@@ -19,13 +19,11 @@ internal class ModList : Feature, IOnSessionMemberChanged
     [FeatureConfig]
     public static ModListSetting Settings { get; set; }
 
-    private SNetExt_PacketFreeSize<pModList> m_packet;
-
     public override void Init()
     {
+        SNetExt.SetupCustomData<pModList>(typeof(pModList).FullName, ReceiveModListData);
         IL2CPPChainloader.Instance.Finished += OnChainloaderFinished;
         GameEventListener.RegisterSelfInGameEventListener(this);
-        m_packet = SNetExt_PacketFreeSize<pModList>.Create(typeof(pModList).FullName, ReceiveModListData);
     }
 
     public class ModListSetting
@@ -126,18 +124,15 @@ internal class ModList : Feature, IOnSessionMemberChanged
         public string Version { get; set; }
     }
 
-    private void ReceiveModListData(ulong sender, pModList data)
+    private void ReceiveModListData(SNet_Player player, pModList data)
     {
-        if (sender == SNet.LocalPlayer.Lookup)
-        {
-            return;
-        }
-        PlayerModsLookup[sender] = new();
-        Logs.LogMessage($"ReceiveModListData from {sender}, Count:{data.ModCount}");
+        if (player.IsLocal) return;
+        PlayerModsLookup[player.Lookup] = new();
+        Logs.LogMessage($"ReceiveModListData from {player.Lookup}, Count:{data.ModCount}");
         for (int i = 0; i < data.ModCount; i++)
         {
             var mod = data.Mods[i];
-            PlayerModsLookup[sender].Add(mod.GUID, mod);
+            PlayerModsLookup[player.Lookup].Add(mod.GUID, mod);
         }
     }
 
@@ -167,15 +162,13 @@ internal class ModList : Feature, IOnSessionMemberChanged
     {
         if (player.IsBot) return;
 
-
         if (player.IsLocal)
         {
+            SNetExt.SetLocalCustomData<pModList>(new(SNet.LocalPlayer, InstalledMods.Values.ToList()));
             return;
         }
-        else
-        {
-            m_packet.Send(new(SNet.LocalPlayer, InstalledMods.Values.ToList()), SNet_ChannelType.GameNonCritical, player);
-        }
+
+        SNetExt.SendCustomData<pModList>(player);
 
         if (playerEvent == SessionMemberEvent.LeftSessionHub)
         {
@@ -203,7 +196,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
         {
             Array.Fill(Mods, new());
             PlayerData.SetPlayer(player);
-            ModCount = modList.Count;
+            ModCount = Math.Clamp(modList.Count, 0, MOD_SYNC_COUNT);
             for (int i = 0; i < ModCount; i++)
             {
                 Mods[i] = modList[i];
@@ -234,16 +227,11 @@ internal class ModList : Feature, IOnSessionMemberChanged
             Version = version;
         }
 
-        public pModInfo()
-        {
-            Name = string.Empty;
-            GUID = string.Empty;
-            Version = default;
-        }
-
-        public string Name { get; set; }
-        public string GUID { get; set; }
-        public Version Version { get; set; }
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 30)]
+        public string Name = string.Empty;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 50)]
+        public string GUID = string.Empty;
+        public Version Version = default;
     }
 
     public struct Version

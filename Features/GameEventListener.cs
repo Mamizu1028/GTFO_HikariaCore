@@ -14,14 +14,9 @@ public class GameEventListener : Feature
 {
     public override string Name => "Game Event Listener";
 
-    public override void Init()
-    {
-        Instance = this;
-    }
-
     public static GameEventListener Instance { get; private set; }
 
-    public static IArchiveLogger Logger => Instance.FeatureLogger;
+    public static new IArchiveLogger FeatureLogger { get; set; }
 
     [ArchivePatch(typeof(SNet_GlobalManager), nameof(SNet_GlobalManager.Setup))]
     private class SNet_GlobalManager__Setup__Patch
@@ -141,7 +136,7 @@ public class GameEventListener : Feature
 
     private static void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
     {
-        Logger.Notice($"{player.NickName} [{player.Lookup}] {playerEvent}");
+        FeatureLogger.Notice($"{player.NickName} [{player.Lookup}] {playerEvent}");
         foreach (var Listener in SessionMemberChangeListeners)
         {
             try
