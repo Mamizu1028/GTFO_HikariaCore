@@ -1,4 +1,4 @@
-﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+﻿using BepInEx.Unity.IL2CPP.Utils;
 using Hikaria.Core.Interfaces;
 using SNetwork;
 using System.Collections;
@@ -6,8 +6,18 @@ using UnityEngine;
 
 namespace Hikaria.Core.Managers;
 
-public sealed class PauseManager : MonoBehaviour
+internal class PauseManager : MonoBehaviour
 {
+    public static void Setup()
+    {
+        if (s_Object == null)
+        {
+            s_Object = new(typeof(PauseManager).FullName);
+            GameObject.DontDestroyOnLoad(s_Object);
+            s_Object.AddComponent<PauseManager>();
+        }
+    }
+
     private void Awake()
     {
         Current = this;
@@ -15,59 +25,60 @@ public sealed class PauseManager : MonoBehaviour
 
     private void SetPaused()
     {
-        SNet.Capture.CaptureGameState(eBufferType.Migration_A);
-        if (_PauseUpdateCoroutine != null)
+        if (SNet.IsMaster)
         {
-            StopCoroutine(_PauseUpdateCoroutine);
+            SNet.Capture.CaptureGameState(eBufferType.Migration_A);
         }
-        _PauseUpdateCoroutine = StartCoroutine(UpdateRegistered().WrapToIl2Cpp());
-        foreach (IPauseable item in _updaters)
+        if (m_pauseUpdateCoroutine != null)
         {
-            item.OnPaused();
+            StopCoroutine(m_pauseUpdateCoroutine);
+        }
+        m_pauseUpdateCoroutine = this.StartCoroutine(UpdateRegistered());
+        foreach (IPauseable pauseable in m_pausableUpdaters)
+        {
+            pauseable.OnPaused();
         }
     }
 
     private void SetUnpaused()
     {
-        if (_PauseUpdateCoroutine != null)
+        if (m_pauseUpdateCoroutine != null)
         {
-            StopCoroutine(_PauseUpdateCoroutine);
-            _PauseUpdateCoroutine = null;
+            StopCoroutine(m_pauseUpdateCoroutine);
+            m_pauseUpdateCoroutine = null;
         }
-        foreach (IPauseable item in _updaters)
+        foreach (IPauseable pauseable in m_pausableUpdaters)
         {
-            item.OnUnpaused();
+            pauseable.OnUnpaused();
         }
-        SNet.Sync.StartRecallWithAllSyncedPlayers(eBufferType.Migration_A, false);
+        if (SNet.IsMaster)
+        {
+            SNet.Sync.StartRecallWithAllSyncedPlayers(eBufferType.Migration_A, false);
+        }
     }
 
     private IEnumerator UpdateRegistered()
     {
+        var yielder = new WaitForSecondsRealtime(PauseUpdateInterval);
         while (true)
         {
-            foreach (IPauseable item in _updaters)
+            foreach (IPauseable pauseable in m_pausableUpdaters)
             {
-                item.PausedUpdate();
+                pauseable.PausedUpdate();
             }
-            yield return new WaitForSecondsRealtime(PauseUpdateInterval);
+            yield return yielder;
         }
     }
 
-    public void RegisterPauseable(IPauseable pu)
+    public static void RegisterPauseable(IPauseable pu)
     {
-        _updaters.Add(pu);
+        m_pausableUpdaters.Add(pu);
     }
 
-    public void UnregisterPauseable(IPauseable pu)
+    public static void UnregisterPauseable(IPauseable pu)
     {
-        _updaters.Remove(pu);
+        m_pausableUpdaters.Remove(pu);
     }
-
-    private Coroutine _PauseUpdateCoroutine;
-
-    public static PauseManager Current;
-
-    private readonly HashSet<IPauseable> _updaters = new();
 
     public static bool IsPaused
     {
@@ -92,7 +103,15 @@ public sealed class PauseManager : MonoBehaviour
         }
     }
 
+    public static float PauseUpdateInterval => Time.fixedDeltaTime;
+
+    private Coroutine m_pauseUpdateCoroutine;
+
+    public static PauseManager Current;
+
+    private static HashSet<IPauseable> m_pausableUpdaters = new();
+
     private static bool s_isPaused;
 
-    public static float PauseUpdateInterval => Time.fixedDeltaTime;
+    private static GameObject s_Object;
 }

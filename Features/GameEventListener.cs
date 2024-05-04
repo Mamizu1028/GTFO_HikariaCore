@@ -1,5 +1,4 @@
-﻿using GameData;
-using Hikaria.Core.Interfaces;
+﻿using Hikaria.Core.Interfaces;
 using SNetwork;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
@@ -10,7 +9,8 @@ namespace Hikaria.Core.Features;
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
 [HideInModSettings]
-public class GameEventListener : Feature
+[DoNotSaveToConfig]
+internal class GameEventListener : Feature
 {
     public override string Name => "Game Event Listener";
 
@@ -18,37 +18,40 @@ public class GameEventListener : Feature
 
     public static new IArchiveLogger FeatureLogger { get; set; }
 
+    [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.AddPlayerToSession))]
+    private class SNet_SessionHub__AddPlayerToSession__Patch
+    {
+        private static void Postfix(SNet_Player player)
+        {
+            OnSessionMemberChanged(player, SessionMemberEvent.JoinSessionHub);
+        }
+    }
+
+    [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.RemovePlayerFromSession))]
+    private class SNet_SessionHub__RemovePlayerFromSession__Patch
+    {
+        private static void Postfix(SNet_Player player)
+        {
+            OnSessionMemberChanged(player, SessionMemberEvent.LeftSessionHub);
+        }
+    }
+
+    [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.LeaveHub))]
+    private class SNet_SessionHub__LeaveHub__Patch
+    {
+        private static void Postfix()
+        {
+            OnSessionMemberChanged(SNet.LocalPlayer, SessionMemberEvent.LeftSessionHub);
+        }
+    }
+
     [ArchivePatch(typeof(SNet_GlobalManager), nameof(SNet_GlobalManager.Setup))]
     private class SNet_GlobalManager__Setup__Patch
     {
         private static void Postfix()
         {
-            OnPlayerEvent += OnPlayerEventM;
-            SNet_Events.OnPlayerEvent += OnPlayerEvent;
-        }
-    }
-
-    [ArchivePatch(typeof(GameDataInit), nameof(GameDataInit.Initialize))]
-    private class GameDataInit__Initialize__Patch
-    {
-        private static void Postfix()
-        {
-            foreach (var Listener in GameDataInitedListeners)
-            {
-                try
-                {
-                    Listener.OnGameDataInited();
-                }
-                catch (Exception ex)
-                {
-                    Logs.LogException(ex);
-                }
-            }
-            var onGameDataInited = OnGameDataInited;
-            if (onGameDataInited != null)
-            {
-                onGameDataInited();
-            }
+            SNet_Events.OnPlayerEvent += new Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason>(OnPlayerEventM);
+            SNet_Events.OnRecallComplete += new Action<eBufferType>(OnRecallCompleteM);
         }
     }
 
@@ -62,15 +65,15 @@ public class GameEventListener : Feature
 
         private static void Postfix(eGameStateName nextState)
         {
-            foreach (var Listener in GameStateChangeListeners)
+            foreach (var listener in GameStateChangeListeners)
             {
                 try
                 {
-                    Listener.OnGameStateChanged(preState, nextState);
+                    listener.OnGameStateChanged(preState, nextState);
                 }
                 catch (Exception ex)
                 {
-                    Logs.LogException(ex);
+                    FeatureLogger.Exception(ex);
                 }
             }
             var onGameStateChanged = OnGameStateChanged;
@@ -88,15 +91,15 @@ public class GameEventListener : Feature
         {
             if (data.fromPlayer.TryGetPlayer(out SNet_Player fromPlayer))
             {
-                foreach (var Listener in ChatMessageListeners)
+                foreach (var listener in ChatMessageListeners)
                 {
                     try
                     {
-                        Listener.OnReceiveChatMessage(fromPlayer, data.message.data);
+                        listener.OnReceiveChatMessage(fromPlayer, data.message.data);
                     }
                     catch (Exception ex)
                     {
-                        Logs.LogException(ex);
+                        FeatureLogger.Exception(ex);
                     }
                 }
                 var onReceiveChatMessage = OnReceiveChatMessage;
@@ -105,6 +108,26 @@ public class GameEventListener : Feature
                     onReceiveChatMessage(fromPlayer, data.message.data);
                 }
             }
+        }
+    }
+
+    private static void OnRecallCompleteM(eBufferType bufferType)
+    {
+        foreach (var listener in OnRecallCompleteListeners)
+        {
+            try
+            {
+                listener.OnRecallComplete(bufferType);
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
+        }
+        var onRecallComplete = OnRecallComplete;
+        if (onRecallComplete != null)
+        {
+            onRecallComplete(bufferType);
         }
     }
 
@@ -118,18 +141,13 @@ public class GameEventListener : Feature
             }
             catch (Exception ex)
             {
-                Logs.LogException(ex);
+                FeatureLogger.Exception(ex);
             }
         }
-        switch (playerEvent)
+        var onPlayerEvent = OnPlayerEvent;
+        if (onPlayerEvent != null)
         {
-            case SNet_PlayerEvent.PlayerLeftSessionHub:
-            case SNet_PlayerEvent.PlayerAgentDeSpawned:
-                OnSessionMemberChanged(player, SessionMemberEvent.LeftSessionHub);
-                break;
-            case SNet_PlayerEvent.PlayerAgentSpawned:
-                OnSessionMemberChanged(player, SessionMemberEvent.JoinSessionHub);
-                break;
+            onPlayerEvent(player, playerEvent, reason);
         }
     }
 
@@ -145,41 +163,26 @@ public class GameEventListener : Feature
             }
             catch (Exception ex)
             {
-                Logs.LogException(ex);
+                FeatureLogger.Exception(ex);
             }
         }
     }
 
-    public static void RegisterSelfInGameEventListener<T>(T instance)
-    {
-        Type type = typeof(T);
-        if (type.IsInterface || type.IsAbstract)
-            return;
-        if (typeof(IOnGameStateChanged).IsAssignableFrom(type))
-            GameStateChangeListeners.Add((IOnGameStateChanged)instance);
-        if (typeof(IPlayerEventListener).IsAssignableFrom(type))
-            PlayerEventListeners.Add((IPlayerEventListener)instance);
-        if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
-            ChatMessageListeners.Add((IOnReceiveChatMessage)instance);
-        if (typeof(IOnGameDataInited).IsAssignableFrom(type))
-            GameDataInitedListeners.Add((IOnGameDataInited)instance);
-        if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
-            SessionMemberChangeListeners.Add((IOnSessionMemberChanged)instance);
-    }
-
     private static eGameStateName preState;
 
-    private static HashSet<IOnGameDataInited> GameDataInitedListeners = new();
+    public static HashSet<IOnGameStateChanged> GameStateChangeListeners = new();
 
-    private static HashSet<IOnGameStateChanged> GameStateChangeListeners = new();
+    public static HashSet<IOnReceiveChatMessage> ChatMessageListeners = new();
 
-    private static HashSet<IOnReceiveChatMessage> ChatMessageListeners = new();
+    public static HashSet<IOnPlayerEvent> PlayerEventListeners = new();
 
-    private static HashSet<IPlayerEventListener> PlayerEventListeners = new();
+    public static HashSet<IOnRecallComplete> OnRecallCompleteListeners = new();
 
-    private static HashSet<IOnSessionMemberChanged> SessionMemberChangeListeners = new();
+    public static HashSet<IOnSessionMemberChanged> SessionMemberChangeListeners = new();
 
     public static event Action OnGameDataInited;
+
+    public static event Action<eBufferType> OnRecallComplete;
 
     public static event Action<eGameStateName, eGameStateName> OnGameStateChanged;
 

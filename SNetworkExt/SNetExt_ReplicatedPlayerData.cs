@@ -7,7 +7,7 @@ public class SNetExt_ReplicatedPlayerData<A> where A : struct
         if (s_singleton == null)
         {
             s_singleton = new();
-            s_singleton.m_syncPacket = SNetExt_Packet<A>.Create(eventName, OnReceiveData);
+            s_singleton.m_syncPacket = SNetExt_Packet<A>.Create(eventName, OnReceiveData, null, false);
         }
         s_singleton.m_onChangeCallback = callback;
     }

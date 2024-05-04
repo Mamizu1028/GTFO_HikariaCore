@@ -9,17 +9,19 @@ public class SNetExt_Packet
 
 public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
 {
+    private bool SendLocal { get; set; }
     private Action<T> ValidateAction { get; set; }
     private Action<ulong, T> ReceiveAction { get; set; }
 
-    public static SNetExt_Packet<T> Create(string eventName, Action<ulong, T> receiveAction, Action<T> validateAction = null)
+    public static SNetExt_Packet<T> Create(string eventName, Action<ulong, T> receiveAction, Action<T> validateAction = null, bool sendLocal = true)
     {
         var packet = new SNetExt_Packet<T>
         {
             EventName = eventName,
             ReceiveAction = receiveAction,
             ValidateAction = validateAction,
-            m_hasValidateAction = validateAction != null
+            m_hasValidateAction = validateAction != null,
+            SendLocal = sendLocal
         };
         NetworkAPI.RegisterEvent<T>(eventName, packet.OnReceiveData);
         return packet;
@@ -48,7 +50,10 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
         {
             NetworkAPI.InvokeEvent(EventName, data, player, type);
         }
-        OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);
+        if (SendLocal)
+        {
+            OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);
+        }
     }
 
     public void Send(T data, SNetwork.SNet_ChannelType type, params SNetwork.SNet_Player[] players)

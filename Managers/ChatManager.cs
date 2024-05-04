@@ -11,13 +11,17 @@ public sealed class ChatManager : MonoBehaviour, IPauseable
     private void Awake()
     {
         Instance = this;
-        PauseManager.Current.RegisterPauseable(this);
+        PauseManager.RegisterPauseable(this);
+    }
+    private void OnDestroy()
+    {
+        PauseManager.UnregisterPauseable(this);
     }
 
     private void FixedUpdate()
     {
         _timer += Time.fixedDeltaTime;
-        if (_timer < 0.4)
+        if (_timer < 0.333)
         {
             return;
         }
@@ -101,7 +105,7 @@ public sealed class ChatManager : MonoBehaviour, IPauseable
 
     public void PausedUpdate()
     {
-        _timer += Time.fixedDeltaTime;
+        _timer += PauseManager.PauseUpdateInterval;
         if (_timer < 0.333)
         {
             return;

@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
+using Version = Hikaria.Core.Utilities.Version;
 
 namespace Hikaria.Core.Features;
 
@@ -23,7 +24,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
     {
         SNetExt.SetupCustomData<pModList>(typeof(pModList).FullName, ReceiveModListData);
         IL2CPPChainloader.Instance.Finished += OnChainloaderFinished;
-        GameEventListener.RegisterSelfInGameEventListener(this);
+        GameEventAPI.RegisterSelf(this);
     }
 
     public class ModListSetting
@@ -109,7 +110,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
         {
             Name = modInfo.Name;
             GUID = modInfo.GUID;
-            Version = modInfo.Version.ToDetailString();
+            Version = modInfo.Version.ToVersionString();
         }
 
         [FSSeparator]
@@ -128,7 +129,6 @@ internal class ModList : Feature, IOnSessionMemberChanged
     {
         if (player.IsLocal) return;
         PlayerModsLookup[player.Lookup] = new();
-        Logs.LogMessage($"ReceiveModListData from {player.Lookup}, Count:{data.ModCount}");
         for (int i = 0; i < data.ModCount; i++)
         {
             var mod = data.Mods[i];
@@ -140,7 +140,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
     {
         var metaData = pluginInfo.Metadata;
         var pVersion = pluginInfo.Metadata.Version;
-        var version = new Version(pVersion.Major, pVersion.Minor, pVersion.Patch, pVersion.Build);
+        var version = new Version(pVersion.Major, pVersion.Minor, pVersion.Patch);
         InstalledMods[metaData.GUID] = new(metaData.Name, metaData.GUID, version);
     }
 
@@ -151,7 +151,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
         {
             var metaData = kvp.Value.Metadata;
             var pVersion = metaData.Version;
-            var version = new Version(pVersion.Major, pVersion.Minor, pVersion.Patch, pVersion.Build);
+            var version = new Version(pVersion.Major, pVersion.Minor, pVersion.Patch);
             InstalledMods[metaData.GUID] = new(metaData.Name, metaData.GUID, version);
         }
         IL2CPPChainloader.Instance.Finished -= OnChainloaderFinished;
@@ -168,7 +168,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
             return;
         }
 
-        SNetExt.SendCustomData<pModList>(player);
+        SNetExt.SendCustomData<pModList>();
 
         if (playerEvent == SessionMemberEvent.LeftSessionHub)
         {
@@ -232,26 +232,5 @@ internal class ModList : Feature, IOnSessionMemberChanged
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 50)]
         public string GUID = string.Empty;
         public Version Version = default;
-    }
-
-    public struct Version
-    {
-        public Version(int major, int minor, int patch, string build)
-        {
-            Major = major;
-            Minor = minor;
-            Patch = patch;
-            Build = build;
-        }
-
-        public string ToDetailString()
-        {
-            return $"{Major}.{Minor}.{Patch}";
-        }
-
-        public int Major = 0;
-        public int Minor = 0;
-        public int Patch = 0;
-        public string Build = string.Empty;
     }
 }

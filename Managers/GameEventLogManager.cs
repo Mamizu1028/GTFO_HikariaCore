@@ -9,14 +9,20 @@ public class GameEventLogManager : MonoBehaviour, IPauseable
     private void Awake()
     {
         Instance = this;
+        GameEventAPI.RegisterSelf(this);
+    }
+
+    private void OnDestroy()
+    {
+        GameEventAPI.UnregisterSelf(this);
     }
 
     private void FixedUpdate()
     {
-        _timer += Time.fixedDeltaTime;
-        if (_timer < 0.4)
+        timer += Time.fixedDeltaTime;
+        if (timer < 0.333)
             return;
-        _timer = 0f;
+        timer = 0f;
         if (queue.TryDequeue(out var log))
         {
             PageLoadoutLog.AddLogItem(log);
@@ -39,10 +45,10 @@ public class GameEventLogManager : MonoBehaviour, IPauseable
 
     public void PausedUpdate()
     {
-        _timer += Time.fixedDeltaTime;
-        if (_timer < 0.4)
+        timer += PauseManager.PauseUpdateInterval;
+        if (timer < 0.333)
             return;
-        _timer = 0f;
+        timer = 0f;
         if (queue.TryDequeue(out var log))
         {
             PageLoadoutLog.AddLogItem(log);
@@ -61,7 +67,7 @@ public class GameEventLogManager : MonoBehaviour, IPauseable
     public static GameEventLogManager Instance { get; private set; }
 
     private Queue<string> queue = new();
-    private float _timer = 0f;
+    private float timer = 0f;
     private PUI_GameEventLog PageLoadoutLog => MainMenuGuiLayer.Current.PageLoadout.m_gameEventLog;
     private PUI_GameEventLog PlayerLayerLog => GuiManager.PlayerLayer.m_gameEventLog;
 }

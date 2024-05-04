@@ -1,5 +1,4 @@
-﻿using Hikaria.Core.Managers;
-using TheArchive.Core;
+﻿using TheArchive.Core;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.Localization;
 
@@ -23,8 +22,6 @@ public class EntryPoint : IArchiveModule
 
     public void Init()
     {
-        InitializeManager.OnPluginLoaded();
-
         Logs.LogMessage("OK");
     }
 

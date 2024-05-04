@@ -1,5 +1,4 @@
-﻿using Hikaria.Core.Interfaces;
-using Hikaria.Core.Managers;
+﻿using Hikaria.Core.Managers;
 using Hikaria.Core.SNetworkExt;
 using SNetwork;
 using TheArchive.Core.Attributes;
@@ -12,15 +11,14 @@ namespace Hikaria.Core.Features;
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
 [HideInModSettings]
-internal class Bootstrap : Feature, IOnGameDataInited
+internal class Bootstrap : Feature
 {
     public override string Name => "Bootstrap";
     public override void Init()
     {
         LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<ChatManager>();
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<GameEventLogManager>();
         LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<Managers.PauseManager>();
-
-        GameEventListener.RegisterSelfInGameEventListener(this);
     }
 
     [ArchivePatch(typeof(SNet_Player), nameof(SNet_Player.SendAllCustomData))]
@@ -50,7 +48,7 @@ internal class Bootstrap : Feature, IOnGameDataInited
         }
     }
 
-    public void OnGameDataInited()
+    public override void OnGameDataInitialized()
     {
         if (CompsObj == null)
         {
@@ -65,6 +63,11 @@ internal class Bootstrap : Feature, IOnGameDataInited
         {
             CompsObj.AddComponent<ChatManager>();
         }
+        if (CompsObj.GetComponent<GameEventLogManager>() == null)
+        {
+            CompsObj.AddComponent<GameEventLogManager>();
+        }
+        Managers.PauseManager.Setup();
     }
 
     private const string CompsObjName = "Hikaria.Core.Comps.obj";
