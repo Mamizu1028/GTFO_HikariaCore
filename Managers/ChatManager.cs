@@ -11,11 +11,11 @@ public sealed class ChatManager : MonoBehaviour, IPauseable
     private void Awake()
     {
         Instance = this;
-        PauseManager.RegisterPauseable(this);
+        GameEventAPI.RegisterSelf(this);
     }
     private void OnDestroy()
     {
-        PauseManager.UnregisterPauseable(this);
+        GameEventAPI.UnregisterSelf(this);
     }
 
     private void FixedUpdate()

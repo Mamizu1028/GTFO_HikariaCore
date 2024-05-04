@@ -4,7 +4,7 @@ using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Interfaces;
 
-namespace Hikaria.Core.Features;
+namespace Hikaria.Core.Features.Core;
 
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
@@ -13,6 +13,8 @@ namespace Hikaria.Core.Features;
 internal class GameEventListener : Feature
 {
     public override string Name => "Game Event Listener";
+
+    public override FeatureGroup Group => EntryPoint.Groups.Core;
 
     public static GameEventListener Instance { get; private set; }
 
@@ -23,7 +25,7 @@ internal class GameEventListener : Feature
     {
         private static void Postfix(SNet_Player player)
         {
-            OnSessionMemberChanged(player, SessionMemberEvent.JoinSessionHub);
+            OnSessionMemberChangedM(player, SessionMemberEvent.JoinSessionHub);
         }
     }
 
@@ -32,7 +34,7 @@ internal class GameEventListener : Feature
     {
         private static void Postfix(SNet_Player player)
         {
-            OnSessionMemberChanged(player, SessionMemberEvent.LeftSessionHub);
+            OnSessionMemberChangedM(player, SessionMemberEvent.LeftSessionHub);
         }
     }
 
@@ -41,7 +43,7 @@ internal class GameEventListener : Feature
     {
         private static void Postfix()
         {
-            OnSessionMemberChanged(SNet.LocalPlayer, SessionMemberEvent.LeftSessionHub);
+            OnSessionMemberChangedM(SNet.LocalPlayer, SessionMemberEvent.LeftSessionHub);
         }
     }
 
@@ -152,7 +154,7 @@ internal class GameEventListener : Feature
     }
 
 
-    private static void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
+    private static void OnSessionMemberChangedM(SNet_Player player, SessionMemberEvent playerEvent)
     {
         FeatureLogger.Notice($"{player.NickName} [{player.Lookup}] {playerEvent}");
         foreach (var Listener in SessionMemberChangeListeners)
@@ -165,6 +167,11 @@ internal class GameEventListener : Feature
             {
                 FeatureLogger.Exception(ex);
             }
+        }
+        var onSessionMemberChanged = OnSessionMemberChanged;
+        if (onSessionMemberChanged != null)
+        {
+            onSessionMemberChanged(player, playerEvent);
         }
     }
 
@@ -189,4 +196,6 @@ internal class GameEventListener : Feature
     public static event Action<SNet_Player, string> OnReceiveChatMessage;
 
     public static event Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason> OnPlayerEvent;
+
+    public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged;
 }

@@ -6,7 +6,7 @@ using TheArchive.Core.FeaturesAPI;
 using TheArchive.Loader;
 using UnityEngine;
 
-namespace Hikaria.Core.Features;
+namespace Hikaria.Core.Features.Core;
 
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
@@ -14,6 +14,9 @@ namespace Hikaria.Core.Features;
 internal class Bootstrap : Feature
 {
     public override string Name => "Bootstrap";
+
+    public override FeatureGroup Group => EntryPoint.Groups.Core;
+
     public override void Init()
     {
         LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<ChatManager>();
@@ -30,7 +33,7 @@ internal class Bootstrap : Feature
         }
     }
 
-    [ArchivePatch(typeof(global::PauseManager), nameof(global::PauseManager.SetPaused))]
+    [ArchivePatch(typeof(PauseManager), nameof(PauseManager.SetPaused))]
     private class PauseManager__SetPaused__Patch
     {
         private static void Postfix()
@@ -39,7 +42,7 @@ internal class Bootstrap : Feature
         }
     }
 
-    [ArchivePatch(typeof(global::PauseManager), nameof(global::PauseManager.SetUnpaused))]
+    [ArchivePatch(typeof(PauseManager), nameof(PauseManager.SetUnpaused))]
     private class PauseManager__SetUnpaused__Patch
     {
         private static void Postfix()

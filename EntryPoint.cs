@@ -1,9 +1,12 @@
 ﻿using TheArchive.Core;
+using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.Localization;
 
 namespace Hikaria.Core;
 
+[ArchiveDependency("dev.gtfomodding.gtfo-api", ArchiveDependency.DependencyFlags.HardDependency)]
+[ArchiveModule(PluginInfo.GUID, PluginInfo.NAME, PluginInfo.VERSION)]
 public class EntryPoint : IArchiveModule
 {
     public bool ApplyHarmonyPatches => false;
@@ -35,5 +38,16 @@ public class EntryPoint : IArchiveModule
 
     public void OnExit()
     {
+    }
+
+    internal class Groups
+    {
+        static Groups()
+        {
+            Core.SetLanguage(new Dictionary<Language, string>() { { Language.Chinese, "核心" }, { Language.English, "Core" } });
+        }
+
+        public static FeatureGroup ModuleGroup => FeatureGroups.GetOrCreateModuleGroup("Hikaria Core");
+        public static FeatureGroup Core => ModuleGroup.GetOrCreateSubGroup("Core");
     }
 }

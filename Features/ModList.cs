@@ -5,6 +5,7 @@ using SNetwork;
 using System.Runtime.InteropServices;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
+using TheArchive.Core.Bootstrap;
 using TheArchive.Core.FeaturesAPI;
 using Version = Hikaria.Core.Utilities.Version;
 
@@ -23,7 +24,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
     public override void Init()
     {
         SNetExt.SetupCustomData<pModList>(typeof(pModList).FullName, ReceiveModListData);
-        IL2CPPChainloader.Instance.Finished += OnChainloaderFinished;
+        ArchiveModuleChainloader.Instance.Finished += OnChainloaderFinished;
         GameEventAPI.RegisterSelf(this);
     }
 
@@ -144,6 +145,14 @@ internal class ModList : Feature, IOnSessionMemberChanged
         InstalledMods[metaData.GUID] = new(metaData.Name, metaData.GUID, version);
     }
 
+    private void OnModuleLoaded(ModuleInfo moduleInfo)
+    {
+        var metaData = moduleInfo.Metadata;
+        var pVersion = moduleInfo.Metadata.Version;
+        var version = new Version(pVersion.Major, pVersion.Minor, pVersion.Patch);
+        InstalledMods[metaData.GUID] = new(metaData.Name, metaData.GUID, version);
+    }
+
     private void OnChainloaderFinished()
     {
         InstalledMods.Clear();
@@ -154,8 +163,15 @@ internal class ModList : Feature, IOnSessionMemberChanged
             var version = new Version(pVersion.Major, pVersion.Minor, pVersion.Patch);
             InstalledMods[metaData.GUID] = new(metaData.Name, metaData.GUID, version);
         }
-        IL2CPPChainloader.Instance.Finished -= OnChainloaderFinished;
+        foreach (var kvp in ArchiveModuleChainloader.Instance.Modules)
+        {
+            var metaData = kvp.Value.Metadata;
+            var pVersion = metaData.Version;
+            var version = new Version(pVersion.Major, pVersion.Minor, pVersion.Patch);
+            InstalledMods[metaData.GUID] = new(metaData.Name, metaData.GUID, version);
+        }
         IL2CPPChainloader.Instance.PluginLoaded += OnPluginLoaded;
+        ArchiveModuleChainloader.Instance.ModuleLoaded += OnModuleLoaded;
     }
 
     public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)

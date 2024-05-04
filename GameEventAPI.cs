@@ -1,8 +1,7 @@
-﻿using Hikaria.Core.Features;
+﻿using Hikaria.Core.Features.Core;
 using Hikaria.Core.Interfaces;
-using Hikaria.Core.Managers;
 using SNetwork;
-using static Hikaria.Core.Features.GameEventListener;
+using static Hikaria.Core.Features.Core.GameEventListener;
 
 namespace Hikaria.Core;
 
@@ -17,6 +16,8 @@ public static class GameEventAPI
     public static event Action<SNet_Player, string> OnReceiveChatMessage { add => GameEventListener.OnReceiveChatMessage += value; remove => GameEventListener.OnReceiveChatMessage -= value; }
 
     public static event Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason> OnPlayerEvent { add => GameEventListener.OnPlayerEvent += value; remove => GameEventListener.OnPlayerEvent -= value; }
+
+    public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged { add => GameEventListener.OnSessionMemberChanged += value; remove => GameEventListener.OnSessionMemberChanged -= value; }
 
     public static void RegisterSelf<T>(T instance)
     {
