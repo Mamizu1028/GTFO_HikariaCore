@@ -1,5 +1,4 @@
 ﻿using Globals;
-using Hikaria.Core;
 using LevelGeneration;
 using Player;
 using SNetwork;
@@ -9,7 +8,7 @@ using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.Localization;
 using UnityEngine;
 
-namespace Hikaria.AdminSystem.Features.Dev;
+namespace Hikaria.Core.Features.Accessibility;
 
 [DisallowInGameToggle]
 [EnableFeatureByDefault]
@@ -18,7 +17,7 @@ public class PauseGame : Feature
 {
     public override string Name => "暂停游戏";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Dev;
+    public override FeatureGroup Group => EntryPoint.Groups.Accessibility;
 
     [FeatureConfig]
     public static PauseGameSettings Settings { get; set; }
@@ -67,7 +66,7 @@ public class PauseGame : Feature
     {
         private static void Postfix()
         {
-            Core.Managers.PauseManager.IsPaused = true;
+            Managers.PauseManager.IsPaused = true;
             DoPauseGame(true);
         }
     }
@@ -77,7 +76,7 @@ public class PauseGame : Feature
     {
         private static void Postfix()
         {
-            Core.Managers.PauseManager.IsPaused = false;
+            Managers.PauseManager.IsPaused = false;
             DoPauseGame(false);
         }
     }

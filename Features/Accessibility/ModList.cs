@@ -9,7 +9,7 @@ using TheArchive.Core.Bootstrap;
 using TheArchive.Core.FeaturesAPI;
 using Version = Hikaria.Core.Utilities.Version;
 
-namespace Hikaria.Core.Features.Dev;
+namespace Hikaria.Core.Features.Accessibility;
 
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
@@ -18,7 +18,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
 {
     public override string Name => "Mod List";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Dev;
+    public override FeatureGroup Group => EntryPoint.Groups.Accessibility;
 
     [FeatureConfig]
     public static ModListSetting Settings { get; set; }

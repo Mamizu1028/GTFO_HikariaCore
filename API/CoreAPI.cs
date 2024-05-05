@@ -1,5 +1,5 @@
 ﻿using SNetwork;
-using static Hikaria.Core.Features.Dev.ModList;
+using static Hikaria.Core.Features.Accessibility.ModList;
 using Version = Hikaria.Core.Utilities.Version;
 
 namespace Hikaria.Core;
