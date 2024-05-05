@@ -19,9 +19,10 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
 
     public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
     {
-        if (!SNet.IsMaster || player.IsLocal || playerEvent != SessionMemberEvent.LeftSessionHub) return;
-
-        CleanupSlotsForPlayer(player);
+        if (!SNet.IsMaster || player.IsLocal || playerEvent != SessionMemberEvent.LeftSessionHub)
+            return;
+        if (SlotsNeedCleanup(player))
+            CleanupSlotsForPlayer(player);
     }
 
     [ArchivePatch(typeof(SNet_PlayerSlotManager), nameof(SNet_PlayerSlotManager.SetSlotPermission))]
@@ -35,6 +36,28 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
             }
             CleanupSlotsForPlayer(__instance.PlayerSlots[playerIndex].player);
         }
+    }
+
+    private static bool SlotsNeedCleanup(SNet_Player player)
+    {
+        var slots = SNet.Slots;
+        for (int i = 0; i < slots.CharacterSlots.Count; i++)
+        {
+            var characterSlot = slots.CharacterSlots[i];
+            if (characterSlot.player != null && characterSlot.player.Lookup == player.Lookup)
+            {
+                return true;
+            }
+        }
+        for (int i = 0; i < slots.PlayerSlots.Count; i++)
+        {
+            var playerSlot = slots.PlayerSlots[i];
+            if (playerSlot.player != null && playerSlot.player.Lookup == player.Lookup)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void CleanupSlotsForPlayer(SNet_Player player)
