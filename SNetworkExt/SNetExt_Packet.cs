@@ -16,7 +16,7 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
     private Action<T> ValidateAction { get; set; }
     private Action<ulong, T> ReceiveAction { get; set; }
 
-    public static SNetExt_Packet<T> Create(string eventName, Action<ulong, T> receiveAction, Action<T> validateAction = null, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical, bool allowSendToLocal = false)
+    public static SNetExt_Packet<T> Create(string eventName, Action<ulong, T> receiveAction, Action<T> validateAction = null, bool allowSendToLocal = false, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
     {
         var packet = new SNetExt_Packet<T>
         {

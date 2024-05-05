@@ -4,7 +4,7 @@ public abstract class SNetExt_SyncedAction<T> where T : struct
 {
     protected void Setup(string eventName, Action<ulong, T> incomingAction, Action<T> incomingActionValidation = null, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
     {
-        m_packet = SNetExt_Packet<T>.Create(eventName, incomingAction, incomingActionValidation, channelType, false);
+        m_packet = SNetExt_Packet<T>.Create(eventName, incomingAction, incomingActionValidation, false, channelType);
         m_incomingAction = incomingAction;
     }
 
