@@ -16,8 +16,6 @@ internal class GameEventListener : Feature
 
     public override FeatureGroup Group => EntryPoint.Groups.Core;
 
-    public static GameEventListener Instance { get; private set; }
-
     public static new IArchiveLogger FeatureLogger { get; set; }
 
     [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.AddPlayerToSession))]
@@ -26,15 +24,6 @@ internal class GameEventListener : Feature
         private static void Postfix(SNet_Player player)
         {
             OnSessionMemberChangedM(player, SessionMemberEvent.JoinSessionHub);
-        }
-    }
-
-    [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.RemovePlayerFromSession))]
-    private class SNet_SessionHub__RemovePlayerFromSession__Patch
-    {
-        private static void Postfix(SNet_Player player)
-        {
-            OnSessionMemberChangedM(player, SessionMemberEvent.LeftSessionHub);
         }
     }
 
@@ -150,6 +139,13 @@ internal class GameEventListener : Feature
         if (onPlayerEvent != null)
         {
             onPlayerEvent(player, playerEvent, reason);
+        }
+
+        switch (playerEvent)
+        {
+            case SNet_PlayerEvent.PlayerLeftSessionHub:
+                OnSessionMemberChangedM(player, SessionMemberEvent.LeftSessionHub);
+                break;
         }
     }
 

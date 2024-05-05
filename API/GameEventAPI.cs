@@ -57,5 +57,8 @@ public static class GameEventAPI
             Managers.PauseManager.UnregisterPauseable((IPauseable)instance);
     }
 
-    public static bool IsPaused { get => Managers.PauseManager.IsPaused; set => Managers.PauseManager.IsPaused = value; }
+    public static bool IsGamePaused { get => global::PauseManager.IsPaused; set => global::PauseManager.IsPaused = value; }
+
+    public static event Action OnGamePaused { add => Managers.PauseManager.OnPaused += value; remove => Managers.PauseManager.OnPaused -= value; }
+    public static event Action OnGameUnpaused { add => Managers.PauseManager.OnUnpaused += value; remove => Managers.PauseManager.OnUnpaused -= value; }
 }

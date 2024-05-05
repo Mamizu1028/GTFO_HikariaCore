@@ -1,7 +1,9 @@
-﻿using BepInEx.Unity.IL2CPP.Utils;
+﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
 using Hikaria.Core.Interfaces;
 using SNetwork;
 using System.Collections;
+using TheArchive.Interfaces;
+using TheArchive.Loader;
 using UnityEngine;
 
 namespace Hikaria.Core.Managers;
@@ -13,7 +15,7 @@ internal class PauseManager : MonoBehaviour
         if (s_Object == null)
         {
             s_Object = new(typeof(PauseManager).FullName);
-            GameObject.DontDestroyOnLoad(s_Object);
+            UnityEngine.Object.DontDestroyOnLoad(s_Object);
             s_Object.AddComponent<PauseManager>();
         }
     }
@@ -25,7 +27,7 @@ internal class PauseManager : MonoBehaviour
 
     private void SetPaused()
     {
-        if (SNet.IsMaster)
+        if (SNet.IsMaster && GameStateManager.CurrentStateName == eGameStateName.InLevel)
         {
             SNet.Capture.CaptureGameState(eBufferType.Migration_A);
         }
@@ -33,11 +35,21 @@ internal class PauseManager : MonoBehaviour
         {
             StopCoroutine(m_pauseUpdateCoroutine);
         }
-        m_pauseUpdateCoroutine = this.StartCoroutine(UpdateRegistered());
+        m_pauseUpdateCoroutine = StartCoroutine(UpdateRegistered().WrapToIl2Cpp());
         foreach (IPauseable pauseable in m_pausableUpdaters)
         {
-            pauseable.OnPaused();
+            try
+            {
+                pauseable.OnPaused();
+            }
+            catch
+            {
+            }
         }
+        var onPaused = OnPaused;
+        if (onPaused != null)
+            onPaused();
+        Logger.Notice("Game Paused");
     }
 
     private void SetUnpaused()
@@ -49,12 +61,22 @@ internal class PauseManager : MonoBehaviour
         }
         foreach (IPauseable pauseable in m_pausableUpdaters)
         {
-            pauseable.OnUnpaused();
+            try
+            {
+                pauseable.OnUnpaused();
+            }
+            catch
+            {
+            }
         }
-        if (SNet.IsMaster)
+        var onUnpaused = OnUnpaused;
+        if (onUnpaused != null)
+            onUnpaused();
+        if (SNet.IsMaster && GameStateManager.CurrentStateName == eGameStateName.InLevel)
         {
             SNet.Sync.StartRecallWithAllSyncedPlayers(eBufferType.Migration_A, false);
         }
+        Logger.Notice("Game Unpaused");
     }
 
     private IEnumerator UpdateRegistered()
@@ -64,7 +86,13 @@ internal class PauseManager : MonoBehaviour
         {
             foreach (IPauseable pauseable in m_pausableUpdaters)
             {
-                pauseable.PausedUpdate();
+                try
+                {
+                    pauseable.PausedUpdate();
+                }
+                catch
+                {
+                }
             }
             yield return yielder;
         }
@@ -94,11 +122,9 @@ internal class PauseManager : MonoBehaviour
                 if (value)
                 {
                     Current.SetPaused();
-                    global::PauseManager.IsPaused = true;
                     return;
                 }
                 Current.SetUnpaused();
-                global::PauseManager.IsPaused = false;
             }
         }
     }
@@ -107,11 +133,18 @@ internal class PauseManager : MonoBehaviour
 
     private Coroutine m_pauseUpdateCoroutine;
 
-    public static PauseManager Current;
+    public static PauseManager Current { get; private set; }
 
     private static HashSet<IPauseable> m_pausableUpdaters = new();
 
     private static bool s_isPaused;
 
     private static GameObject s_Object;
+
+    public static event Action OnPaused;
+    public static event Action OnUnpaused;
+
+    private static IArchiveLogger _logger;
+
+    private static IArchiveLogger Logger => _logger ??= LoaderWrapper.CreateLoggerInstance(nameof(PauseManager));
 }

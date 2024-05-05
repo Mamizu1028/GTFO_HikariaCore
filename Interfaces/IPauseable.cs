@@ -1,11 +1,10 @@
-﻿namespace Hikaria.Core.Interfaces
+﻿namespace Hikaria.Core.Interfaces;
+
+public interface IPauseable
 {
-    public interface IPauseable
-    {
-        void PausedUpdate();
+    void PausedUpdate();
 
-        void OnPaused();
+    void OnPaused();
 
-        void OnUnpaused();
-    }
+    void OnUnpaused();
 }

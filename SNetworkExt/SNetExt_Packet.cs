@@ -2,14 +2,15 @@
 
 namespace Hikaria.Core.SNetworkExt;
 
-public class SNetExt_Packet
+public abstract class SNetExt_Packet
 {
     internal string EventName { get; set; }
+
+    internal bool SendLocal { get; set; }
 }
 
 public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
 {
-    private bool SendLocal { get; set; }
     private Action<T> ValidateAction { get; set; }
     private Action<ulong, T> ReceiveAction { get; set; }
 

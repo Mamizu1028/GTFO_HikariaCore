@@ -12,11 +12,16 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
 
     public override FeatureGroup Group => EntryPoint.Groups.Fixes;
 
+    public override void Init()
+    {
+        GameEventAPI.RegisterSelf(this);
+    }
+
     public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
     {
         if (!SNet.IsMaster || player.IsLocal || playerEvent != SessionMemberEvent.LeftSessionHub) return;
 
-        CleanupSlotsOfPlayer(player);
+        CleanupSlotsForPlayer(player);
     }
 
     [ArchivePatch(typeof(SNet_PlayerSlotManager), nameof(SNet_PlayerSlotManager.SetSlotPermission))]
@@ -28,11 +33,11 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
             {
                 return;
             }
-            CleanupSlotsOfPlayer(__instance.PlayerSlots[playerIndex].player);
+            CleanupSlotsForPlayer(__instance.PlayerSlots[playerIndex].player);
         }
     }
 
-    private static void CleanupSlotsOfPlayer(SNet_Player player)
+    private static void CleanupSlotsForPlayer(SNet_Player player)
     {
         if (player == null) return;
         var slots = SNet.Slots;
