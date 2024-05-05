@@ -208,6 +208,8 @@ internal class GameEventListener : Feature
             SessionMemberChangeListeners.Add((IOnSessionMemberChanged)instance);
         if (typeof(IOnRecallComplete).IsAssignableFrom(type))
             RecallCompleteListeners.Add((IOnRecallComplete)instance);
+        if (typeof(IOnMasterChanged).IsAssignableFrom(type))
+            MasterChangedListeners.Add((IOnMasterChanged)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.RegisterPauseable((IPauseable)instance);
     }
@@ -227,6 +229,8 @@ internal class GameEventListener : Feature
             SessionMemberChangeListeners.Remove((IOnSessionMemberChanged)instance);
         if (typeof(IOnRecallComplete).IsAssignableFrom(type))
             RecallCompleteListeners.Remove((IOnRecallComplete)instance);
+        if (typeof(IOnMasterChanged).IsAssignableFrom(type))
+            MasterChangedListeners.Remove((IOnMasterChanged)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.UnregisterPauseable((IPauseable)instance);
     }
