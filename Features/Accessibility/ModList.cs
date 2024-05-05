@@ -9,7 +9,7 @@ using TheArchive.Core.Bootstrap;
 using TheArchive.Core.FeaturesAPI;
 using Version = Hikaria.Core.Utilities.Version;
 
-namespace Hikaria.Core.Features;
+namespace Hikaria.Core.Features.Accessibility;
 
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
@@ -17,6 +17,8 @@ namespace Hikaria.Core.Features;
 internal class ModList : Feature, IOnSessionMemberChanged
 {
     public override string Name => "Mod List";
+
+    public override FeatureGroup Group => EntryPoint.Groups.Accessibility;
 
     [FeatureConfig]
     public static ModListSetting Settings { get; set; }
@@ -128,8 +130,16 @@ internal class ModList : Feature, IOnSessionMemberChanged
 
     private void ReceiveModListData(SNet_Player player, pModList data)
     {
-        if (player.IsLocal) return;
-        PlayerModsLookup[player.Lookup] = new();
+        if (player.IsLocal || player.IsBot) return;
+
+        if (!PlayerModsLookup.ContainsKey(player.Lookup))
+        {
+            PlayerModsLookup[player.Lookup] = new();
+        }
+        else
+        {
+            PlayerModsLookup[player.Lookup].Clear();
+        }
         for (int i = 0; i < data.ModCount; i++)
         {
             var mod = data.Mods[i];
@@ -188,10 +198,13 @@ internal class ModList : Feature, IOnSessionMemberChanged
 
         if (playerEvent == SessionMemberEvent.LeftSessionHub)
         {
-            var index = Settings.OthersMods.FindIndex(p => p.Lookup == player.Lookup);
-            if (index != -1)
+            if (player.IsLocal)
             {
-                Settings.OthersMods.RemoveAt(index);
+                Settings.OthersMods.Clear();
+            }
+            else
+            {
+                Settings.OthersMods.RemoveAll(p => p.Lookup == player.Lookup);
             }
         }
         else if (playerEvent == SessionMemberEvent.JoinSessionHub)

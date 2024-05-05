@@ -5,7 +5,7 @@ using TheArchive.Core.Localization;
 
 namespace Hikaria.Core;
 
-[ArchiveDependency("dev.gtfomodding.gtfo-api", ArchiveDependency.DependencyFlags.HardDependency)]
+[ArchiveDependency("dev.gtfomodding.gtfo-api")]
 [ArchiveModule(PluginInfo.GUID, PluginInfo.NAME, PluginInfo.VERSION)]
 public class EntryPoint : IArchiveModule
 {
@@ -45,9 +45,13 @@ public class EntryPoint : IArchiveModule
         static Groups()
         {
             Core.SetLanguage(new Dictionary<Language, string>() { { Language.Chinese, "核心" }, { Language.English, "Core" } });
+            Accessibility.SetLanguage(new Dictionary<Language, string>() { { Language.Chinese, "辅助功能" }, { Language.English, "Accessibility" } });
+            Fixes.SetLanguage(new Dictionary<Language, string>() { { Language.Chinese, "修复" }, { Language.English, "Fixes" } });
         }
 
         public static FeatureGroup ModuleGroup => FeatureGroups.GetOrCreateModuleGroup("Hikaria Core");
+        public static FeatureGroup Accessibility => ModuleGroup.GetOrCreateSubGroup("Accessibility");
         public static FeatureGroup Core => ModuleGroup.GetOrCreateSubGroup("Core");
+        public static FeatureGroup Fixes => ModuleGroup.GetOrCreateSubGroup("Fixes");
     }
 }
