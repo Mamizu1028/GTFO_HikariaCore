@@ -40,6 +40,7 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
 
     private static bool SlotsNeedCleanup(SNet_Player player)
     {
+        if (player == null) return false;
         var slots = SNet.Slots;
         for (int i = 0; i < slots.CharacterSlots.Count; i++)
         {
