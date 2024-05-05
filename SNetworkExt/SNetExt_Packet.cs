@@ -31,7 +31,7 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
         return packet;
     }
 
-    public void Ask(T data, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.SessionOrderCritical)
+    public void Ask(T data)
     {
         if (SNetwork.SNet.IsMaster)
         {
@@ -40,19 +40,19 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
         }
         if (SNetwork.SNet.HasMaster)
         {
-            Send(data, channelType, SNetwork.SNet.Master);
+            Send(data, SNetwork.SNet.Master);
         }
     }
 
-    public void Send(T data, SNetwork.SNet_ChannelType type, SNetwork.SNet_Player player = null)
+    public void Send(T data, SNetwork.SNet_Player player = null)
     {
         if (player == null)
         {
-            NetworkAPI.InvokeEvent(EventName, data, type);
+            NetworkAPI.InvokeEvent(EventName, data, ChannelType);
         }
         else
         {
-            NetworkAPI.InvokeEvent(EventName, data, player, type);
+            NetworkAPI.InvokeEvent(EventName, data, player, ChannelType);
             if (AllowSendToLocal && player.IsLocal)
             {
                 OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);
@@ -60,11 +60,11 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
         }
     }
 
-    public void Send(T data, SNetwork.SNet_ChannelType type, params SNetwork.SNet_Player[] players)
+    public void Send(T data, params SNetwork.SNet_Player[] players)
     {
         if (players == null || players.Count() == 0) return;
 
-        NetworkAPI.InvokeEvent(EventName, data, players.ToList(), type);
+        NetworkAPI.InvokeEvent(EventName, data, players.ToList(), ChannelType);
         if (AllowSendToLocal && players.Any(p => p.IsLocal))
         {
             OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);

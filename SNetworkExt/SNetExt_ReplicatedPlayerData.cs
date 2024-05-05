@@ -42,10 +42,10 @@ public class SNetExt_ReplicatedPlayerData<A> where A : struct
             data = (A)replicatedPlayerData;
             if (toPlayer != null)
             {
-                s_singleton.m_syncPacket.Send(data, SNetwork.SNet_ChannelType.SessionOrderCritical, toPlayer);
+                s_singleton.m_syncPacket.Send(data, toPlayer);
                 return;
             }
-            s_singleton.m_syncPacket.Send(data, SNetwork.SNet_ChannelType.SessionOrderCritical);
+            s_singleton.m_syncPacket.Send(data);
         }
     }
 

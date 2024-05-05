@@ -11,7 +11,7 @@ public class SNetExt_BroadcastAction<T> : SNetExt_SyncedAction<T> where T : stru
 
     public void Do(T data)
     {
-        m_packet.Send(data, m_channelType);
+        m_packet.Send(data);
         m_incomingAction(SNetwork.SNet.LocalPlayer.Lookup, data);
     }
 }

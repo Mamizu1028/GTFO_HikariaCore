@@ -19,7 +19,7 @@ public class SNetExt_AuthorativeAction<T> : SNetExt_SyncedAction<T> where T : st
         }
         if (SNetwork.SNet.HasMaster)
         {
-            m_packet.Send(data, m_channelType, SNetwork.SNet.Master);
+            m_packet.Send(data, SNetwork.SNet.Master);
         }
     }
 
@@ -27,13 +27,13 @@ public class SNetExt_AuthorativeAction<T> : SNetExt_SyncedAction<T> where T : st
     {
         if (SNetwork.SNet.IsMaster)
         {
-            m_packet.Send(data, m_channelType);
+            m_packet.Send(data);
             m_incomingAction(SNetwork.SNet.LocalPlayer.Lookup, data);
             return;
         }
         if (SNetwork.SNet.HasMaster)
         {
-            m_packet.Send(data, m_channelType, SNetwork.SNet.Master);
+            m_packet.Send(data, SNetwork.SNet.Master);
         }
     }
 
