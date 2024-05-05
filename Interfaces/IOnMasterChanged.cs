@@ -1,6 +1,6 @@
 ﻿namespace Hikaria.Core.Interfaces;
 
-internal interface IOnMasterChanged
+public interface IOnMasterChanged
 {
     public void OnMasterChanged();
 }
