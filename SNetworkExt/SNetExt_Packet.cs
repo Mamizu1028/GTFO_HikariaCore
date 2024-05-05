@@ -71,6 +71,17 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
         }
     }
 
+    public void Send(T data, List<SNetwork.SNet_Player> players)
+    {
+        if (players == null || players.Count() == 0) return;
+
+        NetworkAPI.InvokeEvent(EventName, data, players, ChannelType);
+        if (AllowSendToLocal && players.Any(p => p.IsLocal))
+        {
+            OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);
+        }
+    }
+
     public void OnReceiveData(ulong sender, T data)
     {
         m_data = data;
