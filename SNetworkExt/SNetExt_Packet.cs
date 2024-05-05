@@ -6,7 +6,9 @@ public abstract class SNetExt_Packet
 {
     internal string EventName { get; set; }
 
-    internal bool SendLocal { get; set; }
+    internal bool AllowSendToLocal { get; set; }
+
+    internal SNetwork.SNet_ChannelType ChannelType { get; set; }
 }
 
 public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
@@ -14,15 +16,16 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
     private Action<T> ValidateAction { get; set; }
     private Action<ulong, T> ReceiveAction { get; set; }
 
-    public static SNetExt_Packet<T> Create(string eventName, Action<ulong, T> receiveAction, Action<T> validateAction = null, bool sendLocal = true)
+    public static SNetExt_Packet<T> Create(string eventName, Action<ulong, T> receiveAction, Action<T> validateAction = null, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical, bool allowSendToLocal = false)
     {
         var packet = new SNetExt_Packet<T>
         {
             EventName = eventName,
+            ChannelType = channelType,
             ReceiveAction = receiveAction,
             ValidateAction = validateAction,
             m_hasValidateAction = validateAction != null,
-            SendLocal = sendLocal
+            AllowSendToLocal = allowSendToLocal
         };
         NetworkAPI.RegisterEvent<T>(eventName, packet.OnReceiveData);
         return packet;
@@ -50,10 +53,10 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
         else
         {
             NetworkAPI.InvokeEvent(EventName, data, player, type);
-        }
-        if (SendLocal)
-        {
-            OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);
+            if (AllowSendToLocal && player.IsLocal)
+            {
+                OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);
+            }
         }
     }
 
@@ -62,7 +65,7 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
         if (players == null || players.Count() == 0) return;
 
         NetworkAPI.InvokeEvent(EventName, data, players.ToList(), type);
-        if (players.Any(p => p.IsLocal))
+        if (AllowSendToLocal && players.Any(p => p.IsLocal))
         {
             OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);
         }
