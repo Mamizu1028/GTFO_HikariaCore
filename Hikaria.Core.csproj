@@ -57,6 +57,7 @@
 
   <ItemGroup>
     <Folder Include="Features\Accessibility\" />
+    <Folder Include="Localization\" />
   </ItemGroup>
 
 </Project>

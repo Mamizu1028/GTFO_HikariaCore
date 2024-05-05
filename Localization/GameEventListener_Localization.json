@@ -1,0 +1,27 @@
+{
+  "Internal": {
+    "FeatureSettingsTexts": {
+      "Hikaria.Core.Features.Core.GameEventListener.Name": {
+        "FName": {
+          "English": "Game Event Listener",
+          "Chinese": "游戏事件监听",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      }
+    },
+    "FeatureSettingsEnumTexts": {},
+    "ExtraTexts": []
+  },
+  "External": {
+    "ExternalFeatureSettingsTexts": {},
+    "ExternalEnumTexts": {}
+  }
+}
