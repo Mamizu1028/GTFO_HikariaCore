@@ -19,42 +19,16 @@ public static class GameEventAPI
 
     public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged { add => GameEventListener.OnSessionMemberChanged += value; remove => GameEventListener.OnSessionMemberChanged -= value; }
 
+    public static event Action OnMasterChanged { add => GameEventListener.OnMasterChanged += value; remove => GameEventListener.OnMasterChanged -= value; }
+
     public static void RegisterSelf<T>(T instance)
     {
-        Type type = typeof(T);
-        if (type.IsInterface || type.IsAbstract)
-            return;
-        if (typeof(IOnGameStateChanged).IsAssignableFrom(type))
-            GameStateChangeListeners.Add((IOnGameStateChanged)instance);
-        if (typeof(IOnPlayerEvent).IsAssignableFrom(type))
-            PlayerEventListeners.Add((IOnPlayerEvent)instance);
-        if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
-            ChatMessageListeners.Add((IOnReceiveChatMessage)instance);
-        if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
-            SessionMemberChangeListeners.Add((IOnSessionMemberChanged)instance);
-        if (typeof(IOnRecallComplete).IsAssignableFrom(type))
-            OnRecallCompleteListeners.Add((IOnRecallComplete)instance);
-        if (typeof(IPauseable).IsAssignableFrom(type))
-            Managers.PauseManager.RegisterPauseable((IPauseable)instance);
+        GameEventListener.RegisterSelf(instance);
     }
 
     public static void UnregisterSelf<T>(T instance)
     {
-        Type type = typeof(T);
-        if (type.IsInterface || type.IsAbstract)
-            return;
-        if (typeof(IOnGameStateChanged).IsAssignableFrom(type))
-            GameStateChangeListeners.Remove((IOnGameStateChanged)instance);
-        if (typeof(IOnPlayerEvent).IsAssignableFrom(type))
-            PlayerEventListeners.Remove((IOnPlayerEvent)instance);
-        if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
-            ChatMessageListeners.Remove((IOnReceiveChatMessage)instance);
-        if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
-            SessionMemberChangeListeners.Remove((IOnSessionMemberChanged)instance);
-        if (typeof(IOnRecallComplete).IsAssignableFrom(type))
-            OnRecallCompleteListeners.Remove((IOnRecallComplete)instance);
-        if (typeof(IPauseable).IsAssignableFrom(type))
-            Managers.PauseManager.UnregisterPauseable((IPauseable)instance);
+        GameEventListener.UnregisterSelf(instance);
     }
 
     public static bool IsGamePaused { get => global::PauseManager.IsPaused; set => global::PauseManager.IsPaused = value; }

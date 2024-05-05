@@ -43,6 +43,7 @@ internal class GameEventListener : Feature
         {
             SNet_Events.OnPlayerEvent += new Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason>(OnPlayerEventM);
             SNet_Events.OnRecallComplete += new Action<eBufferType>(OnRecallCompleteM);
+            SNet_Events.OnMasterChanged += new Action(OnMasterChangedM);
         }
     }
 
@@ -102,9 +103,29 @@ internal class GameEventListener : Feature
         }
     }
 
+    private static void OnMasterChangedM()
+    {
+        foreach (var listener in MasterChangedListeners)
+        {
+            try
+            {
+                listener.OnMasterChanged();
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
+        }
+        var onMasterChanged = OnMasterChanged;
+        if (onMasterChanged != null)
+        {
+            onMasterChanged();
+        }
+    }
+
     private static void OnRecallCompleteM(eBufferType bufferType)
     {
-        foreach (var listener in OnRecallCompleteListeners)
+        foreach (var listener in RecallCompleteListeners)
         {
             try
             {
@@ -171,27 +192,58 @@ internal class GameEventListener : Feature
         }
     }
 
+
+    public static void RegisterSelf<T>(T instance)
+    {
+        Type type = typeof(T);
+        if (type.IsInterface || type.IsAbstract)
+            return;
+        if (typeof(IOnGameStateChanged).IsAssignableFrom(type))
+            GameStateChangeListeners.Add((IOnGameStateChanged)instance);
+        if (typeof(IOnPlayerEvent).IsAssignableFrom(type))
+            PlayerEventListeners.Add((IOnPlayerEvent)instance);
+        if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
+            ChatMessageListeners.Add((IOnReceiveChatMessage)instance);
+        if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
+            SessionMemberChangeListeners.Add((IOnSessionMemberChanged)instance);
+        if (typeof(IOnRecallComplete).IsAssignableFrom(type))
+            RecallCompleteListeners.Add((IOnRecallComplete)instance);
+        if (typeof(IPauseable).IsAssignableFrom(type))
+            Managers.PauseManager.RegisterPauseable((IPauseable)instance);
+    }
+
+    public static void UnregisterSelf<T>(T instance)
+    {
+        Type type = typeof(T);
+        if (type.IsInterface || type.IsAbstract)
+            return;
+        if (typeof(IOnGameStateChanged).IsAssignableFrom(type))
+            GameStateChangeListeners.Remove((IOnGameStateChanged)instance);
+        if (typeof(IOnPlayerEvent).IsAssignableFrom(type))
+            PlayerEventListeners.Remove((IOnPlayerEvent)instance);
+        if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
+            ChatMessageListeners.Remove((IOnReceiveChatMessage)instance);
+        if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
+            SessionMemberChangeListeners.Remove((IOnSessionMemberChanged)instance);
+        if (typeof(IOnRecallComplete).IsAssignableFrom(type))
+            RecallCompleteListeners.Remove((IOnRecallComplete)instance);
+        if (typeof(IPauseable).IsAssignableFrom(type))
+            Managers.PauseManager.UnregisterPauseable((IPauseable)instance);
+    }
+
     private static eGameStateName preState;
-
-    public static HashSet<IOnGameStateChanged> GameStateChangeListeners = new();
-
-    public static HashSet<IOnReceiveChatMessage> ChatMessageListeners = new();
-
-    public static HashSet<IOnPlayerEvent> PlayerEventListeners = new();
-
-    public static HashSet<IOnRecallComplete> OnRecallCompleteListeners = new();
-
-    public static HashSet<IOnSessionMemberChanged> SessionMemberChangeListeners = new();
+    private static HashSet<IOnGameStateChanged> GameStateChangeListeners = new();
+    private static HashSet<IOnReceiveChatMessage> ChatMessageListeners = new();
+    private static HashSet<IOnPlayerEvent> PlayerEventListeners = new();
+    private static HashSet<IOnRecallComplete> RecallCompleteListeners = new();
+    private static HashSet<IOnSessionMemberChanged> SessionMemberChangeListeners = new();
+    private static HashSet<IOnMasterChanged> MasterChangedListeners = new();
 
     public static event Action OnGameDataInited;
-
     public static event Action<eBufferType> OnRecallComplete;
-
     public static event Action<eGameStateName, eGameStateName> OnGameStateChanged;
-
     public static event Action<SNet_Player, string> OnReceiveChatMessage;
-
     public static event Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason> OnPlayerEvent;
-
     public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged;
+    public static event Action OnMasterChanged;
 }
