@@ -7,7 +7,6 @@ using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.Bootstrap;
 using TheArchive.Core.FeaturesAPI;
-using Version = Hikaria.Core.Utilities.Version;
 
 namespace Hikaria.Core.Features.Accessibility;
 
@@ -113,7 +112,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
         {
             Name = modInfo.Name;
             GUID = modInfo.GUID;
-            Version = modInfo.Version.ToVersionString();
+            Version = modInfo.Version.ToString();
         }
 
         [FSSeparator]

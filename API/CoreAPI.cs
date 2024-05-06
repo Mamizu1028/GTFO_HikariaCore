@@ -1,6 +1,5 @@
 ﻿using SNetwork;
 using static Hikaria.Core.Features.Accessibility.ModList;
-using Version = Hikaria.Core.Utilities.Version;
 
 namespace Hikaria.Core;
 
@@ -10,26 +9,6 @@ public static class CoreAPI
     {
         return IsPlayerInstalledMod(player, PluginInfo.GUID, version);
     }
-
-    /*
-    public static bool IsPlayerInstalledMod(SNet_Player player, string guid, Version version = default)
-    {
-        if (player == null) return false;
-        var data = player.LoadCustomData<pModList>();
-        if (data.ModCount == 0) return false;
-        for (int i = 0; i < data.ModCount; i++)
-        {
-            var mod = data.Mods[i];
-            if (mod.GUID == guid)
-            {
-                if (mod.Version >= version)
-                    return true;
-                return false;
-            }
-        }
-        return false;
-    }
-    */
 
     public static bool IsPlayerInstalledMod(SNet_Player player, string guid, Version version = default)
     {
