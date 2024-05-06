@@ -1,6 +1,7 @@
 ﻿using Hikaria.Core.Interfaces;
-using Player;
 using SNetwork;
+using System.Reflection.Metadata;
+using System;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Interfaces;
@@ -50,12 +51,12 @@ internal class GameEventListener : Feature
         }
     }
 
-    [ArchivePatch(typeof(SNet_SyncManager), nameof(SNet_SyncManager.OnSyncPlayerData_Session))]
-    private class SNet_SyncManager__OnSyncPlayerData_Session__Patch
+    [ArchivePatch(typeof(SNet_PlayerSlotManager), nameof(SNet_PlayerSlotManager.Internal_ManageSlot))]
+    private class SNet_PlayerSlotManager__Internal_ManageSlot__Patch
     {
-        private static void Postfix(pPlayerData_Session data)
+        private static void Postfix(SNet_Player player, SNet_SlotType type, SNet_SlotHandleType handle, int index)
         {
-            OnSyncPlayerData_SessionM(data);
+            OnPlayerSlotChangedM(player, type, handle, index);
         }
     }
 
@@ -189,13 +190,13 @@ internal class GameEventListener : Feature
         }
     }
 
-    private static void OnSyncPlayerData_SessionM(pPlayerData_Session data)
+    private static void OnPlayerSlotChangedM(SNet_Player player, SNet_SlotType type, SNet_SlotHandleType handle, int index)
     {
-        foreach (var Listener in SyncPlayerData_SessionListeners)
+        foreach (var Listener in PlayerSlotChangedListener)
         {
             try
             {
-                Listener.OnSyncPlayerData_Session(data);
+                Listener.OnPlayerSlotChanged(player, type, handle, index);
             }
             catch (Exception ex)
             {
@@ -203,10 +204,10 @@ internal class GameEventListener : Feature
             }
         }
 
-        var onSyncPlayerData_Session = OnSyncPlayerData_Session;
-        if (onSyncPlayerData_Session != null)
+        var onPlayerSlotChanged = OnPlayerSlotChanged;
+        if (onPlayerSlotChanged != null)
         {
-            onSyncPlayerData_Session(data);
+            onPlayerSlotChanged(player, type, handle, index);
         }
     }
 
@@ -287,8 +288,8 @@ internal class GameEventListener : Feature
             MasterChangedListeners.Add((IOnMasterChanged)instance);
         if (typeof(IOnMasterCommand).IsAssignableFrom(type))
             MasterCommandListeners.Add((IOnMasterCommand)instance);
-        if (typeof(IOnSyncPlayerData_Session).IsAssignableFrom(type))
-            SyncPlayerData_SessionListeners.Add((IOnSyncPlayerData_Session)instance);
+        if (typeof(IOnPlayerSlotChanged).IsAssignableFrom(type))
+            PlayerSlotChangedListener.Add((IOnPlayerSlotChanged)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.RegisterPauseable((IPauseable)instance);
     }
@@ -314,8 +315,8 @@ internal class GameEventListener : Feature
             MasterChangedListeners.Remove((IOnMasterChanged)instance);
         if (typeof(IOnMasterCommand).IsAssignableFrom(type))
             MasterCommandListeners.Remove((IOnMasterCommand)instance);
-        if (typeof(IOnSyncPlayerData_Session).IsAssignableFrom(type))
-            SyncPlayerData_SessionListeners.Remove((IOnSyncPlayerData_Session)instance);
+        if (typeof(IOnPlayerSlotChanged).IsAssignableFrom(type))
+            PlayerSlotChangedListener.Remove((IOnPlayerSlotChanged)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.UnregisterPauseable((IPauseable)instance);
     }
@@ -328,7 +329,7 @@ internal class GameEventListener : Feature
     private static HashSet<IOnSessionMemberChanged> SessionMemberChangedListeners = new();
     private static HashSet<IOnMasterChanged> MasterChangedListeners = new();
     private static HashSet<IOnMasterCommand> MasterCommandListeners = new();
-    private static HashSet<IOnSyncPlayerData_Session> SyncPlayerData_SessionListeners = new();
+    private static HashSet<IOnPlayerSlotChanged> PlayerSlotChangedListener = new();
 
     public static event Action OnGameDataInited;
     public static event Action<eBufferType> OnRecallComplete;
@@ -338,5 +339,5 @@ internal class GameEventListener : Feature
     public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged;
     public static event Action OnMasterChanged;
     public static event Action<eMasterCommandType, int> OnMasterCommand;
-    public static event Action<pPlayerData_Session> OnSyncPlayerData_Session;
+    public static event Action<SNet_Player, SNet_SlotType, SNet_SlotHandleType, int> OnPlayerSlotChanged;
 }

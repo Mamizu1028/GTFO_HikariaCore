@@ -14,7 +14,7 @@ public static class GameEventAPI
     public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged { add => GameEventListener.OnSessionMemberChanged += value; remove => GameEventListener.OnSessionMemberChanged -= value; }
     public static event Action OnMasterChanged { add => GameEventListener.OnMasterChanged += value; remove => GameEventListener.OnMasterChanged -= value; }
     public static event Action<eMasterCommandType, int> OnMasterCommand { add => GameEventListener.OnMasterCommand += value; remove => GameEventListener.OnMasterCommand -= value; }
-    public static event Action<pPlayerData_Session> OnSyncPlayerData_Session { add => GameEventListener.OnSyncPlayerData_Session += value; remove => GameEventListener.OnSyncPlayerData_Session -= value; }
+    public static event Action<SNet_Player, SNet_SlotType, SNet_SlotHandleType, int> OnPlayerSlotChanged { add => GameEventListener.OnPlayerSlotChanged += value; remove => GameEventListener.OnPlayerSlotChanged -= value; }
 
     public static void RegisterSelf<T>(T instance)
     {
