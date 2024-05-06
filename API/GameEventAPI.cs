@@ -7,18 +7,14 @@ namespace Hikaria.Core;
 public static class GameEventAPI
 {
     public static event Action<eBufferType> OnRecallComplete { add => GameEventListener.OnRecallComplete += value; remove => GameEventListener.OnRecallComplete -= value; }
-
     public static event Action OnGameDataInited { add => GameEventListener.OnGameDataInited += value; remove => GameEventListener.OnGameDataInited -= value; }
-
     public static event Action<eGameStateName, eGameStateName> OnGameStateChanged { add => GameEventListener.OnGameStateChanged += value; remove => GameEventListener.OnGameStateChanged -= value; }
-
     public static event Action<SNet_Player, string> OnReceiveChatMessage { add => GameEventListener.OnReceiveChatMessage += value; remove => GameEventListener.OnReceiveChatMessage -= value; }
-
     public static event Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason> OnPlayerEvent { add => GameEventListener.OnPlayerEvent += value; remove => GameEventListener.OnPlayerEvent -= value; }
-
     public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged { add => GameEventListener.OnSessionMemberChanged += value; remove => GameEventListener.OnSessionMemberChanged -= value; }
-
     public static event Action OnMasterChanged { add => GameEventListener.OnMasterChanged += value; remove => GameEventListener.OnMasterChanged -= value; }
+    public static event Action<eMasterCommandType, int> OnMasterCommand { add => GameEventListener.OnMasterCommand += value; remove => GameEventListener.OnMasterCommand -= value; }
+    public static event Action<pPlayerData_Session> OnSyncPlayerData_Session { add => GameEventListener.OnSyncPlayerData_Session += value; remove => GameEventListener.OnSyncPlayerData_Session -= value; }
 
     public static void RegisterSelf<T>(T instance)
     {

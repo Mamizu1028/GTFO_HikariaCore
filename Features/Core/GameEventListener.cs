@@ -1,4 +1,5 @@
 ﻿using Hikaria.Core.Interfaces;
+using Player;
 using SNetwork;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
@@ -42,15 +43,27 @@ internal class GameEventListener : Feature
     {
         private static void Postfix()
         {
+            SNet_Events.OnMasterCommand += new Action<pMasterCommand>(OnMasterCommandM);
             SNet_Events.OnPlayerEvent += new Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason>(OnPlayerEventM);
             SNet_Events.OnRecallComplete += new Action<eBufferType>(OnRecallCompleteM);
             SNet_Events.OnMasterChanged += new Action(OnMasterChangedM);
         }
     }
 
+    [ArchivePatch(typeof(SNet_SyncManager), nameof(SNet_SyncManager.OnSyncPlayerData_Session))]
+    private class SNet_SyncManager__OnSyncPlayerData_Session__Patch
+    {
+        private static void Postfix(pPlayerData_Session data)
+        {
+            OnSyncPlayerData_SessionM(data);
+        }
+    }
+
     [ArchivePatch(typeof(GameStateManager), nameof(GameStateManager.DoChangeState))]
     private class GameStateManager__DoChangeState__Patch
     {
+        private static eGameStateName preState;
+
         private static void Prefix(GameStateManager __instance)
         {
             preState = __instance.m_currentStateName;
@@ -176,6 +189,49 @@ internal class GameEventListener : Feature
         }
     }
 
+    private static void OnSyncPlayerData_SessionM(pPlayerData_Session data)
+    {
+        foreach (var Listener in SyncPlayerData_SessionListeners)
+        {
+            try
+            {
+                Listener.OnSyncPlayerData_Session(data);
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
+        }
+
+        var onSyncPlayerData_Session = OnSyncPlayerData_Session;
+        if (onSyncPlayerData_Session != null)
+        {
+            onSyncPlayerData_Session(data);
+        }
+    }
+
+
+    private static void OnMasterCommandM(pMasterCommand command)
+    {
+        foreach (var Listener in MasterCommandListeners)
+        {
+            try
+            {
+                Listener.OnMasterCommand(command.type, command.refA);
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
+        }
+
+        var onMasterCommand = OnMasterCommand;
+        if (onMasterCommand != null)
+        {
+            onMasterCommand(command.type, command.refA);
+        }
+    }
+
 
     private static void OnSessionMemberChangedM(SNet_Player player, SessionMemberEvent playerEvent)
     {
@@ -229,6 +285,10 @@ internal class GameEventListener : Feature
             RecallCompleteListeners.Add((IOnRecallComplete)instance);
         if (typeof(IOnMasterChanged).IsAssignableFrom(type))
             MasterChangedListeners.Add((IOnMasterChanged)instance);
+        if (typeof(IOnMasterCommand).IsAssignableFrom(type))
+            MasterCommandListeners.Add((IOnMasterCommand)instance);
+        if (typeof(IOnSyncPlayerData_Session).IsAssignableFrom(type))
+            SyncPlayerData_SessionListeners.Add((IOnSyncPlayerData_Session)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.RegisterPauseable((IPauseable)instance);
     }
@@ -252,11 +312,14 @@ internal class GameEventListener : Feature
             RecallCompleteListeners.Remove((IOnRecallComplete)instance);
         if (typeof(IOnMasterChanged).IsAssignableFrom(type))
             MasterChangedListeners.Remove((IOnMasterChanged)instance);
+        if (typeof(IOnMasterCommand).IsAssignableFrom(type))
+            MasterCommandListeners.Remove((IOnMasterCommand)instance);
+        if (typeof(IOnSyncPlayerData_Session).IsAssignableFrom(type))
+            SyncPlayerData_SessionListeners.Remove((IOnSyncPlayerData_Session)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.UnregisterPauseable((IPauseable)instance);
     }
 
-    private static eGameStateName preState;
     private static HashSet<IOnGameStateChanged> GameStateChangeListeners = new();
     private static HashSet<IOnReceiveChatMessage> ChatMessageListeners = new();
     private static HashSet<IOnPlayerEvent> PlayerEventListeners = new();
@@ -264,6 +327,8 @@ internal class GameEventListener : Feature
     private static HashSet<IOnSessionMemberChange> SessionMemberChangeListeners = new();
     private static HashSet<IOnSessionMemberChanged> SessionMemberChangedListeners = new();
     private static HashSet<IOnMasterChanged> MasterChangedListeners = new();
+    private static HashSet<IOnMasterCommand> MasterCommandListeners = new();
+    private static HashSet<IOnSyncPlayerData_Session> SyncPlayerData_SessionListeners = new();
 
     public static event Action OnGameDataInited;
     public static event Action<eBufferType> OnRecallComplete;
@@ -272,4 +337,6 @@ internal class GameEventListener : Feature
     public static event Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason> OnPlayerEvent;
     public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged;
     public static event Action OnMasterChanged;
+    public static event Action<eMasterCommandType, int> OnMasterCommand;
+    public static event Action<pPlayerData_Session> OnSyncPlayerData_Session;
 }

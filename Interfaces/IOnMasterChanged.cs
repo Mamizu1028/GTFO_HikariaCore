@@ -2,5 +2,5 @@
 
 public interface IOnMasterChanged
 {
-    public void OnMasterChanged();
+    void OnMasterChanged();
 }
