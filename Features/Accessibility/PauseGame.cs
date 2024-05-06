@@ -15,7 +15,7 @@ namespace Hikaria.Core.Features.Accessibility;
 [DoNotSaveToConfig]
 public class PauseGame : Feature
 {
-    public override string Name => "暂停游戏";
+    public override string Name => "Pause Game";
 
     public override FeatureGroup Group => EntryPoint.Groups.Accessibility;
 

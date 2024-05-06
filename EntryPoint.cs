@@ -44,7 +44,7 @@ public class EntryPoint : IArchiveModule
     {
         static Groups()
         {
-            Core.SetLanguage(new Dictionary<Language, string>() { { Language.Chinese, "核心" }, { Language.English, "Core" } });
+            Core.SetLanguage(new Dictionary<Language, string>() { { Language.Chinese, "Hikaria 核心" }, { Language.English, "Hikaria Core" } });
             Accessibility.SetLanguage(new Dictionary<Language, string>() { { Language.Chinese, "辅助功能" }, { Language.English, "Accessibility" } });
             Dev.SetLanguage(new Dictionary<Language, string>() { { Language.Chinese, "开发者" }, { Language.English, "Developer" } });
             Fixes.SetLanguage(new Dictionary<Language, string>() { { Language.Chinese, "修复" }, { Language.English, "Fixes" } });
@@ -52,7 +52,7 @@ public class EntryPoint : IArchiveModule
 
         public static FeatureGroup ModuleGroup => FeatureGroups.GetOrCreateModuleGroup("Hikaria Core");
         public static FeatureGroup Accessibility => ModuleGroup.GetOrCreateSubGroup("Accessibility");
-        public static FeatureGroup Core => ModuleGroup.GetOrCreateSubGroup("Core");
+        public static FeatureGroup Core => ModuleGroup.GetOrCreateSubGroup("Hikaria Core");
         public static FeatureGroup Dev => ModuleGroup.GetOrCreateSubGroup("Develop", true);
         public static FeatureGroup Fixes => ModuleGroup.GetOrCreateSubGroup("Fixes");
 

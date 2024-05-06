@@ -30,7 +30,16 @@ internal class ModList : Feature, IOnSessionMemberChange
     {
         SNetExt.SetupCustomData<pModList>(typeof(pModList).FullName, ReceiveModListData);
         ArchiveModuleChainloader.Instance.Finished += OnChainloaderFinished;
+    }
+
+    public override void OnEnable()
+    {
         GameEventAPI.RegisterSelf(this);
+    }
+
+    public override void OnDisable()
+    {
+        GameEventAPI.UnregisterSelf(this);
     }
 
     public class ModListSetting

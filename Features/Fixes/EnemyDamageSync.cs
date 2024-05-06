@@ -4,8 +4,7 @@ using TheArchive.Core.FeaturesAPI;
 
 namespace Hikaria.Core.Features.Fixes;
 
-[HideInModSettings]
-[AutomatedFeature]
+[EnableFeatureByDefault]
 internal class EnemyDamageSync : Feature
 {
     public override string Name => "Enemy Damage Sync";

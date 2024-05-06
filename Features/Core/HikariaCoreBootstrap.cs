@@ -11,9 +11,10 @@ namespace Hikaria.Core.Features.Core;
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
 [HideInModSettings]
-internal class Bootstrap : Feature
+[DoNotSaveToConfig]
+internal class HikariaCoreBootstrap : Feature
 {
-    public override string Name => "Bootstrap";
+    public override string Name => "Hikaria Core Bootstrap";
 
     public override FeatureGroup Group => EntryPoint.Groups.Core;
 

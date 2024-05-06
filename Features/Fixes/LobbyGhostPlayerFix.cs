@@ -12,9 +12,14 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
 
     public override FeatureGroup Group => EntryPoint.Groups.Fixes;
 
-    public override void Init()
+    public override void OnEnable()
     {
         GameEventAPI.RegisterSelf(this);
+    }
+
+    public override void OnDisable()
+    {
+        GameEventAPI.UnregisterSelf(this);
     }
 
     public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
