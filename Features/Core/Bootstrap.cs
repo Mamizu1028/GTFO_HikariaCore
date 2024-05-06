@@ -33,24 +33,6 @@ internal class Bootstrap : Feature
         }
     }
 
-    [ArchivePatch(typeof(PauseManager), nameof(PauseManager.SetPaused))]
-    private class PauseManager__SetPaused__Patch
-    {
-        private static void Postfix()
-        {
-            PauseManager.IsPaused = true;
-        }
-    }
-
-    [ArchivePatch(typeof(PauseManager), nameof(PauseManager.SetUnpaused))]
-    private class PauseManager__SetUnpaused__Patch
-    {
-        private static void Postfix()
-        {
-            PauseManager.IsPaused = false;
-        }
-    }
-
     public override void OnGameDataInitialized()
     {
         if (CompsObj == null)
