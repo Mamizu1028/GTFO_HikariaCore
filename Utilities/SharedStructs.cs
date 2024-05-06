@@ -57,11 +57,6 @@ public struct Version : IComparable<Version>, IComparable, IEquatable<Version>
 
     public bool Equals(Version other)
     {
-        if ((object)other == null)
-        {
-            return false;
-        }
-
         return CompareTo(other) == 0;
     }
 
@@ -102,11 +97,16 @@ public struct Version : IComparable<Version>, IComparable, IEquatable<Version>
 
     public override bool Equals(object other)
     {
-        if (other is null)
+        if (other != null)
         {
-            return false;
+            if (other is Version ver)
+            {
+                return Equals(ver);
+            }
+
+            throw new ArgumentException("Object is not a Version");
         }
-        return Equals((Version)other);
+        return false;
     }
 
     public static Version Parse(string input, bool loose = false)
