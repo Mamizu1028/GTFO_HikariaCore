@@ -9,10 +9,9 @@ public static class CoreAPI
     {
         return IsPlayerInstalledMod(player, PluginInfo.GUID, version);
     }
-
     public static bool IsPlayerInstalledMod(SNet_Player player, string guid, Version version = default)
     {
-        if (player == null) return false;
+        if (player == null || player.IsBot) return false;
         if (player.IsLocal)
         {
             return InstalledMods.TryGetValue(guid, out var info1) && info1.Version >= version;

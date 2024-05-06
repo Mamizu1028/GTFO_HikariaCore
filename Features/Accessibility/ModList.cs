@@ -112,7 +112,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
         {
             Name = modInfo.Name;
             GUID = modInfo.GUID;
-            Version = modInfo.Version.Clean();
+            Version = modInfo.Version.ToString();
         }
 
         [FSSeparator]
