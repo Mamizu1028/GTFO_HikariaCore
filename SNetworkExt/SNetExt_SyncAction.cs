@@ -112,9 +112,9 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T 
 
     protected bool m_hasListenerFilter;
 
-    protected List<SNetwork.SNet_Player> m_listeners;
+    protected List<SNetwork.SNet_Player> m_listeners = new();
 
-    protected Dictionary<ulong, SNetwork.SNet_Player> m_listenersLookup;
+    protected Dictionary<ulong, SNetwork.SNet_Player> m_listenersLookup = new();
 
     public IEnumerable<SNetwork.SNet_Player> Listeners => m_listeners;
 

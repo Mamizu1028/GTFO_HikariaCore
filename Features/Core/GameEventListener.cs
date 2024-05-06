@@ -200,7 +200,7 @@ internal class GameEventListener : Feature
 
     public static void RegisterSelf<T>(T instance)
     {
-        Type type = typeof(T);
+        Type type = instance.GetType();
         if (type.IsInterface || type.IsAbstract)
             return;
         if (typeof(IOnGameStateChanged).IsAssignableFrom(type))
@@ -221,7 +221,7 @@ internal class GameEventListener : Feature
 
     public static void UnregisterSelf<T>(T instance)
     {
-        Type type = typeof(T);
+        Type type = instance.GetType();
         if (type.IsInterface || type.IsAbstract)
             return;
         if (typeof(IOnGameStateChanged).IsAssignableFrom(type))
