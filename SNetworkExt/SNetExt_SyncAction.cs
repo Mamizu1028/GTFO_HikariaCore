@@ -18,6 +18,28 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T 
         GameEventAPI.RegisterSelf(this);
     }
 
+    public void SyncToPlayer(SNetwork.SNet_Player player, params T[] datas)
+    {
+        if (!player.IsLocal && IsListener(player))
+        {
+            foreach (var data in datas)
+            {
+                m_packet.Send(data, player);
+            }
+        }
+    }
+
+    public void SyncToPlayer(SNetwork.SNet_Player player, IEnumerable<T> datas)
+    {
+        if (!player.IsLocal && IsListener(player))
+        {
+            foreach (var data in datas)
+            {
+                m_packet.Send(data, player);
+            }
+        }
+    }
+
     public void OnSessionMemberChanged(SNetwork.SNet_Player player, SessionMemberEvent playerEvent)
     {
         if (playerEvent == SessionMemberEvent.JoinSessionHub)
@@ -38,7 +60,7 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T 
             if (player.IsLocal)
             {
                 var onPlayerRemovedFromListeners = OnPlayerRemovedFromListeners;
-                foreach (var listener in m_listeners)
+                foreach (var listener in m_listeners.ToList())
                 {
                     m_listeners.RemoveAll(p => p.Lookup == player.Lookup);
                     m_listenersLookup.Remove(player.Lookup);
@@ -98,6 +120,16 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T 
             if (onPlayerRemovedFromListeners != null)
                 onPlayerRemovedFromListeners(player);
         }
+    }
+
+    public bool IsListener(SNetwork.SNet_Player player)
+    {
+        return m_listeners.Contains(player) || IsListener(player.Lookup);
+    }
+
+    public bool IsListener(ulong lookup)
+    {
+        return m_listenersLookup.ContainsKey(lookup);
     }
 
     public event Action<SNetwork.SNet_Player> OnPlayerAddedToListeners;

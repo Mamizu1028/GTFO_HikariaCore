@@ -13,7 +13,7 @@ namespace Hikaria.Core.Features.Accessibility;
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
 [DoNotSaveToConfig]
-internal class ModList : Feature, IOnSessionMemberChanged
+internal class ModList : Feature, IOnSessionMemberChange
 {
     public override string Name => "Mod List";
 
@@ -190,7 +190,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
         ArchiveModuleChainloader.Instance.ModuleLoaded += OnModuleLoaded;
     }
 
-    public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
+    public void OnSessionMemberChange(SNet_Player player, SessionMemberEvent playerEvent)
     {
         if (player.IsBot) return;
 

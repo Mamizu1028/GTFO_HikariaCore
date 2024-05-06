@@ -3,6 +3,7 @@ using SNetwork;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Interfaces;
+using static PlayfabMatchmakingManager.MatchResult;
 
 namespace Hikaria.Core.Features.Core;
 
@@ -183,6 +184,17 @@ internal class GameEventListener : Feature
         {
             try
             {
+                Listener.OnSessionMemberChange(player, playerEvent);
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
+        }
+        foreach (var Listener in SessionMemberChangedListeners)
+        {
+            try
+            {
                 Listener.OnSessionMemberChanged(player, playerEvent);
             }
             catch (Exception ex)
@@ -209,8 +221,10 @@ internal class GameEventListener : Feature
             PlayerEventListeners.Add((IOnPlayerEvent)instance);
         if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
             ChatMessageListeners.Add((IOnReceiveChatMessage)instance);
+        if (typeof(IOnSessionMemberChange).IsAssignableFrom(type))
+            SessionMemberChangeListeners.Add((IOnSessionMemberChange)instance);
         if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
-            SessionMemberChangeListeners.Add((IOnSessionMemberChanged)instance);
+            SessionMemberChangedListeners.Add((IOnSessionMemberChanged)instance);
         if (typeof(IOnRecallComplete).IsAssignableFrom(type))
             RecallCompleteListeners.Add((IOnRecallComplete)instance);
         if (typeof(IOnMasterChanged).IsAssignableFrom(type))
@@ -230,8 +244,10 @@ internal class GameEventListener : Feature
             PlayerEventListeners.Remove((IOnPlayerEvent)instance);
         if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
             ChatMessageListeners.Remove((IOnReceiveChatMessage)instance);
+        if (typeof(IOnSessionMemberChange).IsAssignableFrom(type))
+            SessionMemberChangeListeners.Remove((IOnSessionMemberChange)instance);
         if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
-            SessionMemberChangeListeners.Remove((IOnSessionMemberChanged)instance);
+            SessionMemberChangedListeners.Remove((IOnSessionMemberChanged)instance);
         if (typeof(IOnRecallComplete).IsAssignableFrom(type))
             RecallCompleteListeners.Remove((IOnRecallComplete)instance);
         if (typeof(IOnMasterChanged).IsAssignableFrom(type))
@@ -245,7 +261,8 @@ internal class GameEventListener : Feature
     private static HashSet<IOnReceiveChatMessage> ChatMessageListeners = new();
     private static HashSet<IOnPlayerEvent> PlayerEventListeners = new();
     private static HashSet<IOnRecallComplete> RecallCompleteListeners = new();
-    private static HashSet<IOnSessionMemberChanged> SessionMemberChangeListeners = new();
+    private static HashSet<IOnSessionMemberChange> SessionMemberChangeListeners = new();
+    private static HashSet<IOnSessionMemberChanged> SessionMemberChangedListeners = new();
     private static HashSet<IOnMasterChanged> MasterChangedListeners = new();
 
     public static event Action OnGameDataInited;
