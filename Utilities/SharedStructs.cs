@@ -1,6 +1,23 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace Hikaria.Core;
+
+public struct pModInfo
+{
+    public pModInfo(string name, string guid, Version version)
+    {
+        Name = name;
+        GUID = guid;
+        Version = version;
+    }
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 50)]
+    public string Name = string.Empty;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 50)]
+    public string GUID = string.Empty;
+    public Version Version = default;
+}
 
 public struct Version : IComparable<Version>, IComparable, IEquatable<Version>
 {

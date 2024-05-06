@@ -1,4 +1,5 @@
-﻿using SNetwork;
+﻿using Hikaria.Core.Features.Accessibility;
+using SNetwork;
 using static Hikaria.Core.Features.Accessibility.ModList;
 
 namespace Hikaria.Core;
@@ -9,6 +10,7 @@ public static class CoreAPI
     {
         return IsPlayerInstalledMod(player, PluginInfo.GUID, version);
     }
+
     public static bool IsPlayerInstalledMod(SNet_Player player, string guid, Version version = default)
     {
         if (player == null || player.IsBot) return false;
@@ -18,4 +20,7 @@ public static class CoreAPI
         }
         return PlayerModsLookup.TryGetValue(player.Lookup, out var lookup) && lookup.TryGetValue(guid, out var info2) && info2.Version >= version;
     }
+
+
+    public static event Action<SNet_Player, IEnumerable<pModInfo>> OnPlayerModsSynced { add => ModList.OnPlayerModsSynced += value; remove => ModList.OnPlayerModsSynced -= value; }
 }

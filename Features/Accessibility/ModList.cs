@@ -7,6 +7,7 @@ using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.Bootstrap;
 using TheArchive.Core.FeaturesAPI;
+using static Il2CppSystem.Globalization.CultureInfo;
 
 namespace Hikaria.Core.Features.Accessibility;
 
@@ -18,6 +19,8 @@ internal class ModList : Feature, IOnSessionMemberChanged
     public override string Name => "Mod List";
 
     public override FeatureGroup Group => EntryPoint.Groups.Accessibility;
+
+    public static event Action<SNet_Player, IEnumerable<pModInfo>> OnPlayerModsSynced;
 
     [FeatureConfig]
     public static ModListSetting Settings { get; set; }
@@ -144,6 +147,11 @@ internal class ModList : Feature, IOnSessionMemberChanged
             var mod = data.Mods[i];
             PlayerModsLookup[player.Lookup].Add(mod.GUID, mod);
         }
+        var onPlayerModsSynced = OnPlayerModsSynced;
+        if (onPlayerModsSynced != null)
+        {
+            onPlayerModsSynced(player, data.Mods);
+        }
     }
 
     private void OnPluginLoaded(BepInEx.PluginInfo pluginInfo)
@@ -190,6 +198,11 @@ internal class ModList : Feature, IOnSessionMemberChanged
         if (player.IsLocal)
         {
             SNetExt.SetLocalCustomData<pModList>(new(SNet.LocalPlayer, InstalledMods.Values.ToList()));
+            var onPlayerModsSynced = OnPlayerModsSynced;
+            if (onPlayerModsSynced != null)
+            {
+                onPlayerModsSynced(player, InstalledMods.Values);
+            }
             return;
         }
 
@@ -244,21 +257,5 @@ internal class ModList : Feature, IOnSessionMemberChanged
         public const int MOD_SYNC_COUNT = 100;
 
         public SNetStructs.pPlayer PlayerData { get; set; } = new();
-    }
-
-    public struct pModInfo
-    {
-        public pModInfo(string name, string guid, Version version)
-        {
-            Name = name;
-            GUID = guid;
-            Version = version;
-        }
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 30)]
-        public string Name = string.Empty;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 50)]
-        public string GUID = string.Empty;
-        public Version Version = default;
     }
 }

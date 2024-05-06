@@ -1,7 +1,6 @@
 ﻿using Hikaria.Core.Features.Core;
 using Hikaria.Core.Interfaces;
 using SNetwork;
-using static Hikaria.Core.Features.Core.GameEventListener;
 
 namespace Hikaria.Core;
 
