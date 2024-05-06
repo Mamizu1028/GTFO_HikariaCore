@@ -7,7 +7,6 @@ using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.Bootstrap;
 using TheArchive.Core.FeaturesAPI;
-using static Il2CppSystem.Globalization.CultureInfo;
 
 namespace Hikaria.Core.Features.Accessibility;
 
