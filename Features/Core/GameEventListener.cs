@@ -167,6 +167,11 @@ internal class GameEventListener : Feature
             case SNet_PlayerEvent.PlayerLeftSessionHub:
                 OnSessionMemberChangedM(player, SessionMemberEvent.LeftSessionHub);
                 break;
+                /*
+            case SNet_PlayerEvent.PlayerAgentSpawned:
+                OnSessionMemberChangedM(player, SessionMemberEvent.JoinSessionHub);
+                break;
+                */
         }
     }
 

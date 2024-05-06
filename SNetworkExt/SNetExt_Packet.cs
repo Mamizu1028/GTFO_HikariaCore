@@ -62,7 +62,7 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
 
     public void Send(T data, params SNetwork.SNet_Player[] players)
     {
-        if (players == null || players.Count() == 0) return;
+        if (players == null || !players.Any()) return;
 
         NetworkAPI.InvokeEvent(EventName, data, players.ToList(), ChannelType);
         if (AllowSendToLocal && players.Any(p => p.IsLocal))
@@ -73,7 +73,7 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
 
     public void Send(T data, List<SNetwork.SNet_Player> players)
     {
-        if (players == null || players.Count() == 0) return;
+        if (players == null || !players.Any()) return;
 
         NetworkAPI.InvokeEvent(EventName, data, players, ChannelType);
         if (AllowSendToLocal && players.Any(p => p.IsLocal))

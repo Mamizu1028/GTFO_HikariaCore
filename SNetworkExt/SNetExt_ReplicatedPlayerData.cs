@@ -14,8 +14,7 @@ public class SNetExt_ReplicatedPlayerData<A> where A : struct
 
     private static void OnReceiveData(ulong sender, A wrappedData)
     {
-        SNetwork.SNet_Player snet_Player;
-        if (((IReplicatedPlayerData)wrappedData).PlayerData.TryGetPlayer(out snet_Player) && !snet_Player.IsLocal)
+        if (((IReplicatedPlayerData)wrappedData).PlayerData.TryGetPlayer(out var snet_Player) && !snet_Player.IsLocal)
         {
             snet_Player.StoreCustomData(wrappedData);
             Action<SNetwork.SNet_Player, A> onChangeCallback = s_singleton.m_onChangeCallback;
