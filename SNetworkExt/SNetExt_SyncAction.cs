@@ -2,7 +2,7 @@
 
 namespace Hikaria.Core.SNetworkExt;
 
-public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T : struct
+public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlayerModsSynced where T : struct
 {
     ~SNetExt_SyncedAction()
     {
@@ -16,6 +16,7 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T 
         m_listenerFilter = listenerFilter;
         m_hasListenerFilter = listenerFilter != null;
         GameEventAPI.RegisterSelf(this);
+        CoreAPI.RegisterSelf(this);
     }
 
     public void SyncToPlayer(SNetwork.SNet_Player player, params T[] datas)
@@ -40,6 +41,16 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T 
         }
     }
 
+    public void OnPlayerModsSynced(SNetwork.SNet_Player player, IEnumerable<pModInfo> mods)
+    {
+        if (!m_hasListenerFilter || !m_listenerFilter(player))
+            return;
+        if (player.IsInSessionHub)
+        {
+            Internal_AddPlayerToListeners(player);
+        }
+    }
+
     public void OnSessionMemberChanged(SNetwork.SNet_Player player, SessionMemberEvent playerEvent)
     {
         if (playerEvent == SessionMemberEvent.JoinSessionHub)
@@ -47,46 +58,16 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T 
             if (m_hasListenerFilter && !m_listenerFilter(player))
                 return;
 
-            m_listeners.RemoveAll(p => p.Lookup == player.Lookup);
-            m_listeners.Add(player);
-            m_listenersLookup[player.Lookup] = player;
-
-            var onPlayerAddedToListeners = OnPlayerAddedToListeners;
-            if (onPlayerAddedToListeners != null)
-                onPlayerAddedToListeners(player);
+            Internal_AddPlayerToListeners(player);
         }
         else if (playerEvent == SessionMemberEvent.LeftSessionHub)
         {
-            if (player.IsLocal)
-            {
-                var onPlayerRemovedFromListeners = OnPlayerRemovedFromListeners;
-                foreach (var listener in m_listeners.ToList())
-                {
-                    m_listeners.RemoveAll(p => p.Lookup == player.Lookup);
-                    m_listenersLookup.Remove(player.Lookup);
-                    if (onPlayerRemovedFromListeners != null)
-                    {
-                        onPlayerRemovedFromListeners(listener);
-                    }
-                }
-            }
-            else
-            {
-                m_listeners.RemoveAll(p => p.Lookup == player.Lookup);
-                m_listenersLookup.Remove(player.Lookup);
-
-                var onPlayerRemovedFromListeners = OnPlayerRemovedFromListeners;
-                if (onPlayerRemovedFromListeners != null)
-                    onPlayerRemovedFromListeners(player);
-            }
+            Internal_RemovePlayerFromListeners(player);
         }
     }
 
-    public void AddPlayerToListeners(SNetwork.SNet_Player player)
+    private void Internal_AddPlayerToListeners(SNetwork.SNet_Player player)
     {
-        if (m_hasListenerFilter && !m_listenerFilter(player))
-            return;
-
         m_listeners.RemoveAll(p => p.Lookup == player.Lookup);
         m_listeners.Add(player);
         m_listenersLookup[player.Lookup] = player;
@@ -96,12 +77,12 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T 
             onPlayerAddedToListeners(player);
     }
 
-    public void RemovePlayerFromListeners(SNetwork.SNet_Player player)
+    private void Internal_RemovePlayerFromListeners(SNetwork.SNet_Player player)
     {
         if (player.IsLocal)
         {
             var onPlayerRemovedFromListeners = OnPlayerRemovedFromListeners;
-            foreach (var listener in m_listeners)
+            foreach (var listener in m_listeners.ToList())
             {
                 m_listeners.RemoveAll(p => p.Lookup == player.Lookup);
                 m_listenersLookup.Remove(player.Lookup);
@@ -120,6 +101,19 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T 
             if (onPlayerRemovedFromListeners != null)
                 onPlayerRemovedFromListeners(player);
         }
+    }
+
+    public void AddPlayerToListeners(SNetwork.SNet_Player player)
+    {
+        if (m_hasListenerFilter && !m_listenerFilter(player))
+            return;
+
+        Internal_AddPlayerToListeners(player);
+    }
+
+    public void RemovePlayerFromListeners(SNetwork.SNet_Player player)
+    {
+        Internal_RemovePlayerFromListeners(player);
     }
 
     public bool IsListener(SNetwork.SNet_Player player)

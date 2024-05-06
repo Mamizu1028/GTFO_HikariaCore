@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <IsPublishable>False</IsPublishable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,6 +32,9 @@
     </Reference>
     <Reference Include="Modules-ASM">
       <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\Modules-ASM.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\core\MonoMod.RuntimeDetour.dll</HintPath>
     </Reference>
     <Reference Include="SemanticVersioning">
       <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\core\SemanticVersioning.dll</HintPath>

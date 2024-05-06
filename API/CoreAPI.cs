@@ -1,4 +1,5 @@
 ﻿using Hikaria.Core.Features.Accessibility;
+using Hikaria.Core.Interfaces;
 using SNetwork;
 using static Hikaria.Core.Features.Accessibility.ModList;
 
@@ -21,6 +22,15 @@ public static class CoreAPI
         return PlayerModsLookup.TryGetValue(player.Lookup, out var lookup) && lookup.TryGetValue(guid, out var info2) && info2.Version >= version;
     }
 
+    public static void RegisterSelf<T>(T instance)
+    {
+        Type type = instance.GetType();
+        if (type.IsInterface || type.IsAbstract)
+            return;
+
+        if (typeof(IOnPlayerModsSynced).IsAssignableFrom(type))
+            PlayerModsSyncedListeners.Add((IOnPlayerModsSynced)instance);
+    }
 
     public static event Action<SNet_Player, IEnumerable<pModInfo>> OnPlayerModsSynced { add => ModList.OnPlayerModsSynced += value; remove => ModList.OnPlayerModsSynced -= value; }
 }

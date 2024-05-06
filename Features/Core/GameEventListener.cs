@@ -1,4 +1,8 @@
-﻿using Hikaria.Core.Interfaces;
+﻿using BepInEx.Unity.IL2CPP.Hook;
+using Hikaria.Core.Interfaces;
+using Hikaria.Core.Utilities;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Il2CppInterop.Runtime.Runtime;
 using SNetwork;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
@@ -18,12 +22,102 @@ internal class GameEventListener : Feature
 
     public static new IArchiveLogger FeatureLogger { get; set; }
 
-    [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.AddPlayerToSession))]
-    private class SNet_SessionHub__AddPlayerToSession__Patch
+    public override void Init()
     {
-        private static void Postfix(SNet_Player player)
+        SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour.ApplyDetour();
+        SNet_SessionHub__AddPlayerToSession__NativeDetour.ApplyDetour();
+        SNet_SessionHub__RemovePlayerFromSession__NativeDetour.ApplyDetour();
+    }
+
+    private static class SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour
+    {
+        private unsafe delegate bool Internal_ManageSlotDel(IntPtr instancePtr, IntPtr playerPtr, IntPtr slotPtr, IntPtr slotsPtr, SNet_SlotType type, SNet_SlotHandleType handle, int index, Il2CppMethodInfo* methodInfo);
+
+        private static Internal_ManageSlotDel _Original;
+
+        private static INativeDetour _Detour;
+
+        public static unsafe void ApplyDetour()
         {
-            OnSessionMemberChangedM(player, SessionMemberEvent.JoinSessionHub);
+            DetourDescriptor desc = new()
+            {
+                Type = typeof(SNet_PlayerSlotManager),
+                MethodName = nameof(SNet_PlayerSlotManager.Internal_ManageSlot),
+                ArgTypes = new Type[] { typeof(SNet_Player), typeof(SNet_Slot), typeof(Il2CppReferenceArray<SNet_Slot>), typeof(SNet_SlotType), typeof(SNet_SlotHandleType), typeof(int) },
+                ReturnType = typeof(bool),
+                IsGeneric = false
+            };
+            EasyDetour.TryCreate(desc, Detour, out _Original, out _Detour);
+        }
+
+        private static unsafe bool Detour(IntPtr instancePtr, IntPtr playerPtr, IntPtr slotPtr, IntPtr slotsPtr, SNet_SlotType type, SNet_SlotHandleType handle, int index, Il2CppMethodInfo* methodInfo)
+        {
+            var result = _Original(instancePtr, playerPtr, slotPtr, slotsPtr, type, handle, index, methodInfo);
+            OnPlayerSlotChangedM(new SNet_Player(playerPtr), type, handle, index);
+            return result;
+        }
+    }
+
+    private static class SNet_SessionHub__AddPlayerToSession__NativeDetour
+    {
+        private unsafe delegate void AddPlayerToSessionDel(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo);
+
+        private static AddPlayerToSessionDel _Original;
+
+        private static INativeDetour _Detour;
+
+        public static unsafe void ApplyDetour()
+        {
+            DetourDescriptor desc = new()
+            {
+                Type = typeof(SNet_SessionHub),
+                MethodName = nameof(SNet_SessionHub.AddPlayerToSession),
+                ArgTypes = new Type[] { typeof(SNet_Player), typeof(bool) },
+                ReturnType = typeof(void),
+                IsGeneric = false
+            };
+            EasyDetour.TryCreate(desc, Detour, out _Original, out _Detour);
+        }
+
+        private static void Unpatch()
+        {
+            _Detour.Undo();
+            _Detour.Free();
+            _Detour.Dispose();
+        }
+
+        private static unsafe void Detour(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo)
+        {
+            _Original(instancePtr, playerPtr, broadcastIfMaster, methodInfo);
+            OnSessionMemberChangedM(new SNet_Player(playerPtr), SessionMemberEvent.JoinSessionHub);
+        }
+    }
+
+    private static class SNet_SessionHub__RemovePlayerFromSession__NativeDetour
+    {
+        private unsafe delegate void RemovePlayerFromSessionDel(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo);
+
+        private static RemovePlayerFromSessionDel _Original;
+
+        private static INativeDetour _Detour;
+
+        public static unsafe void ApplyDetour()
+        {
+            DetourDescriptor desc = new()
+            {
+                Type = typeof(SNet_SessionHub),
+                MethodName = nameof(SNet_SessionHub.RemovePlayerFromSession),
+                ArgTypes = new Type[] { typeof(SNet_Player), typeof(bool) },
+                ReturnType = typeof(void),
+                IsGeneric = false
+            };
+            EasyDetour.TryCreate(desc, Detour, out _Original, out _Detour);
+        }
+
+        private static unsafe void Detour(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo)
+        {
+            _Original(instancePtr, playerPtr, broadcastIfMaster, methodInfo);
+            OnSessionMemberChangedM(new SNet_Player(playerPtr), SessionMemberEvent.LeftSessionHub);
         }
     }
 
@@ -45,15 +139,6 @@ internal class GameEventListener : Feature
             SNet_Events.OnPlayerEvent += new Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason>(OnPlayerEventM);
             SNet_Events.OnRecallComplete += new Action<eBufferType>(OnRecallCompleteM);
             SNet_Events.OnMasterChanged += new Action(OnMasterChangedM);
-        }
-    }
-
-    [ArchivePatch(typeof(SNet_PlayerSlotManager), nameof(SNet_PlayerSlotManager.Internal_ManageSlot))]
-    private class SNet_PlayerSlotManager__Internal_ManageSlot__Patch
-    {
-        private static void Postfix(SNet_Player player, SNet_SlotType type, SNet_SlotHandleType handle, int index)
-        {
-            OnPlayerSlotChangedM(player, type, handle, index);
         }
     }
 
@@ -80,10 +165,17 @@ internal class GameEventListener : Feature
                     FeatureLogger.Exception(ex);
                 }
             }
-            var onGameStateChanged = OnGameStateChanged;
-            if (onGameStateChanged != null)
+            try
             {
-                onGameStateChanged(preState, nextState);
+                var onGameStateChanged = OnGameStateChanged;
+                if (onGameStateChanged != null)
+                {
+                    onGameStateChanged(preState, nextState);
+                }
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
             }
         }
     }
@@ -106,10 +198,17 @@ internal class GameEventListener : Feature
                         FeatureLogger.Exception(ex);
                     }
                 }
-                var onReceiveChatMessage = OnReceiveChatMessage;
-                if (onReceiveChatMessage != null)
+                try
                 {
-                    onReceiveChatMessage(fromPlayer, data.message.data);
+                    var onReceiveChatMessage = OnReceiveChatMessage;
+                    if (onReceiveChatMessage != null)
+                    {
+                        onReceiveChatMessage(fromPlayer, data.message.data);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    FeatureLogger.Exception(ex);
                 }
             }
         }
@@ -128,10 +227,17 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        var onMasterChanged = OnMasterChanged;
-        if (onMasterChanged != null)
+        try
         {
-            onMasterChanged();
+            var onMasterChanged = OnMasterChanged;
+            if (onMasterChanged != null)
+            {
+                onMasterChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
         }
     }
 
@@ -148,10 +254,17 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        var onRecallComplete = OnRecallComplete;
-        if (onRecallComplete != null)
+        try
         {
-            onRecallComplete(bufferType);
+            var onRecallComplete = OnRecallComplete;
+            if (onRecallComplete != null)
+            {
+                onRecallComplete(bufferType);
+            }
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
         }
     }
 
@@ -168,23 +281,27 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        var onPlayerEvent = OnPlayerEvent;
-        if (onPlayerEvent != null)
-        {
-            onPlayerEvent(player, playerEvent, reason);
-        }
 
+        try
+        {
+            var onPlayerEvent = OnPlayerEvent;
+            if (onPlayerEvent != null)
+            {
+                onPlayerEvent(player, playerEvent, reason);
+            }
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
+        }
+        /*
         switch (playerEvent)
         {
             case SNet_PlayerEvent.PlayerLeftSessionHub:
                 OnSessionMemberChangedM(player, SessionMemberEvent.LeftSessionHub);
                 break;
-                /*
-            case SNet_PlayerEvent.PlayerAgentSpawned:
-                OnSessionMemberChangedM(player, SessionMemberEvent.JoinSessionHub);
-                break;
-                */
         }
+        */
     }
 
     private static void OnPlayerSlotChangedM(SNet_Player player, SNet_SlotType type, SNet_SlotHandleType handle, int index)
@@ -201,10 +318,17 @@ internal class GameEventListener : Feature
             }
         }
 
-        var onPlayerSlotChanged = OnPlayerSlotChanged;
-        if (onPlayerSlotChanged != null)
+        try
         {
-            onPlayerSlotChanged(player, type, handle, index);
+            var onPlayerSlotChanged = OnPlayerSlotChanged;
+            if (onPlayerSlotChanged != null)
+            {
+                onPlayerSlotChanged(player, type, handle, index);
+            }
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
         }
     }
 
@@ -222,11 +346,17 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-
-        var onMasterCommand = OnMasterCommand;
-        if (onMasterCommand != null)
+        try
         {
-            onMasterCommand(command.type, command.refA);
+            var onMasterCommand = OnMasterCommand;
+            if (onMasterCommand != null)
+            {
+                onMasterCommand(command.type, command.refA);
+            }
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
         }
     }
 
@@ -256,10 +386,17 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        var onSessionMemberChanged = OnSessionMemberChanged;
-        if (onSessionMemberChanged != null)
+        try
         {
-            onSessionMemberChanged(player, playerEvent);
+            var onSessionMemberChanged = OnSessionMemberChanged;
+            if (onSessionMemberChanged != null)
+            {
+                onSessionMemberChanged(player, playerEvent);
+            }
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
         }
     }
 

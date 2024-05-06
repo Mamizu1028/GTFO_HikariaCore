@@ -21,6 +21,8 @@ internal class ModList : Feature, IOnSessionMemberChange
 
     public static event Action<SNet_Player, IEnumerable<pModInfo>> OnPlayerModsSynced;
 
+    public static HashSet<IOnPlayerModsSynced> PlayerModsSyncedListeners = new();
+
     [FeatureConfig]
     public static ModListSetting Settings { get; set; }
 
@@ -146,11 +148,31 @@ internal class ModList : Feature, IOnSessionMemberChange
             var mod = data.Mods[i];
             PlayerModsLookup[player.Lookup].Add(mod.GUID, mod);
         }
-        var onPlayerModsSynced = OnPlayerModsSynced;
-        if (onPlayerModsSynced != null)
+
+        foreach (var listener in PlayerModsSyncedListeners)
         {
-            onPlayerModsSynced(player, data.Mods);
+            try
+            {
+                listener.OnPlayerModsSynced(player, data.Mods);
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
         }
+        try
+        {
+            var onPlayerModsSynced = OnPlayerModsSynced;
+            if (onPlayerModsSynced != null)
+            {
+                onPlayerModsSynced(player, data.Mods);
+            }
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
+        }
+
     }
 
     private void OnPluginLoaded(BepInEx.PluginInfo pluginInfo)
