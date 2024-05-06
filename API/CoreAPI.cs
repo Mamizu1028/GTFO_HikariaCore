@@ -27,9 +27,17 @@ public static class CoreAPI
         Type type = instance.GetType();
         if (type.IsInterface || type.IsAbstract)
             return;
-
         if (typeof(IOnPlayerModsSynced).IsAssignableFrom(type))
             PlayerModsSyncedListeners.Add((IOnPlayerModsSynced)instance);
+    }
+
+    public static void UnregisterSelf<T>(T instance)
+    {
+        Type type = instance.GetType();
+        if (type.IsInterface || type.IsAbstract)
+            return;
+        if (typeof(IOnPlayerModsSynced).IsAssignableFrom(type))
+            PlayerModsSyncedListeners.Remove((IOnPlayerModsSynced)instance);
     }
 
     public static event Action<SNet_Player, IEnumerable<pModInfo>> OnPlayerModsSynced { add => ModList.OnPlayerModsSynced += value; remove => ModList.OnPlayerModsSynced -= value; }
