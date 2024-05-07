@@ -24,64 +24,52 @@ internal class GameEventListener : Feature
 
     public override void Init()
     {
-        SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour.ApplyDetour();
-        SNet_SessionHub__AddPlayerToSession__NativeDetour.ApplyDetour();
+        EasyDetour.CreateAndApply<SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour>(out var Internal_ManageSlot);
+        EasyDetour.CreateAndApply<SNet_SessionHub__AddPlayerToSession__NativeDetour>(out var AddPlayerToSession);
         //SNet_SessionHub__RemovePlayerFromSession__NativeDetour.ApplyDetour();
     }
 
-    private static class SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour
+    private unsafe class SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour : EasyDetourBase<SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour.Internal_ManageSlotDel>
     {
-        private unsafe delegate bool Internal_ManageSlotDel(IntPtr instancePtr, IntPtr playerPtr, IntPtr slotPtr, IntPtr slotsPtr, SNet_SlotType type, SNet_SlotHandleType handle, int index, Il2CppMethodInfo* methodInfo);
+        public delegate bool Internal_ManageSlotDel(IntPtr instancePtr, IntPtr playerPtr, IntPtr slotPtr, IntPtr slotsPtr, SNet_SlotType type, SNet_SlotHandleType handle, int index, Il2CppMethodInfo* methodInfo);
 
-        private static Internal_ManageSlotDel _Original;
+        public override Internal_ManageSlotDel DetourTo => Detour;
 
-        private static INativeDetour _Detour;
-
-        public static unsafe void ApplyDetour()
+        public override DetourDescriptor Descriptor => new()
         {
-            DetourDescriptor desc = new()
-            {
-                Type = typeof(SNet_PlayerSlotManager),
-                MethodName = nameof(SNet_PlayerSlotManager.Internal_ManageSlot),
-                ArgTypes = new Type[] { typeof(SNet_Player), typeof(SNet_Slot), typeof(Il2CppReferenceArray<SNet_Slot>), typeof(SNet_SlotType), typeof(SNet_SlotHandleType), typeof(int) },
-                ReturnType = typeof(bool),
-                IsGeneric = false
-            };
-            EasyDetour.TryCreate(desc, Detour, out _Original, out _Detour);
-        }
+            Type = typeof(SNet_PlayerSlotManager),
+            MethodName = nameof(SNet_PlayerSlotManager.Internal_ManageSlot),
+            ArgTypes = new Type[] { typeof(SNet_Player), typeof(SNet_Slot), typeof(Il2CppReferenceArray<SNet_Slot>), typeof(SNet_SlotType), typeof(SNet_SlotHandleType), typeof(int) },
+            ReturnType = typeof(bool),
+            IsGeneric = false
+        };
 
-        private static unsafe bool Detour(IntPtr instancePtr, IntPtr playerPtr, IntPtr slotPtr, IntPtr slotsPtr, SNet_SlotType type, SNet_SlotHandleType handle, int index, Il2CppMethodInfo* methodInfo)
+        private bool Detour(IntPtr instancePtr, IntPtr playerPtr, IntPtr slotPtr, IntPtr slotsPtr, SNet_SlotType type, SNet_SlotHandleType handle, int index, Il2CppMethodInfo* methodInfo)
         {
-            var result = _Original(instancePtr, playerPtr, slotPtr, slotsPtr, type, handle, index, methodInfo);
+            var result = Original(instancePtr, playerPtr, slotPtr, slotsPtr, type, handle, index, methodInfo);
             OnPlayerSlotChangedM(new SNet_Player(playerPtr), type, handle, index);
             return result;
         }
     }
 
-    private static class SNet_SessionHub__AddPlayerToSession__NativeDetour
+    private unsafe class SNet_SessionHub__AddPlayerToSession__NativeDetour : EasyDetourBase<SNet_SessionHub__AddPlayerToSession__NativeDetour.AddPlayerToSessionDel>
     {
-        private unsafe delegate void AddPlayerToSessionDel(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo);
+        public unsafe delegate void AddPlayerToSessionDel(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo);
 
-        private static AddPlayerToSessionDel _Original;
-
-        private static INativeDetour _Detour;
-
-        public static unsafe void ApplyDetour()
+        public override DetourDescriptor Descriptor => new()
         {
-            DetourDescriptor desc = new()
-            {
-                Type = typeof(SNet_SessionHub),
-                MethodName = nameof(SNet_SessionHub.AddPlayerToSession),
-                ArgTypes = new Type[] { typeof(SNet_Player), typeof(bool) },
-                ReturnType = typeof(void),
-                IsGeneric = false
-            };
-            EasyDetour.TryCreate(desc, Detour, out _Original, out _Detour);
-        }
+            Type = typeof(SNet_SessionHub),
+            MethodName = nameof(SNet_SessionHub.AddPlayerToSession),
+            ArgTypes = new Type[] { typeof(SNet_Player), typeof(bool) },
+            ReturnType = typeof(void),
+            IsGeneric = false
+        };
 
-        private static unsafe void Detour(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo)
+        public override AddPlayerToSessionDel DetourTo => Detour;
+
+        private void Detour(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo)
         {
-            _Original(instancePtr, playerPtr, broadcastIfMaster, methodInfo);
+            Original(instancePtr, playerPtr, broadcastIfMaster, methodInfo);
             OnSessionMemberChangedM(new SNet_Player(playerPtr), SessionMemberEvent.JoinSessionHub);
         }
     }

@@ -6,82 +6,148 @@ using TheArchive.Loader;
 
 namespace Hikaria.Core.Utilities;
 
-public static class EasyDetour
+public interface IEasyDetour
+{
+    bool Apply();
+    void Unpatch();
+}
+
+
+public abstract class EasyDetourBase<TDelegate> : IEasyDetour where TDelegate : Delegate
+{
+    ~EasyDetourBase()
+    {
+        Unpatch();
+    }
+
+    public abstract TDelegate DetourTo { get; }
+    public abstract DetourDescriptor Descriptor { get; }
+
+    public TDelegate Original => s_Original;
+    public INativeDetour NativeDetour => s_Detour;
+
+    public static TDelegate s_Original;
+    public static INativeDetour s_Detour;
+
+    public bool Apply()
+    {
+        if (s_Detour != null)
+        {
+            s_Detour.Undo();
+            s_Detour.Free();
+            s_Detour.Dispose();
+        }
+
+        return EasyDetour.TryCreate(Descriptor, DetourTo, out s_Original, out s_Detour);
+    }
+
+    public void Unpatch()
+    {
+        if (s_Detour != null)
+        {
+            s_Detour.Undo();
+            s_Detour.Free();
+            s_Detour.Dispose();
+        }
+    }
+}
+
+public unsafe static class EasyDetour
 {
     private static IArchiveLogger _logger;
     private static IArchiveLogger Logger => _logger ??= LoaderWrapper.CreateArSubLoggerInstance(nameof(EasyDetour));
+
+    public delegate void StaticVoidDelegate(Il2CppMethodInfo* methodInfo);
+
+    public delegate void InstanceVoidDelegate(IntPtr instancePtr, Il2CppMethodInfo* methodInfo);
+
     public static bool TryCreate<T>(DetourDescriptor descriptor, T to, out T originalCall, out INativeDetour detourInstance) where T : Delegate
     {
         try
         {
-            IntPtr methodPointer = descriptor.GetMethodPointer();
-            detourInstance = INativeDetour.CreateAndApply<T>(methodPointer, to, out originalCall);
-            bool result = detourInstance != null;
+            var ptr = descriptor.GetMethodPointer();
+            detourInstance = INativeDetour.CreateAndApply(ptr, to, out originalCall);
+            var result = detourInstance != null;
             if (result)
             {
-                Logger.Success($"NativeDetour Success: {descriptor.GetDetailInfo()}");
+                Logger.Success($"NativeDetour Success: {descriptor}");
             }
             else
             {
-                Logger.Fail($"NativeDetour Failed: {descriptor.GetDetailInfo()}");
+                Logger.Fail($"NativeDetour Success: {descriptor}");
             }
             return result;
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            Logger.Error("Exception Thrown while creating Detour:");
-            Logger.Exception(ex);
+            Logger.Error($"Exception Thrown while creating Detour:");
+            Logger.Error(e.ToString());
         }
-        originalCall = default(T);
+
+        originalCall = null;
         detourInstance = null;
         return false;
     }
 
-    public unsafe delegate void StaticVoidDelegate(Il2CppMethodInfo* methodInfo);
-
-    public unsafe delegate void InstanceVoidDelegate(IntPtr instancePtr, Il2CppMethodInfo* methodInfo);
+    public static bool CreateAndApply<T>(out T easyDetour) where T : IEasyDetour
+    {
+        easyDetour = Activator.CreateInstance<T>();
+        return easyDetour.Apply();
+    }
 }
 
 public struct DetourDescriptor
 {
-    public unsafe IntPtr GetMethodPointer()
+    public Type Type;
+    public Type ReturnType;
+    public Type[] ArgTypes;
+    public string MethodName;
+    public bool IsGeneric;
+
+    public unsafe nint GetMethodPointer()
     {
         if (Type == null)
         {
-            throw new MissingFieldException("Field Type is not set!");
+            throw new MissingFieldException($"Field {nameof(Type)} is not set!");
         }
+
         if (ReturnType == null)
         {
-            throw new MissingFieldException("Field ReturnType is not set! If you mean 'void' do typeof(void)");
+            throw new MissingFieldException($"Field {nameof(ReturnType)} is not set! If you mean 'void' do typeof(void)");
         }
+
         if (string.IsNullOrEmpty(MethodName))
         {
-            throw new MissingFieldException("Field MethodName is not set or valid!");
+            throw new MissingFieldException($"Field {nameof(MethodName)} is not set or valid!");
         }
-        Il2CppType.From(Type, true);
-        IntPtr nativeClassPointer = Il2CppClassPointerStore.GetNativeClassPointer(Type);
-        string fullName = GetFullName(ReturnType);
-        string[] array;
-        if (ArgTypes == null || ArgTypes.Length == 0)
+
+        var type = Il2CppType.From(Type, throwOnFailure: true);
+        var typePtr = Il2CppClassPointerStore.GetNativeClassPointer(Type);
+
+        var returnTypeName = GetFullName(ReturnType);
+        string[] argTypeNames;
+        if (ArgTypes == null || ArgTypes.Length <= 0)
         {
-            array = Array.Empty<string>();
+            argTypeNames = Array.Empty<string>();
         }
         else
         {
-            int num = ArgTypes.Length;
-            array = new string[num];
-            for (int i = 0; i < num; i++)
+            var length = ArgTypes.Length;
+            argTypeNames = new string[length];
+            for (int i = 0; i < length; i++)
             {
-                Type type = ArgTypes[i];
-                array[i] = GetFullName(type);
+                var argType = ArgTypes[i];
+                argTypeNames[i] = GetFullName(argType);
             }
         }
-        void** ptr = (void**)IL2CPP.GetIl2CppMethod(nativeClassPointer, IsGeneric, MethodName, fullName, array).ToPointer();
-        if (ptr == null)
+
+        var methodPtr = (void**)IL2CPP.GetIl2CppMethod(typePtr, IsGeneric, MethodName, returnTypeName, argTypeNames).ToPointer();
+        if (methodPtr == null)
         {
-            return (IntPtr)ptr;
+            return (nint)methodPtr;
         }
-        return *(IntPtr*)ptr;
+
+        return (nint)(*methodPtr);
     }
 
     private static string GetFullName(Type type)
@@ -91,37 +157,22 @@ public struct DetourDescriptor
         {
             type = type.GetElementType();
         }
+
         if (type.IsPrimitive || type == typeof(string))
         {
-            if (isPointer)
-            {
-                return type.MakePointerType().FullName;
-            }
-            return type.FullName;
+            if (isPointer) return type.MakePointerType().FullName;
+            else return type.FullName;
         }
         else
         {
-            var type2 = Il2CppType.From(type, true);
-            if (isPointer)
-            {
-                return type2.MakePointerType().FullName;
-            }
-            return type2.FullName;
+            var il2cppType = Il2CppType.From(type, throwOnFailure: true);
+            if (isPointer) return il2cppType.MakePointerType().FullName;
+            else return il2cppType.FullName;
         }
     }
 
-    public string GetDetailInfo()
+    public override string ToString()
     {
-        return $"{Type.FullName}.{MethodName}{(IsGeneric ? "<>" : string.Empty)}({string.Join(", ", ArgTypes.Select(p => p.FullName))})";
+        return $"{Type.FullName}.{MethodName}{(IsGeneric ? "<>" : string.Empty)}({string.Join(", ", ArgTypes.Select(arg => arg.FullName))})";
     }
-
-    public Type Type;
-
-    public Type ReturnType;
-
-    public Type[] ArgTypes;
-
-    public string MethodName;
-
-    public bool IsGeneric;
 }
