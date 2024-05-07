@@ -13,7 +13,7 @@ namespace Hikaria.Core.Features.Accessibility;
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
 [DoNotSaveToConfig]
-internal class ModList : Feature, IOnSessionMemberChange
+internal class ModList : Feature, IOnSessionMemberChanged
 {
     public override string Name => "Mod List";
 
@@ -30,16 +30,7 @@ internal class ModList : Feature, IOnSessionMemberChange
     {
         SNetExt.SetupCustomData<pModList>(typeof(pModList).FullName, ReceiveModListData);
         ArchiveModuleChainloader.Instance.Finished += OnChainloaderFinished;
-    }
-
-    public override void OnEnable()
-    {
         GameEventAPI.RegisterSelf(this);
-    }
-
-    public override void OnDisable()
-    {
-        GameEventAPI.UnregisterSelf(this);
     }
 
     public class ModListSetting
@@ -140,6 +131,15 @@ internal class ModList : Feature, IOnSessionMemberChange
         public string Version { get; set; }
     }
 
+    [ArchivePatch(typeof(SNet_Core_STEAM), nameof(SNet_Core_STEAM.CreateLocalPlayer))]
+    private class SNet_Core_STEAM__CreateLocalPlayer__Patch
+    {
+        private static void Postfix()
+        {
+            SNetExt.SetLocalCustomData<pModList>(new(SNet.LocalPlayer, InstalledMods.Values.ToList()));
+        }
+    }
+
     private void ReceiveModListData(SNet_Player player, pModList data)
     {
         if (player.IsLocal || player.IsBot) return;
@@ -221,22 +221,9 @@ internal class ModList : Feature, IOnSessionMemberChange
         ArchiveModuleChainloader.Instance.ModuleLoaded += OnModuleLoaded;
     }
 
-    public void OnSessionMemberChange(SNet_Player player, SessionMemberEvent playerEvent)
+    public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
     {
-        if (player.IsBot) return;
-
-        if (player.IsLocal)
-        {
-            SNetExt.SetLocalCustomData<pModList>(new(SNet.LocalPlayer, InstalledMods.Values.ToList()));
-            var onPlayerModsSynced = OnPlayerModsSynced;
-            if (onPlayerModsSynced != null)
-            {
-                onPlayerModsSynced(player, InstalledMods.Values);
-            }
-            return;
-        }
-
-        SNetExt.SendCustomData<pModList>();
+        if (player.IsBot || player.IsLocal) return;
 
         if (playerEvent == SessionMemberEvent.LeftSessionHub)
         {

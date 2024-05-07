@@ -26,7 +26,7 @@ internal class GameEventListener : Feature
     {
         SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour.ApplyDetour();
         SNet_SessionHub__AddPlayerToSession__NativeDetour.ApplyDetour();
-        SNet_SessionHub__RemovePlayerFromSession__NativeDetour.ApplyDetour();
+        //SNet_SessionHub__RemovePlayerFromSession__NativeDetour.ApplyDetour();
     }
 
     private static class SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour
@@ -77,13 +77,6 @@ internal class GameEventListener : Feature
                 IsGeneric = false
             };
             EasyDetour.TryCreate(desc, Detour, out _Original, out _Detour);
-        }
-
-        private static void Unpatch()
-        {
-            _Detour.Undo();
-            _Detour.Free();
-            _Detour.Dispose();
         }
 
         private static unsafe void Detour(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo)
@@ -294,14 +287,13 @@ internal class GameEventListener : Feature
         {
             FeatureLogger.Exception(ex);
         }
-        /*
+
         switch (playerEvent)
         {
             case SNet_PlayerEvent.PlayerLeftSessionHub:
                 OnSessionMemberChangedM(player, SessionMemberEvent.LeftSessionHub);
                 break;
         }
-        */
     }
 
     private static void OnPlayerSlotChangedM(SNet_Player player, SNet_SlotType type, SNet_SlotHandleType handle, int index)
@@ -364,17 +356,6 @@ internal class GameEventListener : Feature
     private static void OnSessionMemberChangedM(SNet_Player player, SessionMemberEvent playerEvent)
     {
         FeatureLogger.Notice($"{player.NickName} [{player.Lookup}] {playerEvent}");
-        foreach (var Listener in SessionMemberChangeListeners)
-        {
-            try
-            {
-                Listener.OnSessionMemberChange(player, playerEvent);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
         foreach (var Listener in SessionMemberChangedListeners)
         {
             try
@@ -412,8 +393,6 @@ internal class GameEventListener : Feature
             PlayerEventListeners.Add((IOnPlayerEvent)instance);
         if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
             ChatMessageListeners.Add((IOnReceiveChatMessage)instance);
-        if (typeof(IOnSessionMemberChange).IsAssignableFrom(type))
-            SessionMemberChangeListeners.Add((IOnSessionMemberChange)instance);
         if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
             SessionMemberChangedListeners.Add((IOnSessionMemberChanged)instance);
         if (typeof(IOnRecallComplete).IsAssignableFrom(type))
@@ -439,8 +418,6 @@ internal class GameEventListener : Feature
             PlayerEventListeners.Remove((IOnPlayerEvent)instance);
         if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
             ChatMessageListeners.Remove((IOnReceiveChatMessage)instance);
-        if (typeof(IOnSessionMemberChange).IsAssignableFrom(type))
-            SessionMemberChangeListeners.Remove((IOnSessionMemberChange)instance);
         if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
             SessionMemberChangedListeners.Remove((IOnSessionMemberChanged)instance);
         if (typeof(IOnRecallComplete).IsAssignableFrom(type))
@@ -459,7 +436,6 @@ internal class GameEventListener : Feature
     private static HashSet<IOnReceiveChatMessage> ChatMessageListeners = new();
     private static HashSet<IOnPlayerEvent> PlayerEventListeners = new();
     private static HashSet<IOnRecallComplete> RecallCompleteListeners = new();
-    private static HashSet<IOnSessionMemberChange> SessionMemberChangeListeners = new();
     private static HashSet<IOnSessionMemberChanged> SessionMemberChangedListeners = new();
     private static HashSet<IOnMasterChanged> MasterChangedListeners = new();
     private static HashSet<IOnMasterCommand> MasterCommandListeners = new();

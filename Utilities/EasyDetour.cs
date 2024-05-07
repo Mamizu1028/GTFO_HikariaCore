@@ -1,7 +1,6 @@
 ﻿using BepInEx.Unity.IL2CPP.Hook;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.Runtime;
-using System.Text;
 using TheArchive.Interfaces;
 using TheArchive.Loader;
 
@@ -20,11 +19,11 @@ public static class EasyDetour
             bool result = detourInstance != null;
             if (result)
             {
-                Logger.Success($"NativeDetour Apply Success: \n{descriptor.GetDetailInfo()}");
+                Logger.Success($"NativeDetour Success: {descriptor.GetDetailInfo()}");
             }
             else
             {
-                Logger.Fail($"NativeDetour Apply Failed: \n{descriptor.GetDetailInfo()}");
+                Logger.Fail($"NativeDetour Failed: {descriptor.GetDetailInfo()}");
             }
             return result;
         }
@@ -113,12 +112,7 @@ public struct DetourDescriptor
 
     public string GetDetailInfo()
     {
-        StringBuilder sb = new();
-        sb.AppendLine($"Type: {Type.FullName}");
-        sb.AppendLine($"MethodName: {MethodName}");
-        sb.AppendLine($"ArgTypes: {string.Join(", ", ArgTypes.Select(p => p.FullName))}");
-        sb.Append($"IsGeneric: {IsGeneric}");
-        return sb.ToString();
+        return $"{Type.FullName}.{MethodName}{(IsGeneric ? "<>" : string.Empty)}({string.Join(", ", ArgTypes.Select(p => p.FullName))})";
     }
 
     public Type Type;

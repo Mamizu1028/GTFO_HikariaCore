@@ -132,7 +132,10 @@ public class PauseGame : Feature
     {
         foreach (PlayerAgent player in PlayerManager.PlayerAgentsInLevel)
         {
-            player.Sync.WantsToWieldSlot(InventorySlot.None);
+            if (paused)
+            {
+                player.Sync.WantsToWieldSlot(InventorySlot.None);
+            }
             player.RequestToggleControlsEnabled(!paused);
         }
     }
