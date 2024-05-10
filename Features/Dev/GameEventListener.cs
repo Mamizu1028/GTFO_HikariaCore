@@ -1,5 +1,4 @@
-﻿using BepInEx.Unity.IL2CPP.Hook;
-using Hikaria.Core.Interfaces;
+﻿using Hikaria.Core.Interfaces;
 using Hikaria.Core.Utilities;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppInterop.Runtime.Runtime;
@@ -8,7 +7,7 @@ using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Interfaces;
 
-namespace Hikaria.Core.Features.Core;
+namespace Hikaria.Core.Features.Dev;
 
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
@@ -18,15 +17,13 @@ internal class GameEventListener : Feature
 {
     public override string Name => "Game Event Listener";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Core;
+    public override FeatureGroup Group => EntryPoint.Groups.Dev;
 
     public static new IArchiveLogger FeatureLogger { get; set; }
 
     public override void Init()
     {
-        EasyDetour.CreateAndApply<SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour>(out var Internal_ManageSlot);
-        EasyDetour.CreateAndApply<SNet_SessionHub__AddPlayerToSession__NativeDetour>(out var AddPlayerToSession);
-        //SNet_SessionHub__RemovePlayerFromSession__NativeDetour.ApplyDetour();
+        EasyDetour.CreateAndApply<SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour>(out _);
     }
 
     private unsafe class SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour : EasyDetourBase<SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour.Internal_ManageSlotDel>
@@ -52,65 +49,6 @@ internal class GameEventListener : Feature
         }
     }
 
-    private unsafe class SNet_SessionHub__AddPlayerToSession__NativeDetour : EasyDetourBase<SNet_SessionHub__AddPlayerToSession__NativeDetour.AddPlayerToSessionDel>
-    {
-        public unsafe delegate void AddPlayerToSessionDel(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo);
-
-        public override DetourDescriptor Descriptor => new()
-        {
-            Type = typeof(SNet_SessionHub),
-            MethodName = nameof(SNet_SessionHub.AddPlayerToSession),
-            ArgTypes = new Type[] { typeof(SNet_Player), typeof(bool) },
-            ReturnType = typeof(void),
-            IsGeneric = false
-        };
-
-        public override AddPlayerToSessionDel DetourTo => Detour;
-
-        private void Detour(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo)
-        {
-            Original(instancePtr, playerPtr, broadcastIfMaster, methodInfo);
-            OnSessionMemberChangedM(new SNet_Player(playerPtr), SessionMemberEvent.JoinSessionHub);
-        }
-    }
-
-    private static class SNet_SessionHub__RemovePlayerFromSession__NativeDetour
-    {
-        private unsafe delegate void RemovePlayerFromSessionDel(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo);
-
-        private static RemovePlayerFromSessionDel _Original;
-
-        private static INativeDetour _Detour;
-
-        public static unsafe void ApplyDetour()
-        {
-            DetourDescriptor desc = new()
-            {
-                Type = typeof(SNet_SessionHub),
-                MethodName = nameof(SNet_SessionHub.RemovePlayerFromSession),
-                ArgTypes = new Type[] { typeof(SNet_Player), typeof(bool) },
-                ReturnType = typeof(void),
-                IsGeneric = false
-            };
-            EasyDetour.TryCreate(desc, Detour, out _Original, out _Detour);
-        }
-
-        private static unsafe void Detour(IntPtr instancePtr, IntPtr playerPtr, bool broadcastIfMaster, Il2CppMethodInfo* methodInfo)
-        {
-            _Original(instancePtr, playerPtr, broadcastIfMaster, methodInfo);
-            OnSessionMemberChangedM(new SNet_Player(playerPtr), SessionMemberEvent.LeftSessionHub);
-        }
-    }
-
-    [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.LeaveHub))]
-    private class SNet_SessionHub__LeaveHub__Patch
-    {
-        private static void Postfix()
-        {
-            OnSessionMemberChangedM(SNet.LocalPlayer, SessionMemberEvent.LeftSessionHub);
-        }
-    }
-
     [ArchivePatch(typeof(SNet_GlobalManager), nameof(SNet_GlobalManager.Setup))]
     private class SNet_GlobalManager__Setup__Patch
     {
@@ -120,6 +58,34 @@ internal class GameEventListener : Feature
             SNet_Events.OnPlayerEvent += new Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason>(OnPlayerEventM);
             SNet_Events.OnRecallComplete += new Action<eBufferType>(OnRecallCompleteM);
             SNet_Events.OnMasterChanged += new Action(OnMasterChangedM);
+            SNet_Events.OnPrepareForRecall += new Action<eBufferType>(OnPrepareForRecallM);
+        }
+    }
+
+    [ArchivePatch(typeof(GS_AfterLevel), nameof(GS_AfterLevel.CleanupAfterExpedition))]
+    private class GS_AfterLevel__CleanupAfterExpedition__Patch
+    {
+        private static void Postfix()
+        {
+            CleanupAfterExpeditionM();
+        }
+    }
+
+    [ArchivePatch(typeof(SNet_SyncManager), nameof(SNet_SyncManager.OnRecallDone))]
+    private class SNet_SyncManager__OnRecallDone__Patch
+    {
+        private static void Postfix(eBufferType bufferType)
+        {
+            OnRecallDoneM(bufferType);
+        }
+    }
+
+    [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.AddPlayerToSession))]
+    private class SNet_SessionHub__AddPlayerToSession__Patch
+    {
+        private static void Postfix(SNet_Player player)
+        {
+            OnSessionMemberChangedM(player, SessionMemberEvent.JoinSessionHub);
         }
     }
 
@@ -149,10 +115,7 @@ internal class GameEventListener : Feature
             try
             {
                 var onGameStateChanged = OnGameStateChanged;
-                if (onGameStateChanged != null)
-                {
-                    onGameStateChanged(preState, nextState);
-                }
+                onGameStateChanged?.Invoke(preState, nextState);
             }
             catch (Exception ex)
             {
@@ -182,16 +145,37 @@ internal class GameEventListener : Feature
                 try
                 {
                     var onReceiveChatMessage = OnReceiveChatMessage;
-                    if (onReceiveChatMessage != null)
-                    {
-                        onReceiveChatMessage(fromPlayer, data.message.data);
-                    }
+                    onReceiveChatMessage?.Invoke(fromPlayer, data.message.data);
                 }
                 catch (Exception ex)
                 {
                     FeatureLogger.Exception(ex);
                 }
             }
+        }
+    }
+
+    private static void CleanupAfterExpeditionM()
+    {
+        foreach (var listener in AfterLevelCleanupListeners)
+        {
+            try
+            {
+                listener.OnAfterLevelCleanup();
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
+        }
+        try
+        {
+            var onAfterLevelCleanup = OnAfterLevelCleanup;
+            onAfterLevelCleanup?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
         }
     }
 
@@ -211,10 +195,55 @@ internal class GameEventListener : Feature
         try
         {
             var onMasterChanged = OnMasterChanged;
-            if (onMasterChanged != null)
+            onMasterChanged?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
+        }
+    }
+
+    private static void OnPrepareForRecallM(eBufferType bufferType)
+    {
+        foreach (var listener in PrepareForRecallListeners)
+        {
+            try
             {
-                onMasterChanged();
+                listener.OnPrepareForRecall(bufferType);
             }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
+        }
+        try
+        {
+            var onPrepareForRecall = OnPrepareForRecall;
+            onPrepareForRecall?.Invoke(bufferType);
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
+        }
+    }
+
+    private static void OnRecallDoneM(eBufferType bufferType)
+    {
+        foreach (var listener in RecallDoneListeners)
+        {
+            try
+            {
+                listener.OnRecallDone(bufferType);
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
+        }
+        try
+        {
+            var onRecallDone = OnRecallDone;
+            onRecallDone?.Invoke(bufferType);
         }
         catch (Exception ex)
         {
@@ -238,10 +267,7 @@ internal class GameEventListener : Feature
         try
         {
             var onRecallComplete = OnRecallComplete;
-            if (onRecallComplete != null)
-            {
-                onRecallComplete(bufferType);
-            }
+            onRecallComplete?.Invoke(bufferType);
         }
         catch (Exception ex)
         {
@@ -266,10 +292,7 @@ internal class GameEventListener : Feature
         try
         {
             var onPlayerEvent = OnPlayerEvent;
-            if (onPlayerEvent != null)
-            {
-                onPlayerEvent(player, playerEvent, reason);
-            }
+            onPlayerEvent?.Invoke(player, playerEvent, reason);
         }
         catch (Exception ex)
         {
@@ -301,10 +324,7 @@ internal class GameEventListener : Feature
         try
         {
             var onPlayerSlotChanged = OnPlayerSlotChanged;
-            if (onPlayerSlotChanged != null)
-            {
-                onPlayerSlotChanged(player, type, handle, index);
-            }
+            onPlayerSlotChanged?.Invoke(player, type, handle, index);
         }
         catch (Exception ex)
         {
@@ -329,10 +349,7 @@ internal class GameEventListener : Feature
         try
         {
             var onMasterCommand = OnMasterCommand;
-            if (onMasterCommand != null)
-            {
-                onMasterCommand(command.type, command.refA);
-            }
+            onMasterCommand?.Invoke(command.type, command.refA);
         }
         catch (Exception ex)
         {
@@ -385,12 +402,18 @@ internal class GameEventListener : Feature
             SessionMemberChangedListeners.Add((IOnSessionMemberChanged)instance);
         if (typeof(IOnRecallComplete).IsAssignableFrom(type))
             RecallCompleteListeners.Add((IOnRecallComplete)instance);
+        if (typeof(IOnPrepareForRecall).IsAssignableFrom(type))
+            PrepareForRecallListeners.Add((IOnPrepareForRecall)instance);
+        if (typeof(IOnRecallDone).IsAssignableFrom(type))
+            RecallDoneListeners.Add((IOnRecallDone)instance);
         if (typeof(IOnMasterChanged).IsAssignableFrom(type))
             MasterChangedListeners.Add((IOnMasterChanged)instance);
         if (typeof(IOnMasterCommand).IsAssignableFrom(type))
             MasterCommandListeners.Add((IOnMasterCommand)instance);
         if (typeof(IOnPlayerSlotChanged).IsAssignableFrom(type))
             PlayerSlotChangedListener.Add((IOnPlayerSlotChanged)instance);
+        if (typeof(IOnAfterLevelCleanup).IsAssignableFrom(type))
+            AfterLevelCleanupListeners.Add((IOnAfterLevelCleanup)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.RegisterPauseable((IPauseable)instance);
     }
@@ -410,12 +433,18 @@ internal class GameEventListener : Feature
             SessionMemberChangedListeners.Remove((IOnSessionMemberChanged)instance);
         if (typeof(IOnRecallComplete).IsAssignableFrom(type))
             RecallCompleteListeners.Remove((IOnRecallComplete)instance);
+        if (typeof(IOnPrepareForRecall).IsAssignableFrom(type))
+            PrepareForRecallListeners.Remove((IOnPrepareForRecall)instance);
+        if (typeof(IOnRecallDone).IsAssignableFrom(type))
+            RecallDoneListeners.Remove((IOnRecallDone)instance);
         if (typeof(IOnMasterChanged).IsAssignableFrom(type))
             MasterChangedListeners.Remove((IOnMasterChanged)instance);
         if (typeof(IOnMasterCommand).IsAssignableFrom(type))
             MasterCommandListeners.Remove((IOnMasterCommand)instance);
         if (typeof(IOnPlayerSlotChanged).IsAssignableFrom(type))
             PlayerSlotChangedListener.Remove((IOnPlayerSlotChanged)instance);
+        if (typeof(IOnAfterLevelCleanup).IsAssignableFrom(type))
+            AfterLevelCleanupListeners.Remove((IOnAfterLevelCleanup)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.UnregisterPauseable((IPauseable)instance);
     }
@@ -428,9 +457,14 @@ internal class GameEventListener : Feature
     private static HashSet<IOnMasterChanged> MasterChangedListeners = new();
     private static HashSet<IOnMasterCommand> MasterCommandListeners = new();
     private static HashSet<IOnPlayerSlotChanged> PlayerSlotChangedListener = new();
+    private static HashSet<IOnPrepareForRecall> PrepareForRecallListeners = new();
+    private static HashSet<IOnRecallDone> RecallDoneListeners = new();
+    private static HashSet<IOnAfterLevelCleanup> AfterLevelCleanupListeners = new();
 
     public static event Action OnGameDataInited;
     public static event Action<eBufferType> OnRecallComplete;
+    public static event Action<eBufferType> OnPrepareForRecall;
+    public static event Action<eBufferType> OnRecallDone;
     public static event Action<eGameStateName, eGameStateName> OnGameStateChanged;
     public static event Action<SNet_Player, string> OnReceiveChatMessage;
     public static event Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason> OnPlayerEvent;
@@ -438,4 +472,5 @@ internal class GameEventListener : Feature
     public static event Action OnMasterChanged;
     public static event Action<eMasterCommandType, int> OnMasterCommand;
     public static event Action<SNet_Player, SNet_SlotType, SNet_SlotHandleType, int> OnPlayerSlotChanged;
+    public static event Action OnAfterLevelCleanup;
 }

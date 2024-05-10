@@ -8,7 +8,7 @@ using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.Bootstrap;
 using TheArchive.Core.FeaturesAPI;
 
-namespace Hikaria.Core.Features.Accessibility;
+namespace Hikaria.Core.Features.Core;
 
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
@@ -17,7 +17,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
 {
     public override string Name => "Mod List";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Accessibility;
+    public override FeatureGroup Group => EntryPoint.Groups.Core;
 
     public static event Action<SNet_Player, IEnumerable<pModInfo>> OnPlayerModsSynced;
 
@@ -223,7 +223,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
 
     public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
     {
-        if (player.IsBot || player.IsLocal) return;
+        if (player.IsBot) return;
 
         if (playerEvent == SessionMemberEvent.LeftSessionHub)
         {

@@ -26,8 +26,8 @@ public abstract class EasyDetourBase<TDelegate> : IEasyDetour where TDelegate : 
     public TDelegate Original => s_Original;
     public INativeDetour NativeDetour => s_Detour;
 
-    public static TDelegate s_Original;
-    public static INativeDetour s_Detour;
+    private static TDelegate s_Original;
+    private static INativeDetour s_Detour;
 
     public bool Apply()
     {

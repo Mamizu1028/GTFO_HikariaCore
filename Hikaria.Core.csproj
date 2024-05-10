@@ -15,6 +15,9 @@
     <Reference Include="BepInEx.Unity.IL2CPP">
       <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\core\BepInEx.Unity.IL2CPP.dll</HintPath>
     </Reference>
+    <Reference Include="Clonesoft.Json">
+      <HintPath>..\GTFO_TheArchive\lib\net60\Clonesoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="GlobalFramework-ASM">
       <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\GlobalFramework-ASM.dll</HintPath>
     </Reference>
@@ -42,14 +45,26 @@
     <Reference Include="SNet_ASM">
       <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\SNet_ASM.dll</HintPath>
     </Reference>
+    <Reference Include="SteamWorks_ASM">
+      <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\SteamWorks_ASM.dll</HintPath>
+    </Reference>
     <Reference Include="TheArchive.Core">
       <HintPath>..\GTFO_TheArchive\TheArchive.Core\bin\R_BIE\TheArchive.Core.dll</HintPath>
     </Reference>
     <Reference Include="TheArchive.IL2CPP">
       <HintPath>..\GTFO_TheArchive\TheArchive.IL2CPP\bin\R_BIE\TheArchive.IL2CPP.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\Unity.TextMeshPro.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UnityWebRequestModule">
       <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\UnityEngine.UnityWebRequestModule.dll</HintPath>
@@ -60,7 +75,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Dev\" />
+    <Folder Include="Infos\" />
     <Folder Include="Localization\" />
   </ItemGroup>
 

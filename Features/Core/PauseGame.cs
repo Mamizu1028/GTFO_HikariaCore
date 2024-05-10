@@ -8,7 +8,7 @@ using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.Localization;
 using UnityEngine;
 
-namespace Hikaria.Core.Features.Accessibility;
+namespace Hikaria.Core.Features.Core;
 
 [DisallowInGameToggle]
 [EnableFeatureByDefault]
@@ -17,7 +17,7 @@ public class PauseGame : Feature
 {
     public override string Name => "Pause Game";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Accessibility;
+    public override FeatureGroup Group => EntryPoint.Groups.Core;
 
     [FeatureConfig]
     public static PauseGameSettings Settings { get; set; }

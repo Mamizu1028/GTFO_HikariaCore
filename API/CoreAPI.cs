@@ -1,7 +1,7 @@
-﻿using Hikaria.Core.Features.Accessibility;
+﻿using Hikaria.Core.Features.Core;
 using Hikaria.Core.Interfaces;
 using SNetwork;
-using static Hikaria.Core.Features.Accessibility.ModList;
+using static Hikaria.Core.Features.Core.ModList;
 
 namespace Hikaria.Core;
 

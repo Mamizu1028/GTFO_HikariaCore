@@ -20,25 +20,27 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
         CoreAPI.RegisterSelf(this);
     }
 
+    public void SyncToPlayer(SNetwork.SNet_Player player, T data)
+    {
+        if (!player.IsLocal)
+        {
+            m_packet.Send(data, player);
+        }
+    }
+
     public void SyncToPlayer(SNetwork.SNet_Player player, params T[] datas)
     {
-        if (!player.IsLocal && IsListener(player))
+        foreach (var data in datas)
         {
-            foreach (var data in datas)
-            {
-                m_packet.Send(data, player);
-            }
+            SyncToPlayer(player, data);
         }
     }
 
     public void SyncToPlayer(SNetwork.SNet_Player player, IEnumerable<T> datas)
     {
-        if (!player.IsLocal && IsListener(player))
+        foreach (var data in datas)
         {
-            foreach (var data in datas)
-            {
-                m_packet.Send(data, player);
-            }
+            SyncToPlayer(player, data);
         }
     }
 
@@ -74,8 +76,7 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
         m_listenersLookup[player.Lookup] = player;
 
         var onPlayerAddedToListeners = OnPlayerAddedToListeners;
-        if (onPlayerAddedToListeners != null)
-            onPlayerAddedToListeners(player);
+        onPlayerAddedToListeners?.Invoke(player);
     }
 
     private void Internal_RemovePlayerFromListeners(SNetwork.SNet_Player player)
@@ -87,10 +88,7 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
             {
                 m_listeners.RemoveAll(p => p.Lookup == player.Lookup);
                 m_listenersLookup.Remove(player.Lookup);
-                if (onPlayerRemovedFromListeners != null)
-                {
-                    onPlayerRemovedFromListeners(listener);
-                }
+                onPlayerRemovedFromListeners?.Invoke(listener);
             }
         }
         else
@@ -99,8 +97,7 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
             m_listenersLookup.Remove(player.Lookup);
 
             var onPlayerRemovedFromListeners = OnPlayerRemovedFromListeners;
-            if (onPlayerRemovedFromListeners != null)
-                onPlayerRemovedFromListeners(player);
+            onPlayerRemovedFromListeners?.Invoke(player);
         }
     }
 
@@ -119,6 +116,7 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
 
     public bool IsListener(SNetwork.SNet_Player player)
     {
+        if (player == null) return false;
         return m_listeners.Contains(player) || IsListener(player.Lookup);
     }
 
@@ -132,18 +130,11 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
     public event Action<SNetwork.SNet_Player> OnPlayerRemovedFromListeners;
 
     protected SNetExt_Packet<T> m_packet;
-
     protected Action<ulong, T> m_incomingAction;
-
     protected Func<SNetwork.SNet_Player, bool> m_listenerFilter;
-
     protected bool m_hasListenerFilter;
-
     protected List<SNetwork.SNet_Player> m_listeners = new();
-
     protected Dictionary<ulong, SNetwork.SNet_Player> m_listenersLookup = new();
-
     public IEnumerable<SNetwork.SNet_Player> Listeners => m_listeners;
-
     public IReadOnlyDictionary<ulong, SNetwork.SNet_Player> ListenersLookup => m_listenersLookup;
 }

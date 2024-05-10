@@ -6,17 +6,17 @@ using TheArchive.Core.FeaturesAPI;
 using TheArchive.Loader;
 using UnityEngine;
 
-namespace Hikaria.Core.Features.Core;
+namespace Hikaria.Core.Features.Dev;
 
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
 [HideInModSettings]
 [DoNotSaveToConfig]
-internal class HikariaCoreBootstrap : Feature
+internal class CoreBootstrap : Feature
 {
-    public override string Name => "Hikaria Core Bootstrap";
+    public override string Name => "Core Bootstrap";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Core;
+    public override FeatureGroup Group => EntryPoint.Groups.Dev;
 
     public override void Init()
     {
@@ -53,7 +53,7 @@ internal class HikariaCoreBootstrap : Feature
         {
             CompsObj.AddComponent<GameEventLogManager>();
         }
-        Managers.PauseManager.Setup();
+        PopupMessageManager.Setup();
     }
 
     private const string CompsObjName = "Hikaria.Core.Comps.obj";

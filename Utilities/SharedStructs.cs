@@ -3,6 +3,43 @@ using System.Text.RegularExpressions;
 
 namespace Hikaria.Core;
 
+
+public struct pPopupMessage
+{
+    public PopupMessage UnpackPopupMessage()
+    {
+        return new()
+        {
+            BlinkInContent = BlinkInContent,
+            BlinkTimeInterval = BlinkTimeInterval,
+            Header = Header,
+            UpperText = UpperText,
+            LowerText = LowerText,
+            PopupType = PopupType,
+            OnCloseCallback = new Action(() => { })
+        };
+    }
+
+    public pPopupMessage(string header, string upperText, string lowerText, bool blinkInContent = true, float blinkTimeInterval = 0.2f)
+    {
+        Header = header;
+        UpperText = upperText;
+        LowerText = lowerText;
+        BlinkInContent = blinkInContent;
+        BlinkTimeInterval = blinkTimeInterval;
+    }
+
+    public bool BlinkInContent = true;
+    public float BlinkTimeInterval = 0.2f;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 100)]
+    public string Header;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 100)]
+    public string UpperText;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 100)]
+    public string LowerText;
+    public PopupType PopupType = PopupType.BoosterImplantMissed;
+}
+
 public struct pModInfo
 {
     public pModInfo(string name, string guid, Version version)

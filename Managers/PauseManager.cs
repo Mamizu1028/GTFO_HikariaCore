@@ -10,16 +10,6 @@ namespace Hikaria.Core.Managers;
 
 internal class PauseManager : MonoBehaviour
 {
-    public static void Setup()
-    {
-        if (s_Object == null)
-        {
-            s_Object = new(typeof(PauseManager).FullName);
-            UnityEngine.Object.DontDestroyOnLoad(s_Object);
-            s_Object.AddComponent<PauseManager>();
-        }
-    }
-
     private void Awake()
     {
         Current = this;
@@ -47,8 +37,7 @@ internal class PauseManager : MonoBehaviour
             }
         }
         var onPaused = OnPaused;
-        if (onPaused != null)
-            onPaused();
+        onPaused?.Invoke();
         Logger.Notice("Game Paused");
     }
 
@@ -70,8 +59,7 @@ internal class PauseManager : MonoBehaviour
             }
         }
         var onUnpaused = OnUnpaused;
-        if (onUnpaused != null)
-            onUnpaused();
+        onUnpaused?.Invoke();
         if (SNet.IsMaster && GameStateManager.CurrentStateName == eGameStateName.InLevel)
         {
             SNet.Sync.StartRecallWithAllSyncedPlayers(eBufferType.Migration_A, false);
@@ -138,8 +126,6 @@ internal class PauseManager : MonoBehaviour
     private static HashSet<IPauseable> m_pausableUpdaters = new();
 
     private static bool s_isPaused;
-
-    private static GameObject s_Object;
 
     public static event Action OnPaused;
     public static event Action OnUnpaused;

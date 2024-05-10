@@ -18,11 +18,7 @@ public class SNetExt_ReplicatedPlayerData<A> where A : struct
         {
             snet_Player.StoreCustomData(wrappedData);
             Action<SNetwork.SNet_Player, A> onChangeCallback = s_singleton.m_onChangeCallback;
-            if (onChangeCallback == null)
-            {
-                return;
-            }
-            onChangeCallback(snet_Player, wrappedData);
+            onChangeCallback?.Invoke(snet_Player, wrappedData);
         }
     }
 

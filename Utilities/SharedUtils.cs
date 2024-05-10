@@ -1,26 +1,26 @@
-﻿using Player;
-using SNetwork;
-using TheArchive.Utilities;
+﻿using SNetwork;
 
 namespace Hikaria.Core.Utilities;
 
 public static class SharedUtils
 {
-    public static bool TryGetPlayerByCharacterIndex(int index, out SNet_Player player)
-    {
-        player = SNet.LobbyPlayers.ToSystemList().FirstOrDefault(p => p.CharacterSlot.index == index);
-        return player != null;
-    }
-
-    public static bool TryGetPlayerBySlot(int slot, out SNet_Player player)
+    public static bool TryGetPlayerByCharacterSlot(int slot, out SNet_Player player)
     {
         player = null;
         int index = slot - 1;
         if (index < 0 || index > 4)
             return false;
-        if (!PlayerManager.TryGetPlayerAgent(ref index, out PlayerAgent playerAgent))
+        player = SNet.Slots.CharacterSlots[index].player;
+        return player != null;
+    }
+
+    public static bool TryGetPlayerBySlotIndex(int slot, out SNet_Player player)
+    {
+        player = null;
+        int index = slot - 1;
+        if (index < 0 || index > 4)
             return false;
-        player = playerAgent.Owner;
-        return true;
+        player = SNet.Slots.PlayerSlots[index].player;
+        return player != null;
     }
 }
