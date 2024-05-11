@@ -72,7 +72,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
 
         [FSSeparator]
         [FSReadOnly]
-        [FSDisplayName("Nickname")]
+        [FSDisplayName("昵称")]
         public string Nickname
         {
             get
@@ -90,7 +90,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
 
         [FSReadOnly]
         [FSInline]
-        [FSDisplayName("Mod List")]
+        [FSDisplayName("插件列表")]
         public List<ModInfoEntry> ModList
         {
             get
