@@ -7,7 +7,9 @@ namespace Hikaria.Core.Features.Fixes;
 [EnableFeatureByDefault]
 internal class EnemyDamageSync : Feature
 {
-    public override string Name => "Enemy Damage Sync";
+    public override string Name => "敌人生命值同步";
+
+    public override string Description => "客机无法获取敌人的实时生命值.\n在作为主机时启用后会将敌人生命值同步至客机，该功能应保持启用。";
 
     public override FeatureGroup Group => EntryPoint.Groups.Fixes;
 

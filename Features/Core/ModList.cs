@@ -15,7 +15,9 @@ namespace Hikaria.Core.Features.Core;
 [DoNotSaveToConfig]
 internal class ModList : Feature, IOnSessionMemberChanged
 {
-    public override string Name => "Mod List";
+    public override string Name => "插件列表";
+
+    public override string Description => "获取所有安装了本插件的玩家的插件列表。\n本功能属于核心功能，所有插件的正常运作离不开该功能。";
 
     public override FeatureGroup Group => EntryPoint.Groups.Core;
 
@@ -35,7 +37,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
 
     public class ModListSetting
     {
-        [FSDisplayName("My Mods")]
+        [FSDisplayName("我的插件")]
         public List<ModInfoEntry> MyMods
         {
             get
@@ -53,7 +55,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
         }
 
         [FSInline]
-        [FSDisplayName("Others Mods")]
+        [FSDisplayName("其他人的插件")]
         public List<PlayerModListEntry> OthersMods { get; set; } = new();
     }
 
@@ -238,6 +240,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
         }
         else if (playerEvent == SessionMemberEvent.JoinSessionHub)
         {
+            if (player.IsLocal) return;
             if (!Settings.OthersMods.Any(p => p.Lookup == player.Lookup))
             {
                 Settings.OthersMods.Add(new PlayerModListEntry(player));

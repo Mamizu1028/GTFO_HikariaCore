@@ -15,7 +15,9 @@ namespace Hikaria.Core.Features.Core;
 [DoNotSaveToConfig]
 public class PauseGame : Feature
 {
-    public override string Name => "Pause Game";
+    public override string Name => "暂停游戏";
+
+    public override string Description => "为暂停游戏提供图形化交互。";
 
     public override FeatureGroup Group => EntryPoint.Groups.Core;
 

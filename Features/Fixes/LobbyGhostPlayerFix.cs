@@ -8,7 +8,8 @@ namespace Hikaria.Core.Features.Fixes;
 [EnableFeatureByDefault]
 internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
 {
-    public override string Name => "Lobby Ghost Player Fix";
+    public override string Name => "卡房修复";
+    public override string Description => "在玩家离开大厅时自动检查是否有位置被卡，另外可通过锁定位置的方法手动修复特定位置被卡的问题。";
 
     public override FeatureGroup Group => EntryPoint.Groups.Fixes;
 

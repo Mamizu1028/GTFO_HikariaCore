@@ -14,7 +14,9 @@ namespace Hikaria.Core.Features.Dev;
 [DoNotSaveToConfig]
 internal class CoreBootstrap : Feature
 {
-    public override string Name => "Core Bootstrap";
+    public override string Name => "核心引导";
+
+    public override string Description => "负责一些主要部件的初始化和钩子";
 
     public override FeatureGroup Group => EntryPoint.Groups.Dev;
 

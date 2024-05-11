@@ -20,7 +20,7 @@ public struct pPopupMessage
         };
     }
 
-    public pPopupMessage(string header, string upperText, string lowerText, bool blinkInContent = true, float blinkTimeInterval = 0.2f)
+    public pPopupMessage(string header, string upperText, string lowerText, bool blinkInContent = true, float blinkTimeInterval = 0.2f, PopupType type = PopupType.BoosterImplantMissed)
     {
         Header = header;
         UpperText = upperText;

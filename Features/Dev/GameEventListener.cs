@@ -15,7 +15,9 @@ namespace Hikaria.Core.Features.Dev;
 [DoNotSaveToConfig]
 internal class GameEventListener : Feature
 {
-    public override string Name => "Game Event Listener";
+    public override string Name => "游戏事件监听";
+
+    public override string Description => "负责游戏事件的钩子。\n属于核心功能，插件的正常运作离不开该功能。";
 
     public override FeatureGroup Group => EntryPoint.Groups.Dev;
 

@@ -8,22 +8,23 @@ using System.Runtime.InteropServices;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
-using TheArchive.Core.Localization;
 using TheArchive.Features.Security;
 using TheArchive.Interfaces;
 using TheArchive.Loader;
 using TheArchive.Utilities;
 
-namespace Hikaria.Core.Features.Accessibility;
+namespace Hikaria.Core.Features.Security;
 
 [DoNotSaveToConfig]
 [DisallowInGameToggle]
 [EnableFeatureByDefault]
 internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 {
-    public override string Name => "Lobby Settings Override";
+    public override string Name => "大厅设置覆盖";
 
-    public override FeatureGroup Group => EntryPoint.Groups.ModuleGroup;
+    public override string Description => "提供大厅权限和密码的设置。";
+
+    public override FeatureGroup Group => EntryPoint.Groups.Security;
 
     public static new IArchiveLogger FeatureLogger { get; set; }
 
@@ -45,12 +46,12 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             get
             {
-                return LobbySettingManager.CurrentSettings.LobbyPrivacy;
+                return LobbySettingsManager.CurrentSettings.LobbyPrivacy;
             }
             set
             {
-                LobbySettingManager.CurrentSettings.LobbyPrivacy = value;
-                LobbySettingManager.OnLobbySettingsChanged();
+                LobbySettingsManager.CurrentSettings.LobbyPrivacy = value;
+                LobbySettingsManager.OnLobbySettingsChanged();
             }
         }
         [JsonIgnore]
@@ -59,12 +60,12 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             get
             {
-                return LobbySettingManager.CurrentSettings.Password;
+                return LobbySettingsManager.CurrentSettings.Password;
             }
             set
             {
-                LobbySettingManager.CurrentSettings.Password = value;
-                LobbySettingManager.OnLobbySettingsChanged();
+                LobbySettingsManager.CurrentSettings.Password = value;
+                LobbySettingsManager.OnLobbySettingsChanged();
             }
         }
         [JsonIgnore]
@@ -74,11 +75,11 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             get
             {
-                return LobbySettingManager.PasswordForJoinOtherLobby;
+                return LobbySettingsManager.PasswordForJoinOtherLobby;
             }
             set
             {
-                LobbySettingManager.PasswordForJoinOtherLobby = value;
+                LobbySettingsManager.PasswordForJoinOtherLobby = value;
             }
         }
     }
@@ -89,7 +90,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
     {
         private static void Prefix(SlaveSessionQuestion question)
         {
-            LobbySettingManager.SlaveSendSessionRequest(question);
+            LobbySettingsManager.SlaveSendSessionRequest(question);
         }
     }
 
@@ -98,7 +99,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
     {
         private static bool Prefix(pSlaveQuestion data)
         {
-            return LobbySettingManager.OnSlaveQuestionOverride(data);
+            return LobbySettingsManager.OnSlaveQuestionOverride(data);
         }
     }
 
@@ -109,7 +110,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             if (settings != null)
             {
-                LobbySettingManager.ApplyLobbySettings(ref settings);
+                LobbySettingsManager.ApplyLobbySettings(ref settings);
             }
         }
     }
@@ -119,28 +120,28 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
     {
         private static void Postfix(CSteamID steamIDInvitee)
         {
-            LobbySettingManager.WhitelistPlayer(steamIDInvitee.m_SteamID);
+            LobbySettingsManager.WhitelistPlayer(steamIDInvitee.m_SteamID);
         }
     }
 
     public override void Init()
     {
         Instance = this;
-        LobbySettingManager.Setup();
+        LobbySettingsManager.Setup();
     }
 
     public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
     {
         if (playerEvent == SessionMemberEvent.LeftSessionHub)
         {
-            LobbySettingManager.DoPlayerLeftCleanup(player);
+            LobbySettingsManager.DoPlayerLeftCleanup(player);
         }
     }
 
-    public static class LobbySettingManager
+    public static class LobbySettingsManager
     {
         private static IArchiveLogger _logger;
-        private static IArchiveLogger Logger => _logger ??= LoaderWrapper.CreateLoggerInstance(nameof(LobbySettingManager));
+        private static IArchiveLogger Logger => _logger ??= LoaderWrapper.CreateLoggerInstance(nameof(LobbySettingsManager));
 
         private static SNetExt_Packet<pSlaveRequest> s_slaveSessionRequestPacket;
         private static SNetExt_Packet<pLobbyMasterAnswer> s_lobbySettingsAnswerPacket;
@@ -182,12 +183,12 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 
         public static void OnLobbySettingsChanged()
         {
+            if (!SNet.IsInLobby || !SNet.IsMaster || SteamLobby == null) return;
+
             var settings = Core.m_lastLobbySettings;
             settings.Password = CurrentSettings.Password;
             settings.LobbyType = CurrentSettings.LobbyPrivacy;
             settings.LobbyName = CurrentSettings.LobbyName;
-
-            if (!SNet.IsInLobby || !SNet.IsMaster || SteamLobby == null) return;
 
             SteamLobby.Password = CurrentSettings.Password;
             SteamLobby.Name = CurrentSettings.LobbyName;
@@ -306,11 +307,11 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
                 return true;
             if (!IsPlayerAllowedToJoinLobby(player, out var reason))
             {
+                s_lobbySettingsAnswerPacket.Send(new(CurrentSettings.LobbyPrivacy, MasterAnswer.LeaveLobby, reason), player);
                 SNet.SessionHub.RemovePlayerFromSession(player, true);
-                s_lobbySettingsAnswerPacket.Send(new(CurrentSettings.LobbyPrivacy, MasterAnswer.LeaveLobby, reason));
                 return false;
             }
-            s_lobbySettingsAnswerPacket.Send(new(CurrentSettings.LobbyPrivacy, MasterAnswer.AllowToJoin, reason));
+            s_lobbySettingsAnswerPacket.Send(new(CurrentSettings.LobbyPrivacy, MasterAnswer.AllowToJoin, reason), player);
             return true;
         }
 
