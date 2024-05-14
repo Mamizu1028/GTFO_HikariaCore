@@ -61,6 +61,7 @@ internal class GameEventListener : Feature
             SNet_Events.OnRecallComplete += new Action<eBufferType>(OnRecallCompleteM);
             SNet_Events.OnMasterChanged += new Action(OnMasterChangedM);
             SNet_Events.OnPrepareForRecall += new Action<eBufferType>(OnPrepareForRecallM);
+            SNet_Events.OnResetSessionEvent += new Action(OnResetSessionM);
         }
     }
 
@@ -388,6 +389,30 @@ internal class GameEventListener : Feature
         }
     }
 
+    private static void OnResetSessionM()
+    {
+        foreach (var Listener in ResetSessionListeners)
+        {
+            try
+            {
+                Listener.OnResetSession();
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
+        }
+        try
+        {
+            var onResetSession = OnResetSession;
+            onResetSession?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
+        }
+    }
+
 
     public static void RegisterSelf<T>(T instance)
     {
@@ -416,6 +441,8 @@ internal class GameEventListener : Feature
             PlayerSlotChangedListener.Add((IOnPlayerSlotChanged)instance);
         if (typeof(IOnAfterLevelCleanup).IsAssignableFrom(type))
             AfterLevelCleanupListeners.Add((IOnAfterLevelCleanup)instance);
+        if (typeof(IOnResetSession).IsAssignableFrom(type))
+            ResetSessionListeners.Add((IOnResetSession)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.RegisterPauseable((IPauseable)instance);
     }
@@ -447,6 +474,8 @@ internal class GameEventListener : Feature
             PlayerSlotChangedListener.Remove((IOnPlayerSlotChanged)instance);
         if (typeof(IOnAfterLevelCleanup).IsAssignableFrom(type))
             AfterLevelCleanupListeners.Remove((IOnAfterLevelCleanup)instance);
+        if (typeof(IOnResetSession).IsAssignableFrom(type))
+            ResetSessionListeners.Remove((IOnResetSession)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.UnregisterPauseable((IPauseable)instance);
     }
@@ -462,6 +491,7 @@ internal class GameEventListener : Feature
     private static HashSet<IOnPrepareForRecall> PrepareForRecallListeners = new();
     private static HashSet<IOnRecallDone> RecallDoneListeners = new();
     private static HashSet<IOnAfterLevelCleanup> AfterLevelCleanupListeners = new();
+    private static HashSet<IOnResetSession> ResetSessionListeners = new();
 
     public static event Action OnGameDataInited;
     public static event Action<eBufferType> OnRecallComplete;
@@ -475,4 +505,5 @@ internal class GameEventListener : Feature
     public static event Action<eMasterCommandType, int> OnMasterCommand;
     public static event Action<SNet_Player, SNet_SlotType, SNet_SlotHandleType, int> OnPlayerSlotChanged;
     public static event Action OnAfterLevelCleanup;
+    public static event Action OnResetSession;
 }

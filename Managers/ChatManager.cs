@@ -54,7 +54,7 @@ public sealed class ChatManager : MonoBehaviour, IPauseable
         }
         foreach (string msg in result)
         {
-            Instance.queue.Enqueue(Tuple.Create(msg, player));
+            queue.Enqueue(Tuple.Create(msg, player));
         }
     }
 
@@ -68,26 +68,26 @@ public sealed class ChatManager : MonoBehaviour, IPauseable
                 string[] splitMsgs = msgs[0].SplitInChunks(50);
                 foreach (string splitMsg in splitMsgs)
                 {
-                    Instance.queue.Enqueue(Tuple.Create(splitMsg, player));
+                    queue.Enqueue(Tuple.Create(splitMsg, player));
                 }
             }
             else
             {
-                Instance.queue.Enqueue(Tuple.Create(msgs[0], player));
+                queue.Enqueue(Tuple.Create(msgs[0], player));
             }
         }
         else
         {
             foreach (string splitMsg in msgs)
             {
-                Instance.queue.Enqueue(Tuple.Create(splitMsg, player));
+                queue.Enqueue(Tuple.Create(splitMsg, player));
             }
         }
     }
 
     public static void ClearQueue()
     {
-        Instance.queue.Clear();
+        queue.Clear();
     }
 
     private static void Speak(Tuple<string, SNet_Player> tuple)
@@ -125,7 +125,7 @@ public sealed class ChatManager : MonoBehaviour, IPauseable
     {
     }
 
-    private readonly Queue<Tuple<string, SNet_Player>> queue = new();
+    private static Queue<Tuple<string, SNet_Player>> queue = new();
 
     private float _timer = 0f;
 

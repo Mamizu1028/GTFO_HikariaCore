@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using Hikaria.Core.Managers;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace Hikaria.Core;
@@ -16,7 +17,7 @@ public struct pPopupMessage
             UpperText = UpperText,
             LowerText = LowerText,
             PopupType = PopupType,
-            OnCloseCallback = new Action(() => { })
+            OnCloseCallback = PopupMessageManager.EmptyAction
         };
     }
 
@@ -27,6 +28,7 @@ public struct pPopupMessage
         LowerText = lowerText;
         BlinkInContent = blinkInContent;
         BlinkTimeInterval = blinkTimeInterval;
+        PopupType = type;
     }
 
     public bool BlinkInContent = true;

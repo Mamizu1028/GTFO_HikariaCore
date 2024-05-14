@@ -27,8 +27,8 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
     {
         if (!SNet.IsMaster || player.IsLocal || playerEvent != SessionMemberEvent.LeftSessionHub)
             return;
-        if (SlotsNeedCleanup(player))
-            CleanupSlotsForPlayer(player);
+        if (CheckNeedCleanup(player))
+            CleanupForPlayer(player);
     }
 
     [ArchivePatch(typeof(SNet_PlayerSlotManager), nameof(SNet_PlayerSlotManager.SetSlotPermission))]
@@ -40,11 +40,11 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
             {
                 return;
             }
-            CleanupSlotsForPlayer(__instance.PlayerSlots[playerIndex].player);
+            CleanupForPlayer(__instance.PlayerSlots[playerIndex].player);
         }
     }
 
-    private static bool SlotsNeedCleanup(SNet_Player player)
+    private static bool CheckNeedCleanup(SNet_Player player)
     {
         if (player == null) return false;
         var slots = SNet.Slots;
@@ -64,10 +64,18 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
                 return true;
             }
         }
+        for (int i = 0; i < SNet.Lobby.Players.Count; i++)
+        {
+            var lobbyPlayer = SNet.Lobby.Players[i];
+            if (lobbyPlayer.Lookup == player.Lookup)
+            {
+                return true;
+            }
+        }
         return false;
     }
 
-    private static void CleanupSlotsForPlayer(SNet_Player player)
+    private static void CleanupForPlayer(SNet_Player player)
     {
         if (player == null) return;
         var slots = SNet.Slots;
@@ -88,5 +96,6 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
                 slots.Internal_ManageSlot(player, ref playerSlot, slots.PlayerSlots, SNet_SlotType.PlayerSlot, SNet_SlotHandleType.Remove);
             }
         }
+        SNet.Lobby.Players.RemoveAll((Func<SNet_Player, bool>)((p) => p.Lookup == player.Lookup));
     }
 }

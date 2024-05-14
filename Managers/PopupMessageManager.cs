@@ -35,7 +35,7 @@ public static class PopupMessageManager
     {
         s_PopupMessagePacket.Send(data, players);
     }
-
+    
     private static void Empty()
     {
     }

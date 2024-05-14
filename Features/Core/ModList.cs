@@ -123,13 +123,13 @@ internal class ModList : Feature, IOnSessionMemberChanged
 
         [FSSeparator]
         [FSReadOnly]
-        [FSDisplayName("Name")]
+        [FSDisplayName("名称")]
         public string Name { get; set; }
         [FSReadOnly]
-        [FSDisplayName("GUID")]
+        [FSDisplayName("唯一识别符")]
         public string GUID { get; set; }
         [FSReadOnly]
-        [FSDisplayName("Version")]
+        [FSDisplayName("版本")]
         public string Version { get; set; }
     }
 

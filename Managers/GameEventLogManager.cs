@@ -30,12 +30,12 @@ public class GameEventLogManager : MonoBehaviour, IPauseable
         }
     }
 
-    public void AddLog(string log)
+    public static void AddLog(string log)
     {
         queue.Enqueue(log);
     }
 
-    public void AddLogInSeparate(string log, int chunkSize = 50)
+    public static void AddLogInSeparate(string log, int chunkSize = 50)
     {
         foreach (var str in log.SplitInChunks(chunkSize))
         {
@@ -66,8 +66,8 @@ public class GameEventLogManager : MonoBehaviour, IPauseable
 
     public static GameEventLogManager Instance { get; private set; }
 
-    private Queue<string> queue = new();
+    private static Queue<string> queue = new();
     private float timer = 0f;
-    private PUI_GameEventLog PageLoadoutLog => MainMenuGuiLayer.Current.PageLoadout.m_gameEventLog;
-    private PUI_GameEventLog PlayerLayerLog => GuiManager.PlayerLayer.m_gameEventLog;
+    private static PUI_GameEventLog PageLoadoutLog => MainMenuGuiLayer.Current.PageLoadout.m_gameEventLog;
+    private static PUI_GameEventLog PlayerLayerLog => GuiManager.PlayerLayer.m_gameEventLog;
 }
