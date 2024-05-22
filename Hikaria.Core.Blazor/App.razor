@@ -1,18 +1,13 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
+<Router AppAssembly="@typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        <CascadingValue Value="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(BasicLayout)" />
+        </CascadingValue>
     </Found>
     <NotFound>
-        <PageTitle>Not found</PageTitle>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
+        <LayoutView Layout="@typeof(BasicLayout)">
+            <p>Sorry, there's nothing at this address.</p>
         </LayoutView>
     </NotFound>
 </Router>
 <AntContainer />
-
-<link href="_content/AntDesign/css/ant-design-blazor.css" rel="stylesheet">
-<link antblazor-css />
-<script src="_content/AntDesign/js/ant-design-blazor.js"></script>
-<script antblazor-js></script>
