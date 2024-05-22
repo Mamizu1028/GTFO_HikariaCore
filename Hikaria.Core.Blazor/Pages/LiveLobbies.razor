@@ -1,0 +1,14 @@
+﻿@page "/livelobby"
+
+<PageTitle>LiveLobby</PageTitle>
+
+<h1>在线大厅列表</h1>
+
+<Input @bind-Value="queryRequest.Revision" />
+<Input @bind-Value="queryRequest.LobbyType" />
+<Button Type="primary" OnClick="OnQuery">查询</Button>
+<Table DataSource="LiveLobbyList">
+    <PropertyColumn Property="p => p.Identifier.ID" />
+    <PropertyColumn Property="p => p.Identifier.Name" />
+    <PropertyColumn Property="p => p.DetailedInfo.Expedition" />
+</Table>

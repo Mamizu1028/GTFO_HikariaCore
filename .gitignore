@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Hikaria.Core/Hikaria.Core.csproj
+/Hikaria.Core.WebAPI/appsettings.json
+/Hikaria.Core.Blazor/Properties/launchSettings.json
+/Hikaria.Core.WebAPI/Properties/launchSettings.json

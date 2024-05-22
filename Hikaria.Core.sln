@@ -3,7 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hikaria.Core", "Hikaria.Core.csproj", "{2B3CBF0D-0C8F-4291-9843-2D35A0D50B81}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hikaria.Core", "Hikaria.Core\Hikaria.Core.csproj", "{2B3CBF0D-0C8F-4291-9843-2D35A0D50B81}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hikaria.Core.WebAPI", "Hikaria.Core.WebAPI\Hikaria.Core.WebAPI.csproj", "{E5990DB4-A8E3-48AB-BC67-62E45C45FB88}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hikaria.Core.Entities", "Hikaria.Core.Entities\Hikaria.Core.Entities.csproj", "{5571B6CE-F991-426F-83CA-C30BA39B9DC2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hikaria.Core.EntityFramework", "Hikaria.Core.EntityFramework\Hikaria.Core.EntityFramework.csproj", "{340D4666-CDF4-440D-A9FA-5C8D3D114AE3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hikaria.Core.Contracts", "Hikaria.Core.Contracts\Hikaria.Core.Contracts.csproj", "{99C1A6F3-D21A-4064-BC4B-7D64034E7C88}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hikaria.Core.Blazor", "Hikaria.Core.Blazor\Hikaria.Core.Blazor.csproj", "{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +25,26 @@ Global
 		{2B3CBF0D-0C8F-4291-9843-2D35A0D50B81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B3CBF0D-0C8F-4291-9843-2D35A0D50B81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B3CBF0D-0C8F-4291-9843-2D35A0D50B81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5990DB4-A8E3-48AB-BC67-62E45C45FB88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5990DB4-A8E3-48AB-BC67-62E45C45FB88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5990DB4-A8E3-48AB-BC67-62E45C45FB88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5990DB4-A8E3-48AB-BC67-62E45C45FB88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5571B6CE-F991-426F-83CA-C30BA39B9DC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5571B6CE-F991-426F-83CA-C30BA39B9DC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5571B6CE-F991-426F-83CA-C30BA39B9DC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5571B6CE-F991-426F-83CA-C30BA39B9DC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{340D4666-CDF4-440D-A9FA-5C8D3D114AE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{340D4666-CDF4-440D-A9FA-5C8D3D114AE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{340D4666-CDF4-440D-A9FA-5C8D3D114AE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{340D4666-CDF4-440D-A9FA-5C8D3D114AE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99C1A6F3-D21A-4064-BC4B-7D64034E7C88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99C1A6F3-D21A-4064-BC4B-7D64034E7C88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99C1A6F3-D21A-4064-BC4B-7D64034E7C88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99C1A6F3-D21A-4064-BC4B-7D64034E7C88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

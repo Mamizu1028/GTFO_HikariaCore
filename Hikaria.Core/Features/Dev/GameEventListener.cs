@@ -1,5 +1,5 @@
 ﻿using Hikaria.Core.Interfaces;
-using Hikaria.Core.Utilities;
+using Hikaria.Core.Utility;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppInterop.Runtime.Runtime;
 using SNetwork;

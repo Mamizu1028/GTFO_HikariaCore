@@ -1,4 +1,5 @@
-﻿using TheArchive.Core;
+﻿using Hikaria.Core.Features.Accessibility;
+using TheArchive.Core;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.Localization;
@@ -25,6 +26,7 @@ public class EntryPoint : IArchiveModule
 
     public void Init()
     {
+        FeatureManager.EnableAutomatedFeature(typeof(LiveLobbyHandler));
         Logs.LogMessage("OK");
     }
 

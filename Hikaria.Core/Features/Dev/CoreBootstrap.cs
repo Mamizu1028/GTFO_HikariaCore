@@ -1,7 +1,7 @@
 ﻿using Hikaria.Core.Features.Security;
 using Hikaria.Core.Managers;
 using Hikaria.Core.SNetworkExt;
-using Hikaria.Core.Utilities;
+using Hikaria.Core.Utility;
 using SNetwork;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;

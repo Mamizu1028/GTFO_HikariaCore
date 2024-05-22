@@ -1,0 +1,34 @@
+@Hikaria.Core.WebAPI_HostAddress = http://localhost:5062/api/gtfo
+
+POST {{Hikaria.Core.WebAPI_HostAddress}}/livelobby/createlobby/
+Accept: application/json
+Content-Type: application/json
+
+{
+  "identifier": {
+    "id": 0,
+    "name": "string"
+  },
+  "settings": {
+    "lobbyName": "string",
+    "lobbyType": 0,
+    "playerLimit": 0,
+    "password": "string"
+  },
+  "detailedInfo": {
+    "hostSteamID": 0,
+    "lobbyName": "string",
+    "revision": 0,
+    "expedition": "string",
+    "openSlots": 0,
+    "maxPlayerSlots": 0,
+    "statusInfo": "string",
+    "regionName": "string"
+  }
+}
+###
+
+GET {{Hikaria.Core.WebAPI_HostAddress}}/livelobby/GetAllLobby/
+Accept: application/json
+
+###

@@ -1,0 +1,12 @@
+﻿@page "/bannedplayers"
+
+<PageTitle>BannedPlayers</PageTitle>
+
+<h1>封禁玩家名单</h1>
+
+<Table DataSource="_bannedPlayersLookup">
+    <PropertyColumn Property="p => p.Value.SteamID" />
+    <PropertyColumn Property="p => p.Value.Name" />
+    <PropertyColumn Property="p => p.Value.Reason" />
+    <PropertyColumn Property="p => p.Value.DateBanned.ToShortDateString()" />
+</Table>

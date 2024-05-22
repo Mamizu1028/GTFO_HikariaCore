@@ -76,7 +76,6 @@
 
   <ItemGroup>
     <Folder Include="Attributes\" />
-    <Folder Include="Features\Accessibility\" />
     <Folder Include="Localization\" />
   </ItemGroup>
 
