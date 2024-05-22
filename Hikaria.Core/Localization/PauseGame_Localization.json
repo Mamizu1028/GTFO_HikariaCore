@@ -1,0 +1,89 @@
+{
+  "Internal": {
+    "FeatureSettingsTexts": {
+      "Hikaria.Core.Features.Accessibility.PauseGame.Name": {
+        "FName": {
+          "English": "Pause Game",
+          "Chinese": "暂停游戏",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.PauseGame+PauseGameSettings.CurrentStatus": {
+        "FSDisplayName": {
+          "English": "Current Status",
+          "Chinese": "当前状态",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      }
+    },
+    "FeatureSettingsEnumTexts": {
+      "Hikaria.Core.Features.Accessibility.PauseGame+PauseGameStatus": {
+        "English": {
+          "Unpaused": "Unpaused",
+          "Paused": "Paused"
+        },
+        "Chinese": {
+          "Unpaused": "继续",
+          "Paused": "暂停"
+        },
+        "French": {
+          "Unpaused": null,
+          "Paused": null
+        },
+        "Italian": {
+          "Unpaused": null,
+          "Paused": null
+        },
+        "German": {
+          "Unpaused": null,
+          "Paused": null
+        },
+        "Spanish": {
+          "Unpaused": null,
+          "Paused": null
+        },
+        "Russian": {
+          "Unpaused": null,
+          "Paused": null
+        },
+        "Portuguese_Brazil": {
+          "Unpaused": null,
+          "Paused": null
+        },
+        "Polish": {
+          "Unpaused": null,
+          "Paused": null
+        },
+        "Japanese": {
+          "Unpaused": null,
+          "Paused": null
+        },
+        "Korean": {
+          "Unpaused": null,
+          "Paused": null
+        }
+      }
+    },
+    "ExtraTexts": []
+  },
+  "External": {
+    "ExternalFeatureSettingsTexts": {},
+    "ExternalEnumTexts": {}
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "Internal": {
+    "FeatureSettingsTexts": {
+      "Hikaria.Core.Features.Accessibility.ModList.Name": {
+        "FName": {
+          "English": "Mod List",
+          "Chinese": "插件列表",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.ModList+ModListSetting.MyMods": {
+        "FSDisplayName": {
+          "English": "My Mods",
+          "Chinese": "我的插件",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.ModList+ModListSetting.OthersMods": {
+        "FSDisplayName": {
+          "English": "Others Mods",
+          "Chinese": "其他人的插件",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.ModList+PlayerModListEntry.Nickname": {
+        "FSDisplayName": {
+          "English": "Nickname",
+          "Chinese": "昵称",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.ModList+PlayerModListEntry.ModList": {
+        "FSDisplayName": {
+          "English": "Mod List",
+          "Chinese": "插件列表",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.ModList+ModInfoEntry.Name": {
+        "FSDisplayName": {
+          "English": "Mod Name",
+          "Chinese": "插件名称",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.ModList+ModInfoEntry.GUID": {
+        "FSDisplayName": {
+          "English": "GUID",
+          "Chinese": "唯一识别符",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.ModList+ModInfoEntry.Version": {
+        "FSDisplayName": {
+          "English": "Version",
+          "Chinese": "版本",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      }
+    },
+    "FeatureSettingsEnumTexts": {},
+    "ExtraTexts": []
+  },
+  "External": {
+    "ExternalFeatureSettingsTexts": {},
+    "ExternalEnumTexts": {}
+  }
+}
