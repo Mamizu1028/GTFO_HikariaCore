@@ -9,6 +9,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+*.config
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -365,3 +366,5 @@ FodyWeavers.xsd
 /Hikaria.Core.WebAPI/appsettings.json
 /Hikaria.Core.Blazor/Properties/launchSettings.json
 /Hikaria.Core.WebAPI/Properties/launchSettings.json
+/Hikaria.Core.WebAPI/appsettings.Development.json
+/Hikaria.Core.WebAPI/appsettings.Development.json
