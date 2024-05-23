@@ -1,4 +1,5 @@
 ﻿using Hikaria.Core.Entities;
+using Hikaria.Core.WebAPI.Attributes;
 using Hikaria.Core.WebAPI.Managers;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -45,6 +46,7 @@ namespace Hikaria.Core.WebAPI.Controllers
             }
         }
 
+        [UserPrivilegeAuthorize(UserPrivilege.Admin)]
         [HttpGet]
         public async Task<IActionResult> GetLobbyLookup()
         {

@@ -19,7 +19,6 @@ namespace Hikaria.Core.WebAPI.Controllers
             _logger = logger;
         }
 
-        [UserPrivilegeAuthorize(UserPrivilege.Admin)]
         [HttpGet]
         public async Task<IActionResult> GetAllBannedPlayers()
         {
