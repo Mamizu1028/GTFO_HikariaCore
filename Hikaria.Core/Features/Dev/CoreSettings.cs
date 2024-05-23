@@ -28,6 +28,7 @@ namespace Hikaria.Core.Features.Dev
         public override void Init()
         {
             CoreGlobal.CheckIsServerOnline();
+            //CoreGlobal.GetIPLocationInfo();
         }
 
         public override void OnFeatureSettingChanged(FeatureSetting setting)

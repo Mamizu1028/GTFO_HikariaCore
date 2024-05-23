@@ -61,7 +61,7 @@ namespace Hikaria.Core.WebAPI.Managers
             return Task.FromResult(LiveLobbyLookup[filter.Revision].Values
                 .TakeWhile(p => p.PrivacySettings.Privacy == filter.Privacy
                 && p.DetailedInfo.IsPlayingModded == filter.IsPlayingModded
-                && (filter.IgnoreFullLobby || p.DetailedInfo.OpenSlots > 0)
+                && (filter.IgnoreFullLobby || p.DetailedInfo.OpenSlots > 1)
                 && (string.IsNullOrEmpty(filter.ExpeditionName) || p.DetailedInfo.ExpeditionName.Contains(filter.ExpeditionName, StringComparison.InvariantCultureIgnoreCase))
                 && (string.IsNullOrEmpty(filter.Expedition) || p.DetailedInfo.Expedition.Contains(filter.Expedition, StringComparison.InvariantCultureIgnoreCase))
                 && (string.IsNullOrEmpty(filter.LobbyName) || p.Identifier.Name.Contains(filter.LobbyName, StringComparison.InvariantCultureIgnoreCase))

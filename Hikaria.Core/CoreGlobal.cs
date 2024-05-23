@@ -1,4 +1,7 @@
-﻿using Hikaria.Core.Managers;
+﻿using Clonesoft.Json;
+using Hikaria.Core.Entities;
+using Hikaria.Core.Managers;
+using Hikaria.Core.Utility;
 using SNetwork;
 using System.Net.NetworkInformation;
 
@@ -16,6 +19,8 @@ namespace Hikaria.Core
         public static string RevisionString => SNet.GameRevisionString;
 
         public static bool ServerOnline { get; private set; }
+
+        public static IPLocationInfo IPLocation { get; private set; }
 
         public static void CheckIsServerOnline()
         {
@@ -48,6 +53,14 @@ namespace Hikaria.Core
                     });
                 }
             }
+        }
+
+        public static void GetIPLocationInfo()
+        {
+            Task.Run(async () =>
+            {
+                IPLocation = await HttpHelper.GetAsync<IPLocationInfo>("https://api.ip.sb/geoip");
+            });
         }
     }
 }
