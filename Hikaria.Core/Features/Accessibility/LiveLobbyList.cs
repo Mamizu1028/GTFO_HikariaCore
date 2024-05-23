@@ -39,6 +39,7 @@ namespace Hikaria.Core.Features.Accessibility
             public LiveLobbyQueryEntry LobbyQueryEntry { get; set; } = new();
             [JsonIgnore]
             [FSHeader("大厅列表")]
+            [FSDisplayName("大厅列表")]
             public List<LiveLobbyEntry> LiveLobbyEntries { get; set; } = new();
         }
 
