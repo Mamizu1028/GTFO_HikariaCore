@@ -1,4 +1,5 @@
-﻿using Hikaria.Core.Contracts;
+﻿/*
+using Hikaria.Core.Contracts;
 using Hikaria.Core.Entities;
 using Hikaria.Core.WebAPI.Attributes;
 using Hikaria.Core.WebAPI.Entitites;
@@ -82,3 +83,4 @@ public class AuthController : ControllerBase
         }));
     }
 }
+*/
