@@ -1,7 +1,7 @@
 {
   "Internal": {
     "FeatureSettingsTexts": {
-      "Hikaria.Core.Features.Accessibility.PauseGame.Name": {
+      "Hikaria.Core.Features.Core.PauseGame.Name": {
         "FName": {
           "English": "Pause Game",
           "Chinese": "暂停游戏",
@@ -16,7 +16,22 @@
           "Korean": null
         }
       },
-      "Hikaria.Core.Features.Accessibility.PauseGame+PauseGameSettings.CurrentStatus": {
+      "Hikaria.Core.Features.Core.PauseGame.Description": {
+        "FDescription": {
+          "English": null,
+          "Chinese": null,
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Core.PauseGame+PauseGameSettings.CurrentStatus": {
         "FSDisplayName": {
           "English": "Current Status",
           "Chinese": "当前状态",
@@ -33,7 +48,7 @@
       }
     },
     "FeatureSettingsEnumTexts": {
-      "Hikaria.Core.Features.Accessibility.PauseGame+PauseGameStatus": {
+      "Hikaria.Core.Features.Core.PauseGame+PauseGameStatus": {
         "English": {
           "Unpaused": "Unpaused",
           "Paused": "Paused"

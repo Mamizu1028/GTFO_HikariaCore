@@ -1,0 +1,179 @@
+{
+  "Internal": {
+    "FeatureSettingsTexts": {
+      "Hikaria.Core.Features.Security.LobbySettingsOverride.Name": {
+        "FName": {
+          "English": "Lobby Settings",
+          "Chinese": "大厅设置",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Security.LobbySettingsOverride.Description": {
+        "FDescription": {
+          "English": null,
+          "Chinese": null,
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Security.LobbySettingsOverride+LobbySettingOverrideSettings.Privacy": {
+        "FSDisplayName": {
+          "English": "Privacy",
+          "Chinese": "大厅权限",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Security.LobbySettingsOverride+LobbySettingOverrideSettings.Password": {
+        "FSDisplayName": {
+          "English": "Password",
+          "Chinese": "大厅密码",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Security.LobbySettingsOverride+LobbySettingOverrideSettings.PasswordForJoinOthers": {
+        "FSDisplayName": {
+          "English": "Password",
+          "Chinese": "密码",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        },
+        "FSHeader": {
+          "English": "Join Other Lobby",
+          "Chinese": "加入其他大厅",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      }
+    },
+    "FeatureSettingsEnumTexts": {},
+    "ExtraTexts": [
+      {
+        "UntranslatedText": "大厅设置",
+        "Description": "Popup Header",
+        "ID": 1,
+        "Languages": {
+          "English": "Lobby Settings",
+          "Chinese": "大厅设置"
+        }
+      }
+    ]
+  },
+  "External": {
+    "ExternalFeatureSettingsTexts": {},
+    "ExternalEnumTexts": {
+      "Hikaria.Core.Entities.LobbyPrivacy": {
+        "English": {
+          "Public": "Public",
+          "FriendsOnly": "Friends Only",
+          "Private": "Private",
+          "Invisible": "Invisible"
+        },
+        "Chinese": {
+          "Public": "公开",
+          "FriendsOnly": "仅限好友",
+          "Private": "私人",
+          "Invisible": "不可见"
+        },
+        "French": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Italian": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "German": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Spanish": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Russian": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Portuguese_Brazil": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Polish": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Japanese": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Korean": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        }
+      }
+    }
+  }
+}

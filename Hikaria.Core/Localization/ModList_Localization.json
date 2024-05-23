@@ -1,7 +1,7 @@
 {
   "Internal": {
     "FeatureSettingsTexts": {
-      "Hikaria.Core.Features.Accessibility.ModList.Name": {
+      "Hikaria.Core.Features.Core.ModList.Name": {
         "FName": {
           "English": "Mod List",
           "Chinese": "插件列表",
@@ -16,7 +16,22 @@
           "Korean": null
         }
       },
-      "Hikaria.Core.Features.Accessibility.ModList+ModListSetting.MyMods": {
+      "Hikaria.Core.Features.Core.ModList.Description": {
+        "FDescription": {
+          "English": null,
+          "Chinese": null,
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Core.ModList+ModListSetting.MyMods": {
         "FSDisplayName": {
           "English": "My Mods",
           "Chinese": "我的插件",
@@ -31,7 +46,7 @@
           "Korean": null
         }
       },
-      "Hikaria.Core.Features.Accessibility.ModList+ModListSetting.OthersMods": {
+      "Hikaria.Core.Features.Core.ModList+ModListSetting.OthersMods": {
         "FSDisplayName": {
           "English": "Others Mods",
           "Chinese": "其他人的插件",
@@ -46,7 +61,7 @@
           "Korean": null
         }
       },
-      "Hikaria.Core.Features.Accessibility.ModList+PlayerModListEntry.Nickname": {
+      "Hikaria.Core.Features.Core.ModList+PlayerModListEntry.Nickname": {
         "FSDisplayName": {
           "English": "Nickname",
           "Chinese": "昵称",
@@ -61,7 +76,7 @@
           "Korean": null
         }
       },
-      "Hikaria.Core.Features.Accessibility.ModList+PlayerModListEntry.ModList": {
+      "Hikaria.Core.Features.Core.ModList+PlayerModListEntry.ModList": {
         "FSDisplayName": {
           "English": "Mod List",
           "Chinese": "插件列表",
@@ -76,7 +91,7 @@
           "Korean": null
         }
       },
-      "Hikaria.Core.Features.Accessibility.ModList+ModInfoEntry.Name": {
+      "Hikaria.Core.Features.Core.ModList+ModInfoEntry.Name": {
         "FSDisplayName": {
           "English": "Mod Name",
           "Chinese": "插件名称",
@@ -91,7 +106,7 @@
           "Korean": null
         }
       },
-      "Hikaria.Core.Features.Accessibility.ModList+ModInfoEntry.GUID": {
+      "Hikaria.Core.Features.Core.ModList+ModInfoEntry.GUID": {
         "FSDisplayName": {
           "English": "GUID",
           "Chinese": "唯一识别符",
@@ -106,7 +121,7 @@
           "Korean": null
         }
       },
-      "Hikaria.Core.Features.Accessibility.ModList+ModInfoEntry.Version": {
+      "Hikaria.Core.Features.Core.ModList+ModInfoEntry.Version": {
         "FSDisplayName": {
           "English": "Version",
           "Chinese": "版本",

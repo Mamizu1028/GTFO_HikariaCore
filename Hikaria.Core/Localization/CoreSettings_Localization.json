@@ -1,10 +1,10 @@
 {
   "Internal": {
     "FeatureSettingsTexts": {
-      "Hikaria.Core.Features.Core.Bootstrap.Name": {
+      "Hikaria.Core.Features.Dev.CoreSettings.Name": {
         "FName": {
-          "English": "Bootstrap",
-          "Chinese": "引导",
+          "English": null,
+          "Chinese": null,
           "French": null,
           "Italian": null,
           "German": null,

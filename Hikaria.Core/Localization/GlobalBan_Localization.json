@@ -1,0 +1,102 @@
+{
+  "Internal": {
+    "FeatureSettingsTexts": {
+      "Hikaria.Core.Features.Security.GlobalBan.Name": {
+        "FName": {
+          "English": "Global Ban",
+          "Chinese": "在线封禁名单",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Security.GlobalBan+GlobalBanListSettings.BannedPlayers": {
+        "FSDisplayName": {
+          "English": "Banned Players",
+          "Chinese": "封禁玩家列表",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Security.GlobalBan+BannedPlayerEntry.SteamID": {
+        "FSDisplayName": {
+          "English": "SteamID",
+          "Chinese": "SteamID",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Security.GlobalBan+BannedPlayerEntry.Name": {
+        "FSDisplayName": {
+          "English": "Nickname",
+          "Chinese": "名称",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Security.GlobalBan+BannedPlayerEntry.Reason": {
+        "FSDisplayName": {
+          "English": "Reason",
+          "Chinese": "原因",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Security.GlobalBan+BannedPlayerEntry.TimeStamp": {
+        "FSDisplayName": {
+          "English": "Banned Date",
+          "Chinese": "封禁日期",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      }
+    },
+    "FeatureSettingsEnumTexts": {},
+    "ExtraTexts": []
+  },
+  "External": {
+    "ExternalFeatureSettingsTexts": {},
+    "ExternalEnumTexts": {}
+  }
+}

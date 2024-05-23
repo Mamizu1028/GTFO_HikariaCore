@@ -15,6 +15,21 @@
           "Japanese": null,
           "Korean": null
         }
+      },
+      "Hikaria.Core.Features.Fixes.EnemyDamageSync.Description": {
+        "FDescription": {
+          "English": null,
+          "Chinese": null,
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
       }
     },
     "FeatureSettingsEnumTexts": {},

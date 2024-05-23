@@ -1,10 +1,10 @@
 {
   "Internal": {
     "FeatureSettingsTexts": {
-      "Hikaria.Core.Features.Dev.GameEventListener.Name": {
+      "Hikaria.Core.Features.Dev.CoreBootstrap.Name": {
         "FName": {
-          "English": "Game Event Listener",
-          "Chinese": "游戏事件监听",
+          "English": "Core Bootstrap",
+          "Chinese": "核心引导",
           "French": null,
           "Italian": null,
           "German": null,
@@ -16,7 +16,7 @@
           "Korean": null
         }
       },
-      "Hikaria.Core.Features.Dev.GameEventListener.Description": {
+      "Hikaria.Core.Features.Dev.CoreBootstrap.Description": {
         "FDescription": {
           "English": null,
           "Chinese": null,

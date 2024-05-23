@@ -1,0 +1,491 @@
+{
+  "Internal": {
+    "FeatureSettingsTexts": {
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList.Name": {
+        "FName": {
+          "English": "Live Lobby List",
+          "Chinese": "在线大厅列表",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyListSetting.LiveLobbyEntries": {
+        "FSHeader": {
+          "English": "Lobby List",
+          "Chinese": "大厅列表",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.Expedition": {
+        "FSDisplayName": {
+          "English": "Expedition",
+          "Chinese": "关卡",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        },
+        "FSHeader": {
+          "English": "Search Lobby",
+          "Chinese": "大厅搜索",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.ExpeditionName": {
+        "FSDisplayName": {
+          "English": "Expedition Name",
+          "Chinese": "关卡名称",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.LobbyName": {
+        "FSDisplayName": {
+          "English": "Lobby Name",
+          "Chinese": "大厅名称",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.RegionName": {
+        "FSDisplayName": {
+          "English": "Region",
+          "Chinese": "国家/地区",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        },
+        "FSDescription": {
+          "English": "The two-letter code defined in ISO 3166 for the country/region, e.g. \"CN\"",
+          "Chinese": "在 ISO 3166 中定义的由两个字母组成的国家/地区代码，如 \"CN\"",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.IsPlayingModded": {
+        "FSDisplayName": {
+          "English": "Modded",
+          "Chinese": "MTFO标记",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.Privacy": {
+        "FSDisplayName": {
+          "English": "Lobby Privacy",
+          "Chinese": "大厅权限",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.IgnoreFullLobby": {
+        "FSDisplayName": {
+          "English": "Ignore Full Lobby",
+          "Chinese": "忽略满员大厅",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.EmptyLabel1": {
+        "FSLabelText": {
+          "English": null,
+          "Chinese": null,
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.PromptLabel": {
+        "FSLabelText": {
+          "English": null,
+          "Chinese": null,
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.QueryButton": {
+        "FSDisplayName": {
+          "English": "Query Lobby",
+          "Chinese": "搜索大厅",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        },
+        "FSButtonText": {
+          "English": "Query",
+          "Chinese": "搜索",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyQueryEntry.EmptyLabel2": {
+        "FSLabelText": {
+          "English": null,
+          "Chinese": null,
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyEntry.LobbyID": {
+        "FSDisplayName": {
+          "English": "Lobby ID",
+          "Chinese": "大厅ID",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyEntry.LobbyName": {
+        "FSDisplayName": {
+          "English": "Lobby Name",
+          "Chinese": "大厅名称",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyEntry.ExpeditionInfo": {
+        "FSDisplayName": {
+          "English": "Expedition",
+          "Chinese": "关卡",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyEntry.SlotsInfo": {
+        "FSDisplayName": {
+          "English": "Slots",
+          "Chinese": "人数",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyEntry.IsPlayeringModded": {
+        "FSDisplayName": {
+          "English": "Modded",
+          "Chinese": "MTFO标记",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyEntry.RegionName": {
+        "FSDisplayName": {
+          "English": "Region",
+          "Chinese": "国家/地区",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyEntry.StatusInfo": {
+        "FSDisplayName": {
+          "English": "Status",
+          "Chinese": "状态",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyEntry.Privacy": {
+        "FSDisplayName": {
+          "English": "Privacy",
+          "Chinese": "权限",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyEntry.Password": {
+        "FSDisplayName": {
+          "English": "Password",
+          "Chinese": "密码",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        },
+        "FSDescription": {
+          "English": "If the lobby is private, a correct password must be entered to join.",
+          "Chinese": "若为大厅权限为私密则必须输入正确密码才可加入",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      },
+      "Hikaria.Core.Features.Accessibility.LiveLobbyList+LiveLobbyEntry.JoinButton": {
+        "FSDisplayName": {
+          "English": "Join Lobby",
+          "Chinese": "加入大厅",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        },
+        "FSButtonText": {
+          "English": "Join",
+          "Chinese": "加入",
+          "French": null,
+          "Italian": null,
+          "German": null,
+          "Spanish": null,
+          "Russian": null,
+          "Portuguese_Brazil": null,
+          "Polish": null,
+          "Japanese": null,
+          "Korean": null
+        }
+      }
+    },
+    "FeatureSettingsEnumTexts": {},
+    "ExtraTexts": []
+  },
+  "External": {
+    "ExternalFeatureSettingsTexts": {},
+    "ExternalEnumTexts": {
+      "Hikaria.Core.Entities.LobbyPrivacy": {
+        "English": {
+          "Public": "Public",
+          "FriendsOnly": "Friends Only",
+          "Private": "Private",
+          "Invisible": "Invisible"
+        },
+        "Chinese": {
+          "Public": "公开",
+          "FriendsOnly": "仅限好友",
+          "Private": "私人",
+          "Invisible": "不可见"
+        },
+        "French": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Italian": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "German": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Spanish": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Russian": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Portuguese_Brazil": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Polish": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Japanese": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        },
+        "Korean": {
+          "Public": null,
+          "FriendsOnly": null,
+          "Private": null,
+          "Invisible": null
+        }
+      }
+    }
+  }
+}

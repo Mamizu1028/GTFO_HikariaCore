@@ -4,6 +4,7 @@ using Hikaria.Core.Interfaces;
 using Hikaria.Core.Managers;
 using Hikaria.Core.Utility;
 using SNetwork;
+using System.Globalization;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
@@ -38,7 +39,6 @@ namespace Hikaria.Core.Features.Accessibility
             public LiveLobbyQueryEntry LobbyQueryEntry { get; set; } = new();
             [JsonIgnore]
             [FSHeader("大厅列表")]
-            [FSDisplayName("大厅列表")]
             public List<LiveLobbyEntry> LiveLobbyEntries { get; set; } = new();
         }
 
@@ -63,18 +63,19 @@ namespace Hikaria.Core.Features.Accessibility
             }
 
             [FSHeader("大厅搜索")]
-            [FSDisplayName("大厅权限")]
-            public override LobbyPrivacy Privacy { get; set; } = LobbyPrivacy.Public;
             [FSDisplayName("关卡")]
             public override string Expedition { get; set; } = string.Empty;
-            [FSDisplayName("行动名称")]
+            [FSDisplayName("关卡名称")]
             public override string ExpeditionName { get; set; } = string.Empty;
             [FSDisplayName("大厅名称")]
             public override string LobbyName { get; set; } = string.Empty;
-            [FSDisplayName("地理位置")]
+            [FSDisplayName("国家/地区")]
+            [FSDescription("在 ISO 3166 中定义的由两个字母组成的国家/地区代码，如 \"CN\"")]
             public override string RegionName { get; set; } = string.Empty;
             [FSDisplayName("MTFO标记")]
             public override bool IsPlayingModded { get; set; } = false;
+            [FSDisplayName("大厅权限")]
+            public override LobbyPrivacy Privacy { get; set; } = LobbyPrivacy.Public;
             [FSDisplayName("忽略已满大厅")]
             public override bool IgnoreFullLobby { get; set; } = true;
 
@@ -99,7 +100,7 @@ namespace Hikaria.Core.Features.Accessibility
                 Privacy = lobby.PrivacySettings.Privacy;
                 LobbyName = lobby.Identifier.Name;
                 ExpeditionInfo = $"{lobby.DetailedInfo.Expedition} \"{lobby.DetailedInfo.ExpeditionName}\"";
-                RegionName = lobby.DetailedInfo.RegionName;
+                RegionName = new RegionInfo(lobby.DetailedInfo.RegionName).DisplayName;
                 StatusInfo = lobby.StatusInfo?.StatusInfo ?? string.Empty;
                 SlotsInfo = $"{lobby.DetailedInfo.MaxPlayerSlots - lobby.DetailedInfo.OpenSlots}/{lobby.DetailedInfo.MaxPlayerSlots}";
                 JoinButton = new("加入", "加入", () =>
@@ -119,24 +120,24 @@ namespace Hikaria.Core.Features.Accessibility
             [FSDisplayName("大厅名称")]
             [FSReadOnly]
             public string LobbyName { get; set; }
-            [FSDisplayName("大厅权限")]
-            [FSReadOnly]
-            public LobbyPrivacy Privacy { get; set; }
-            [FSDisplayName("关卡信息")]
+            [FSDisplayName("关卡")]
             [FSReadOnly]
             public string ExpeditionInfo { get; set; }
-            [FSDisplayName("大厅人数")]
+            [FSDisplayName("人数")]
             [FSReadOnly]
             public string SlotsInfo { get; set; }
             [FSDisplayName("MTFO标记")]
             [FSReadOnly]
             public bool IsPlayeringModded { get; set; }
-            [FSDisplayName("地理位置")]
+            [FSDisplayName("国家/地区")]
             [FSReadOnly]
             public string RegionName { get; set; }
-            [FSDisplayName("状态信息")]
+            [FSDisplayName("状态")]
             [FSReadOnly]
             public string StatusInfo { get; set; }
+            [FSDisplayName("权限")]
+            [FSReadOnly]
+            public LobbyPrivacy Privacy { get; set; }
             [FSDescription("若为大厅权限为私密则必须输入正确密码才可加入")]
             [FSDisplayName("加入密码")]
             [FSMaxLength(25)]
