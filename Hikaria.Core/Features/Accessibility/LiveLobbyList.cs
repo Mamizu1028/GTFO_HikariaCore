@@ -12,6 +12,7 @@ using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.FeaturesAPI.Components;
 using TMPro;
 using static Hikaria.Core.Features.Security.LobbySettingsOverride;
+using static TheArchive.Models.LocalRundownProgression;
 using LobbyPrivacy = Hikaria.Core.Entities.LobbyPrivacy;
 
 namespace Hikaria.Core.Features.Accessibility
@@ -151,21 +152,29 @@ namespace Hikaria.Core.Features.Accessibility
 
         public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
         {
-            if (!player.IsLocal || !SNet.IsMaster)
-            {
+            if (!SNet.IsMaster || !SNet.IsInLobby)
                 return;
-            }
+
             switch (playerEvent)
             {
                 case SessionMemberEvent.JoinSessionHub:
                     if (player.IsLocal)
                     {
+                        CreateLobby();
+                    }
+                    else
+                    {
+                        UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
                     }
                     break;
                 case SessionMemberEvent.LeftSessionHub:
                     if (player.IsLocal)
                     {
                         CurrentLiveLobby = null;
+                    }
+                    else
+                    {
+                        UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
                     }
                     break;
             }
@@ -176,10 +185,14 @@ namespace Hikaria.Core.Features.Accessibility
         {
             if (SNet.IsMaster && SNet.IsInLobby)
             {
-                Task.Run(async () =>
+                if (CurrentLiveLobby == null)
                 {
-                    await CreateLobby();
-                });
+                    CreateLobby();
+                }
+                else
+                {
+                    UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
+                }
             }
         }
 
@@ -226,18 +239,6 @@ namespace Hikaria.Core.Features.Accessibility
             }
         }
 
-        [ArchivePatch(typeof(SNet_Lobby_STEAM), nameof(SNet_Lobby_STEAM.OnLocalPlayerJoinedLobby))]
-        private class SNet_Lobby_STEAM__OnLocalPlayerJoinedLobby__Patch
-        {
-            private static void Postfix()
-            {
-                if (SNet.IsMaster)
-                {
-                    CreateLobby();
-                }
-            }
-        }
-
         [ArchivePatch(typeof(SNet_Lobby_STEAM), nameof(SNet_Lobby_STEAM.KeepLobbyAliveAndConnected))]
         private class SNet_Lobby_STEAM__KeepLobbyAliveAndConnected__Patch
         {
@@ -265,11 +266,18 @@ namespace Hikaria.Core.Features.Accessibility
         [ArchivePatch(typeof(SNet_Lobby_STEAM), nameof(SNet_Lobby_STEAM.PlayerJoined), new Type[] { typeof(SNet_Player), typeof(CSteamID) })]
         private class SNet_Lobby_STEAM__PlayerJoined__Patch
         {
-            private static void Postfix()
+            private static void Postfix(SNet_Player player)
             {
                 if (SNet.IsMaster && SNet.IsInLobby)
                 {
-                    UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
+                    if (player.IsLocal)
+                    {
+                        CreateLobby();
+                    }
+                    else
+                    {
+                        UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
+                    }
                 }
             }
         }
@@ -277,11 +285,19 @@ namespace Hikaria.Core.Features.Accessibility
         [ArchivePatch(typeof(SNet_Lobby_STEAM), nameof(SNet_Lobby_STEAM.PlayerLeft))]
         private class SNet_Lobby_STEAM__PlayerLeft__Patch
         {
-            private static void Postfix()
+            private static void Postfix(SNet_Player player)
             {
                 if (SNet.IsMaster && SNet.IsInLobby)
                 {
-                    UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
+                    if (player.IsLocal)
+                    {
+                        CurrentLiveLobby = null;
+                    }
+                    else
+                    {
+                        UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
+                    }
+
                 }
             }
         }
