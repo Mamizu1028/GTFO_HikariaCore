@@ -12,7 +12,6 @@ using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.FeaturesAPI.Components;
 using TMPro;
 using static Hikaria.Core.Features.Security.LobbySettingsOverride;
-using static TheArchive.Models.LocalRundownProgression;
 using LobbyPrivacy = Hikaria.Core.Entities.LobbyPrivacy;
 
 namespace Hikaria.Core.Features.Accessibility
@@ -20,7 +19,7 @@ namespace Hikaria.Core.Features.Accessibility
     [EnableFeatureByDefault]
     [DisallowInGameToggle]
     [DoNotSaveToConfig]
-    public class LiveLobbyList : Feature, IOnSessionMemberChanged, IOnMasterChanged
+    public class LiveLobbyList : Feature, IOnSessionMemberChanged, IOnMasterChanged, IOnPlayerSlotChanged
     {
         public override string Name => "在线大厅列表";
 
@@ -182,6 +181,22 @@ namespace Hikaria.Core.Features.Accessibility
 
 
         public void OnMasterChanged()
+        {
+            if (SNet.IsMaster && SNet.IsInLobby)
+            {
+                if (CurrentLiveLobby == null)
+                {
+                    CreateLobby();
+                }
+                else
+                {
+                    UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
+                }
+            }
+        }
+
+
+        public void OnPlayerSlotChanged(SNet_Player player, SNet_SlotType type, SNet_SlotHandleType handle, int index)
         {
             if (SNet.IsMaster && SNet.IsInLobby)
             {
