@@ -1,4 +1,6 @@
-﻿using SNetwork;
+﻿using Hikaria.Core.Managers;
+using SNetwork;
+using System.Net.NetworkInformation;
 
 namespace Hikaria.Core
 {
@@ -12,5 +14,40 @@ namespace Hikaria.Core
 
         public static int Revision => SNet.GameRevision;
         public static string RevisionString => SNet.GameRevisionString;
+
+        public static bool ServerOnline { get; private set; }
+
+        public static void CheckIsServerOnline()
+        {
+            try
+            {
+                using (Ping ping = new Ping())
+                {
+                    PingReply reply = ping.Send(new Uri(ServerUrl).Host);
+                    ServerOnline = reply.Status == IPStatus.Success;
+                }
+            }
+            catch
+            {
+                ServerOnline = false;
+            }
+            finally
+            {
+                if (!ServerOnline)
+                {
+                    Logs.LogError($"Server: \"{ServerUrl}\" is offline!!!");
+                    PopupMessageManager.ShowPopup(new()
+                    {
+                        BlinkInContent = true,
+                        BlinkTimeInterval = 0.5f,
+                        Header = "Hikaria.Core <color=red>警告</color>",
+                        UpperText = "<color=red><size=200%>当前服务端不在线，依赖在线服务的功能无法工作！</size></color>",
+                        LowerText = string.Empty,
+                        PopupType = PopupType.BoosterImplantMissed,
+                        OnCloseCallback = PopupMessageManager.EmptyAction
+                    });
+                }
+            }
+        }
     }
 }

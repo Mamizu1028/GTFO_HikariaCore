@@ -15,8 +15,9 @@ public static class HttpHelper
     private static IArchiveLogger _logger;
     private static IArchiveLogger Logger => _logger ??= LoaderWrapper.CreateLoggerInstance(nameof(HttpHelper));
 
-    public static async Task<T> GetAsync<T>(string url)
+    public static async Task<T> GetAsync<T>(string url) where T : new()
     {
+        if (!CoreGlobal.ServerOnline) return new();
         try
         {
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -28,12 +29,13 @@ public static class HttpHelper
         {
             Logger.Error("Error occurred while sending GET request");
             Logger.Exception(ex);
-            return default(T);
+            return new();
         }
     }
 
-    public static async Task<T> PostAsync<T>(string url, object content)
+    public static async Task<T> PostAsync<T>(string url, object content) where T : new()
     {
+        if (!CoreGlobal.ServerOnline) return new();
         try
         {
             string jsonContent = JsonConvert.SerializeObject(content);
@@ -47,12 +49,13 @@ public static class HttpHelper
         {
             Logger.Error("Error occurred while sending POST request");
             Logger.Exception(ex);
-            return default(T);
+            return new();
         }
     }
 
-    public static async Task<T> PutAsync<T>(string url, object content)
+    public static async Task<T> PutAsync<T>(string url, object content) where T : new()
     {
+        if (!CoreGlobal.ServerOnline) return new();
         try
         {
             string jsonContent = JsonConvert.SerializeObject(content);
@@ -66,12 +69,13 @@ public static class HttpHelper
         {
             Logger.Error("Error occurred while sending PUT request");
             Logger.Exception(ex);
-            return default(T);
+            return new();
         }
     }
 
-    public static async Task<T> PatchAsync<T>(string url, object content)
+    public static async Task<T> PatchAsync<T>(string url, object content) where T : new()
     {
+        if (!CoreGlobal.ServerOnline) return new();
         try
         {
             string jsonContent = JsonConvert.SerializeObject(content);
@@ -85,7 +89,7 @@ public static class HttpHelper
         {
             Logger.Error("Error occurred while sending PATCH request");
             Logger.Exception(ex);
-            return default(T);
+            return new();
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using Hikaria.Core.Entities;
-using Hikaria.Core.Features.Dev;
 using Hikaria.Core.Utility;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
@@ -86,7 +85,7 @@ namespace Hikaria.Core.Features.Security
         {
             if (_task == null || _task.IsCanceled || _task.IsFaulted)
             {
-                FeatureManager.Instance.DisableFeature(this, false);
+                FeatureManager.DisableAutomatedFeature(typeof(GlobalBan));
                 return;
             }
 

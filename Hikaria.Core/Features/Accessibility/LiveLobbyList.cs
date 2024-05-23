@@ -318,7 +318,7 @@ namespace Hikaria.Core.Features.Accessibility
 
         public static async Task<IEnumerable<LiveLobby>> QueryLiveLobby(LiveLobbyQueryBase filter)
         {
-            return await HttpHelper.PostAsync<IEnumerable<LiveLobby>>($"{CoreGlobal.ServerUrl}/LiveLobby/QueryLobby", filter);
+            return await HttpHelper.PostAsync<List<LiveLobby>>($"{CoreGlobal.ServerUrl}/LiveLobby/QueryLobby", filter);
         }
     }
 }
