@@ -3,7 +3,8 @@ using TheArchive.Core.FeaturesAPI;
 
 namespace Hikaria.Core.Features.Dev
 {
-    [AutomatedFeature]
+    [EnableFeatureByDefault]
+    [DisallowInGameToggle]
     [DoNotSaveToConfig]
     public class CoreSettings : Feature
     {
@@ -18,11 +19,6 @@ namespace Hikaria.Core.Features.Dev
             public bool UseThirdPartyServer { get => CoreGlobal.UseThirdPartyServer; set => CoreGlobal.UseThirdPartyServer = value; }
 
             public string ThirdPartyServerUrl { get => CoreGlobal.ThirdPartyServerUrl; set => CoreGlobal.ThirdPartyServerUrl = value; }
-        }
-
-        public override void Init()
-        {
-            FeatureManager.EnableAutomatedFeature(typeof(CoreSettings));
         }
     }
 }

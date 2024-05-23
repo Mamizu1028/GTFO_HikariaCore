@@ -1,7 +1,7 @@
-﻿using Hikaria.Core.Features.Security;
+﻿using Hikaria.Core.Features.Accessibility;
+using Hikaria.Core.Features.Security;
 using Hikaria.Core.Managers;
 using Hikaria.Core.SNetworkExt;
-using Hikaria.Core.Utility;
 using SNetwork;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
@@ -58,6 +58,9 @@ internal class CoreBootstrap : Feature
             CompsObj.AddComponent<GameEventLogManager>();
         }
         PopupMessageManager.Setup();
+
+        FeatureManager.EnableAutomatedFeature(typeof(LiveLobbyList));
+        FeatureManager.EnableAutomatedFeature(typeof(GlobalBan));
     }
 
     private const string CompsObjName = "Hikaria.Core.Comps.obj";

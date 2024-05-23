@@ -1,6 +1,7 @@
 ﻿using Hikaria.Core.Entities;
 using Hikaria.Core.WebAPI.Managers;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace Hikaria.Core.WebAPI.Controllers
 {
@@ -15,12 +16,12 @@ namespace Hikaria.Core.WebAPI.Controllers
             _logger = logger;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateLobby(LiveLobby lobby)
+        [HttpPut]
+        public async Task<IActionResult> CreateLobby([FromBody] LiveLobby lobby)
         {
             try
             {
-                await LiveLobbyManager.CreateLobby(lobby.Identifier, lobby.Settings, lobby.DetailedInfo);
+                await LiveLobbyManager.CreateLobby(lobby.Identifier, lobby.PrivacySettings, lobby.DetailedInfo);
                 return Ok();
             }
             catch (Exception ex)
@@ -30,41 +31,40 @@ namespace Hikaria.Core.WebAPI.Controllers
             }
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllLobbies(int revision, LobbyType lobbyType = LobbyType.Public)
-        {
-            try
-            {
-                return Ok(await LiveLobbyManager.GetAllLobbies(revision, lobbyType));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetLobbiesLookup()
-        {
-            try
-            {
-                return Ok(await LiveLobbyManager.GetLobbiesLookup());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
-        }
-
         [HttpPost]
+        public async Task<IActionResult> QueryLobby([FromBody] LiveLobbyQueryBase lobbyQuery)
+        {
+            try
+            {
+                return Ok(await LiveLobbyManager.QueryLobby(lobbyQuery));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLobbyLookup()
+        {
+            try
+            {
+                return Ok(await LiveLobbyManager.GetLobbyLookup());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpPatch]
         public async Task<IActionResult> KeepLobbyAlive(int revision, ulong lobbyID)
         {
             try
             {
-                await LiveLobbyManager.KeepLobbyAlive(revision, lobbyID);
-                return Ok();
+                return Ok(await LiveLobbyManager.KeepLobbyAlive(revision, lobbyID));
             }
             catch (Exception ex)
             {
@@ -73,13 +73,26 @@ namespace Hikaria.Core.WebAPI.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> UpdateLobbyDetailedInfo(ulong lobbyID, DetailedLobbyInfo lobbyInfo)
+        [HttpPatch]
+        public async Task<IActionResult> UpdateLobbyDetailedInfo(ulong lobbyID, [FromBody] DetailedLobbyInfo lobbyDetailedInfo)
         {
             try
             {
-                await LiveLobbyManager.UpdateLobbyDetailInfo(lobbyID, lobbyInfo);
-                return Ok();
+                return Ok(await LiveLobbyManager.UpdateLobbyDetailInfo(lobbyID, lobbyDetailedInfo));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpPatch]
+        public async Task<IActionResult> UpdateLobbyPrivacySettings(int revision, ulong lobbyID, [FromBody] LobbyPrivacySettings lobbyPrivacySettings)
+        {
+            try
+            {
+                return Ok(await LiveLobbyManager.UpdateLobbyPrivacySettings(revision, lobbyID, lobbyPrivacySettings));
             }
             catch (Exception ex)
             {

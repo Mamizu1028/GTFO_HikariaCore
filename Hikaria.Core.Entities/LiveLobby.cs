@@ -3,24 +3,28 @@
     public class LiveLobby
     {
         public LobbyIdentifier Identifier { get; private set; } = new();
-        public LobbySettings Settings { get; private set; } = new();
+        public LobbyPrivacySettings PrivacySettings { get; private set; } = new();
         public DetailedLobbyInfo DetailedInfo { get; private set; } = new();
+        public LobbyStatusInfo StatusInfo { get; private set; } = new();
 
         public DateTime ExpirationTime { get; private set; }
-        public bool IsLobbyFull => SteamIDsInLobby.Count >= DetailedInfo.MaxPlayerSlots;
-        public HashSet<ulong> SteamIDsInLobby { get; private set; } = new();
 
-        public LiveLobby(LobbyIdentifier identifier, LobbySettings settings, DetailedLobbyInfo detailedInfo)
+        public LiveLobby()
         {
-            Settings = settings;
-            Identifier = identifier;
-            DetailedInfo = detailedInfo;
-            ExpirationTime = DateTime.Now.AddSeconds(15);
+            ExpirationTime = DateTime.Now.AddSeconds(30);
         }
 
-        public void KeepAlive(bool sync = false)
+        public LiveLobby(LobbyIdentifier identifier, LobbyPrivacySettings lobbyPrivacySettings, DetailedLobbyInfo detailedInfo)
         {
-            ExpirationTime = DateTime.Now.AddSeconds(15);
+            PrivacySettings = lobbyPrivacySettings;
+            Identifier = identifier;
+            DetailedInfo = detailedInfo;
+            ExpirationTime = DateTime.Now.AddSeconds(30);
+        }
+
+        public void KeepAlive()
+        {
+            ExpirationTime = DateTime.Now.AddSeconds(30);
         }
 
         public void UpdateInfo(DetailedLobbyInfo detailedInfo)
@@ -28,82 +32,55 @@
             DetailedInfo = detailedInfo;
         }
 
-        public void UpdateSettings(LobbySettings settings)
+        public void UpdatePrivacySettings(LobbyPrivacySettings settings)
         {
-            Settings = settings;
+            PrivacySettings = settings;
         }
 
-        public void UpdateStateInfo(string statusInfo)
+        public void UpdateStatusInfo(LobbyStatusInfo statusInfo)
         {
-            DetailedInfo.StatusInfo = statusInfo;
-        }
-
-        public void PlayerJoined(ulong steamid)
-        {
-            SteamIDsInLobby.Add(steamid);
-        }
-
-        public void PlayerLeft(ulong steamid)
-        {
-            SteamIDsInLobby.Remove(steamid);
-        }
-
-        public void OnLobbyUpdate()
-        {
-
+            StatusInfo = statusInfo;
         }
     }
 
 
-    public class LobbySettings
+    public class LobbyPrivacySettings
     {
-        public string LobbyName { get; set; }
-        public LobbyType LobbyType
+        public LobbyPrivacy Privacy
         {
             get
             {
-                if (UsePassword)
-                    return LobbyType.Private;
-                return _lobbyType;
+                if (HasPassword && _privacy == LobbyPrivacy.Private)
+                    return LobbyPrivacy.Private;
+                return _privacy;
             }
             set
             {
-                _lobbyType = value;
+                _privacy = value;
             }
         }
 
-        public bool UsePassword => _lobbyType == LobbyType.Private && !string.IsNullOrEmpty(_password);
-        public string Password
-        {
-            get
-            {
-                return _password;
-            }
-            set
-            {
-                value ??= string.Empty;
-                value = value[..Math.Min(value.Length, PASSWORD_MAX_LENGTH)];
-                _password = value;
-            }
-        }
+        public bool HasPassword { get; set; }
 
-        private LobbyType _lobbyType = LobbyType.Public;
-        private string _password = string.Empty;
-        public const int PASSWORD_MAX_LENGTH = 25;
+        private LobbyPrivacy _privacy = LobbyPrivacy.Public;
     }
 
     public class DetailedLobbyInfo
     {
         public ulong HostSteamID { get; set; }
-        public string LobbyName { get; set; }
-        public string Rundown { get; set; }
-        public string Expedition { get; set; }
-        public string ExpeditionName { get; set; }
+        public string Expedition { get; set; } = string.Empty;
+        public string ExpeditionName { get; set; } = string.Empty;
         public int OpenSlots { get; set; }
         public int MaxPlayerSlots { get; set; }
-        public string StatusInfo { get; set; }
-        public string RegionName { get; set; }
+        public string RegionName { get; set; } = string.Empty;
         public int Revision { get; set; }
+        public bool IsPlayingModded { get; set; }
+        public HashSet<ulong> SteamIDsInLobby { get; set; } = new();
+    }
+
+    public class LobbyStatusInfo
+    {
+        public string StatusInfo { get; set; } = string.Empty;
     }
 
     public class LobbyIdentifier
@@ -112,7 +89,19 @@
         public string Name { get; set; }
     }
 
-    public enum LobbyType
+    public class LiveLobbyQueryBase
+    {
+        public virtual bool IgnoreFullLobby { get; set; } = true;
+        public virtual bool IsPlayingModded { get; set; } = false;
+        public virtual string LobbyName { get; set; } = string.Empty;
+        public virtual LobbyPrivacy Privacy { get; set; } = LobbyPrivacy.Public;
+        public virtual string Expedition { get; set; } = string.Empty;
+        public virtual string ExpeditionName { get; set; } = string.Empty;
+        public virtual string RegionName { get; set; } = string.Empty;
+        public virtual int Revision { get; set; } = -1;
+    }
+
+    public enum LobbyPrivacy
     {
         Public = 0,
         FriendsOnly = 1,

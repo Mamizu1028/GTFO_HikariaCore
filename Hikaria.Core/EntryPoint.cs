@@ -1,4 +1,8 @@
-﻿using Hikaria.Core.Features.Accessibility;
+﻿using Clonesoft.Json;
+using Clonesoft.Json.Converters;
+using Clonesoft.Json.Serialization;
+using Hikaria.Core.Features.Accessibility;
+using Hikaria.Core.Features.Security;
 using TheArchive.Core;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
@@ -26,7 +30,24 @@ public class EntryPoint : IArchiveModule
 
     public void Init()
     {
-        FeatureManager.EnableAutomatedFeature(typeof(LiveLobbyHandler));
+        JsonConvert.DefaultSettings = new(() =>
+        {
+            JsonSerializerSettings settings = new JsonSerializerSettings()
+            {
+                Formatting = Formatting.Indented,
+                ContractResolver = new DefaultContractResolver()
+            };
+
+            settings.DateFormatHandling = DateFormatHandling.MicrosoftDateFormat;
+            settings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
+            settings.Converters.Add(new IsoDateTimeConverter() { DateTimeFormat = "yyyy-MM-dd HH:mm:ss" });
+            settings.Converters.Add(new StringEnumConverter());
+            settings.ContractResolver = new DefaultContractResolver();
+            settings.NullValueHandling = NullValueHandling.Include;
+
+            return settings;
+        });
+
         Logs.LogMessage("OK");
     }
 
@@ -56,7 +77,7 @@ public class EntryPoint : IArchiveModule
         public static FeatureGroup ModuleGroup => FeatureGroups.GetOrCreateModuleGroup("Hikaria Core");
         public static FeatureGroup Accessibility => ModuleGroup.GetOrCreateSubGroup("Accessibility");
         public static FeatureGroup Core => ModuleGroup.GetOrCreateSubGroup("Core");
-        public static FeatureGroup Dev => ModuleGroup.GetOrCreateSubGroup("Develop", true);
+        public static FeatureGroup Dev => ModuleGroup.GetOrCreateSubGroup("Developer", true);
         public static FeatureGroup Fixes => ModuleGroup.GetOrCreateSubGroup("Fixes");
         public static FeatureGroup Security => ModuleGroup.GetOrCreateSubGroup("Security");
 

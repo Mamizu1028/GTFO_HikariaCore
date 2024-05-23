@@ -1,4 +1,6 @@
-﻿namespace Hikaria.Core
+﻿using SNetwork;
+
+namespace Hikaria.Core
 {
     public static class CoreGlobal
     {
@@ -7,5 +9,8 @@
         public static bool UseThirdPartyServer = false;
 
         public static string ServerUrl => UseThirdPartyServer ? ThirdPartyServerUrl : OfficialServerUrl;
+
+        public static int Revision => SNet.GameRevision;
+        public static string RevisionString => SNet.GameRevisionString;
     }
 }

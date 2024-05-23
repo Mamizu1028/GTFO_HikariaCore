@@ -1,4 +1,6 @@
 ﻿using Clonesoft.Json;
+using Hikaria.Core.Entities;
+using Hikaria.Core.Features.Accessibility;
 using Hikaria.Core.Interfaces;
 using Hikaria.Core.Managers;
 using Hikaria.Core.SNetworkExt;
@@ -8,6 +10,8 @@ using System.Runtime.InteropServices;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Settings;
+using TheArchive.Core.Localization;
 using TheArchive.Features.Security;
 using TheArchive.Interfaces;
 using TheArchive.Loader;
@@ -28,11 +32,11 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 
     public static new IArchiveLogger FeatureLogger { get; set; }
 
-    public static LobbySettingsOverride Instance { get; private set; }
+    public static ILocalizationService LocalizationService { get; private set; }
 
-    public override Type[] LocalizationExternalTypes => new Type[]
+    public override Type[] LocalizationExternalTypes => new[]
     {
-        typeof(LobbyType)
+        typeof(LobbyPrivacy)
     };
 
     [FeatureConfig]
@@ -42,15 +46,15 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
     {
         [JsonIgnore]
         [FSDisplayName("Privacy")]
-        public LobbyType Privacy
+        public LobbyPrivacy Privacy
         {
             get
             {
-                return LobbySettingsManager.CurrentSettings.LobbyPrivacy;
+                return LobbySettingsManager.CurrentSettings.Privacy;
             }
             set
             {
-                LobbySettingsManager.CurrentSettings.LobbyPrivacy = value;
+                LobbySettingsManager.CurrentSettings.Privacy = value;
                 LobbySettingsManager.OnLobbySettingsChanged();
             }
         }
@@ -81,6 +85,14 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
             {
                 LobbySettingsManager.PasswordForJoinOtherLobby = value;
             }
+        }
+    }
+
+    public override void OnFeatureSettingChanged(FeatureSetting setting)
+    {
+        if (SNet.IsMaster && SNet.IsInLobby)
+        {
+            LiveLobbyList.UpdateLobbyPrivacySettings(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
         }
     }
 
@@ -126,7 +138,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 
     public override void Init()
     {
-        Instance = this;
+        LocalizationService = Localization;
         LobbySettingsManager.Setup();
     }
 
@@ -177,7 +189,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         public static void ApplyLobbySettings(ref SNet_LobbySettings settings)
         {
             settings.Password = CurrentSettings.Password;
-            settings.LobbyType = CurrentSettings.LobbyPrivacy;
+            settings.LobbyType = ToSNetLobbyType(CurrentSettings.Privacy);
             settings.LobbyName = CurrentSettings.LobbyName;
         }
 
@@ -187,7 +199,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 
             var settings = Core.m_lastLobbySettings;
             settings.Password = CurrentSettings.Password;
-            settings.LobbyType = CurrentSettings.LobbyPrivacy;
+            settings.LobbyType = ToSNetLobbyType(CurrentSettings.Privacy);
             settings.LobbyName = CurrentSettings.LobbyName;
 
             SteamLobby.Password = CurrentSettings.Password;
@@ -219,10 +231,10 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 
             switch (data.LobbyPrivacy)
             {
-                case LobbyType.Invisible:
+                case LobbyPrivacy.Invisible:
                     PopupMessageManager.ShowPopup(Popup_InvisibleLobby);
                     break;
-                case LobbyType.Private:
+                case LobbyPrivacy.Private:
                     switch (data.Reason)
                     {
                         case MasterAnswerReason.PasswordMismatch:
@@ -230,7 +242,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
                             break;
                     }
                     break;
-                case LobbyType.FriendsOnly:
+                case LobbyPrivacy.FriendsOnly:
                     switch (data.Reason)
                     {
                         case MasterAnswerReason.IsNotFriend:
@@ -247,13 +259,16 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             BlinkInContent = true,
             BlinkTimeInterval = 0.5f,
-            Header = Instance.Localization.Get(1),
+            Header = LocalizationService.Get(1),
             UpperText = "<color=red>无法加入大厅</color>\n\n原因：被封禁的玩家",
             LowerText = string.Empty,
             PopupType = PopupType.BoosterImplantMissed,
             OnCloseCallback = new Action(() =>
             {
-                SNet.SessionHub.LeaveHub();
+                if (SNet.LocalPlayer.IsOutOfSync)
+                {
+                    SNet.SessionHub.LeaveHub();
+                }
             })
         };
 
@@ -261,13 +276,16 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             BlinkInContent = true,
             BlinkTimeInterval = 0.5f,
-            Header = Instance.Localization.Get(1),
+            Header = LocalizationService.Get(1),
             UpperText = "<color=red>无法加入大厅</color>\n\n原因：大厅已锁定",
             LowerText = string.Empty,
             PopupType = PopupType.BoosterImplantMissed,
             OnCloseCallback = new Action(() =>
             {
-                SNet.SessionHub.LeaveHub();
+                if (SNet.LocalPlayer.IsOutOfSync)
+                {
+                    SNet.SessionHub.LeaveHub();
+                }
             })
         };
 
@@ -275,13 +293,16 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             BlinkInContent = true,
             BlinkTimeInterval = 0.5f,
-            Header = Instance.Localization.Get(1),
+            Header = LocalizationService.Get(1),
             UpperText = "<color=red>无法加入大厅</color>\n\n原因：密码错误",
             LowerText = string.Empty,
             PopupType = PopupType.BoosterImplantMissed,
             OnCloseCallback = new Action(() =>
             {
-                SNet.SessionHub.LeaveHub();
+                if (SNet.LocalPlayer.IsOutOfSync)
+                {
+                    SNet.SessionHub.LeaveHub();
+                }
             })
         };
 
@@ -289,13 +310,16 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             BlinkInContent = true,
             BlinkTimeInterval = 0.5f,
-            Header = Instance.Localization.Get(1),
+            Header = LocalizationService.Get(1),
             UpperText = "<color=red>无法加入大厅</color>\n\n原因：您不是房主好友",
             LowerText = string.Empty,
             PopupType = PopupType.BoosterImplantMissed,
             OnCloseCallback = new Action(() =>
             {
-                SNet.SessionHub.LeaveHub();
+                if (SNet.LocalPlayer.IsOutOfSync)
+                {
+                    SNet.SessionHub.LeaveHub();
+                }
             })
         };
 
@@ -319,11 +343,11 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
                 return true;
             if (!IsPlayerAllowedToJoinLobby(player, out var reason))
             {
-                s_lobbySettingsAnswerPacket.Send(new(CurrentSettings.LobbyPrivacy, MasterAnswer.LeaveLobby, reason), player);
+                s_lobbySettingsAnswerPacket.Send(new(CurrentSettings.Privacy, MasterAnswer.LeaveLobby, reason), player);
                 SNet.SessionHub.RemovePlayerFromSession(player, true);
                 return false;
             }
-            s_lobbySettingsAnswerPacket.Send(new(CurrentSettings.LobbyPrivacy, MasterAnswer.AllowToJoin, reason), player);
+            s_lobbySettingsAnswerPacket.Send(new(CurrentSettings.Privacy, MasterAnswer.AllowToJoin, reason), player);
             return true;
         }
 
@@ -360,13 +384,13 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
                 return true;
             }
 
-            switch (CurrentSettings.LobbyPrivacy)
+            switch (CurrentSettings.Privacy)
             {
-                case LobbyType.Invisible:
+                case LobbyPrivacy.Invisible:
                     reason = MasterAnswerReason.InvisibleLobby;
                     Logger.Notice($"Player {playerName} failed to join. Reason: {reason}.");
                     return false;
-                case LobbyType.FriendsOnly:
+                case LobbyPrivacy.FriendsOnly:
                     if (!player.IsFriend())
                     {
                         reason = MasterAnswerReason.IsNotFriend;
@@ -375,8 +399,8 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
                     }
                     reason = MasterAnswerReason.IsFriend;
                     return true;
-                case LobbyType.Private:
-                    if (!CurrentSettings.IsPasswordValid)
+                case LobbyPrivacy.Private:
+                    if (!CurrentSettings.HasPassword)
                     {
                         reason = MasterAnswerReason.Public;
                         return true;
@@ -389,7 +413,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
                     reason = MasterAnswerReason.PasswordMismatch;
                     Logger.Notice($"Player {playerName} failed to join. Reason: {reason}. Lobby: {CurrentSettings.Password}, Slave: {request.Password}");
                     return false;
-                case LobbyType.Public:
+                case LobbyPrivacy.Public:
                     reason = MasterAnswerReason.Public;
                     return true;
                 default:
@@ -440,20 +464,21 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 
         public struct pLobbyMasterAnswer
         {
-            public pLobbyMasterAnswer(LobbyType privacy, MasterAnswer answer, MasterAnswerReason reason)
+            public pLobbyMasterAnswer(LobbyPrivacy privacy, MasterAnswer answer, MasterAnswerReason reason)
             {
                 LobbyPrivacy = privacy;
                 Answer = answer;
                 Reason = reason;
             }
 
-            public LobbyType LobbyPrivacy;
+            public LobbyPrivacy LobbyPrivacy;
             public MasterAnswer Answer;
             public MasterAnswerReason Reason;
         }
 
         public class LobbySettings
         {
+            public string LobbyName { get; set; }
             public string Password
             {
                 get
@@ -465,17 +490,28 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
                     value ??= string.Empty;
                     value = value[..Math.Min(value.Length, PASSWORD_MAX_LENGTH)];
                     _password = value;
-                    IsPasswordValid = !string.IsNullOrEmpty(_password);
+                    HasPassword = !string.IsNullOrEmpty(_password);
                 }
             }
-            public bool IsPasswordValid { get; private set; }
-            public string LobbyName = string.Empty;
-            public LobbyType LobbyPrivacy = LobbyType.Public;
-
+            public bool HasPassword { get; private set; }
+            public LobbyPrivacy Privacy = LobbyPrivacy.Public;
+            public LobbyType Type => ToSNetLobbyType(Privacy);
 
             public const int PASSWORD_MAX_LENGTH = 25;
 
             private string _password = string.Empty;
+        }
+
+        public static LobbyType ToSNetLobbyType(LobbyPrivacy privacy)
+        {
+            return privacy switch
+            {
+                LobbyPrivacy.Public => LobbyType.Public,
+                LobbyPrivacy.Private => LobbyType.Private,
+                LobbyPrivacy.FriendsOnly => LobbyType.FriendsOnly,
+                LobbyPrivacy.Invisible => LobbyType.Invisible,
+                _ => LobbyType.Invisible,
+            };
         }
     }
 }
