@@ -4,6 +4,7 @@ using Hikaria.Core.Interfaces;
 using Hikaria.Core.Managers;
 using Hikaria.Core.Utility;
 using SNetwork;
+using Steamworks;
 using System.Globalization;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
@@ -104,6 +105,7 @@ namespace Hikaria.Core.Features.Accessibility
                 RegionName = new RegionInfo(lobby.DetailedInfo.RegionName).DisplayName;
                 StatusInfo = lobby.StatusInfo?.StatusInfo ?? string.Empty;
                 SlotsInfo = $"{lobby.DetailedInfo.MaxPlayerSlots - lobby.DetailedInfo.OpenSlots}/{lobby.DetailedInfo.MaxPlayerSlots}";
+                IsPlayeringModded = lobby.DetailedInfo.IsPlayingModded;
                 JoinButton = new("加入", "加入", () =>
                 {
                     if (Privacy == LobbyPrivacy.Private)
@@ -260,8 +262,8 @@ namespace Hikaria.Core.Features.Accessibility
             }
         }
 
-        [ArchivePatch(typeof(SNet_LobbyManager), nameof(SNet_LobbyManager.JoinLobby), new Type[] { typeof(SNet_LobbyIdentifier), typeof(bool) })]
-        private class SNet_LobbyManager__JoinLobby__Patch
+        [ArchivePatch(typeof(SNet_Lobby_STEAM), nameof(SNet_Lobby_STEAM.PlayerJoined), new Type[] { typeof(SNet_Player), typeof(CSteamID) })]
+        private class SNet_Lobby_STEAM__PlayerJoined__Patch
         {
             private static void Postfix()
             {
@@ -272,8 +274,8 @@ namespace Hikaria.Core.Features.Accessibility
             }
         }
 
-        [ArchivePatch(typeof(SNet_LobbyManager), nameof(SNet_LobbyManager.LeaveLobby))]
-        private class SNet_LobbyManager__LeaveLobby__Patch
+        [ArchivePatch(typeof(SNet_Lobby_STEAM), nameof(SNet_Lobby_STEAM.PlayerLeft))]
+        private class SNet_Lobby_STEAM__PlayerLeft__Patch
         {
             private static void Postfix()
             {
