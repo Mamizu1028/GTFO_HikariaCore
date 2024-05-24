@@ -10,7 +10,7 @@ namespace Hikaria.Core.Features.Security
 {
     [AutomatedFeature]
     [DoNotSaveToConfig]
-    public class GlobalBan : Feature
+    internal class GlobalBan : Feature
     {
         public override string Name => "在线全局封禁名单";
 

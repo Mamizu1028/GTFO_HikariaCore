@@ -12,7 +12,6 @@ namespace Hikaria.Core.Features.Dev;
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
 [HideInModSettings]
-[DoNotSaveToConfig]
 internal class GameEventListener : Feature
 {
     public override string Name => "游戏事件监听";

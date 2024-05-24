@@ -12,8 +12,7 @@ namespace Hikaria.Core.Features.Core;
 
 [DisallowInGameToggle]
 [EnableFeatureByDefault]
-[DoNotSaveToConfig]
-public class PauseGame : Feature
+internal class PauseGame : Feature
 {
     public override string Name => "暂停游戏";
 

@@ -18,8 +18,7 @@ namespace Hikaria.Core.Features.Accessibility
 {
     [EnableFeatureByDefault]
     [DisallowInGameToggle]
-    [DoNotSaveToConfig]
-    public class LiveLobbyList : Feature, IOnSessionMemberChanged, IOnMasterChanged, IOnPlayerSlotChanged
+    internal class LiveLobbyList : Feature, IOnMasterChanged, IOnPlayerSlotChanged
     {
         public override string Name => "在线大厅列表";
 
@@ -149,74 +148,44 @@ namespace Hikaria.Core.Features.Accessibility
             public FButton JoinButton { get; set; }
         }
 
-        public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
-        {
-            if (!SNet.IsMaster || !SNet.IsInLobby)
-                return;
-
-            switch (playerEvent)
-            {
-                case SessionMemberEvent.JoinSessionHub:
-                    if (player.IsLocal)
-                    {
-                        CreateLobby();
-                    }
-                    else
-                    {
-                        UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
-                    }
-                    break;
-                case SessionMemberEvent.LeftSessionHub:
-                    if (player.IsLocal)
-                    {
-                        CurrentLiveLobby = null;
-                    }
-                    else
-                    {
-                        UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
-                    }
-                    break;
-            }
-        }
-
-
-        public void OnMasterChanged()
-        {
-            if (SNet.IsMaster && SNet.IsInLobby)
-            {
-                if (CurrentLiveLobby == null)
-                {
-                    CreateLobby();
-                }
-                else
-                {
-                    UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
-                }
-            }
-        }
-
-
-        public void OnPlayerSlotChanged(SNet_Player player, SNet_SlotType type, SNet_SlotHandleType handle, int index)
-        {
-            if (SNet.IsMaster && SNet.IsInLobby)
-            {
-                if (CurrentLiveLobby == null)
-                {
-                    CreateLobby();
-                }
-                else
-                {
-                    UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
-                }
-            }
-        }
-
         public override void Init()
         {
             GameEventAPI.RegisterSelf(this);
         }
 
-        public static LiveLobby CurrentLiveLobby { get; private set; }
+        public void OnMasterChanged()
+        {
+            if (SNet.IsMaster && SNet.IsInLobby)
+            {
+                Task.Run(async () =>
+                {
+                    await CreateLobby();
+                    await UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
+                    await UpdateLobbyPrivacySettings(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
+                });
+
+            }
+        }
+
+        public void OnPlayerSlotChanged(SNet_Player player, SNet_SlotType type, SNet_SlotHandleType handle, int index)
+        {
+            if (SNet.IsMaster && SNet.IsInLobby)
+            {
+                UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
+            }
+        }
+
+        [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.OnLobbyInfoUpdate))]
+        private class SNet_SessionHub__OnLobbyInfoUpdate__Patch
+        {
+            private static void Postfix()
+            {
+                if (SNet.IsMaster && SNet.IsInLobby)
+                {
+                    CreateLobby();
+                }
+            }
+        }
 
         [ArchivePatch(typeof(SNet_PlayerSlotManager), nameof(SNet_PlayerSlotManager.SetSlotPermission))]
         private class SNet_PlayerSlotManager__SetSlotPermission__Patch
@@ -266,33 +235,17 @@ namespace Hikaria.Core.Features.Accessibility
             }
         }
 
-        [ArchivePatch(typeof(SNet_Lobby_STEAM), nameof(SNet_Lobby_STEAM.OnLobbyUpdate))]
-        private class SNet_Lobby_STEAM__OnLobbyUpdate__Patch
-        {
-            private static void Postfix(SNet_Lobby_STEAM __instance)
-            {
-                if (SNet.IsMaster && SNet.IsInLobby)
-                {
-                    UpdateLobbyDetailInfo(__instance);
-                }
-            }
-        }
-
         [ArchivePatch(typeof(SNet_Lobby_STEAM), nameof(SNet_Lobby_STEAM.PlayerJoined), new Type[] { typeof(SNet_Player), typeof(CSteamID) })]
         private class SNet_Lobby_STEAM__PlayerJoined__Patch
         {
-            private static void Postfix(SNet_Player player)
+            private static void Postfix(SNet_Lobby_STEAM __instance, SNet_Player player)
             {
                 if (SNet.IsMaster && SNet.IsInLobby)
                 {
                     if (player.IsLocal)
-                    {
                         CreateLobby();
-                    }
                     else
-                    {
-                        UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
-                    }
+                        UpdateLobbyDetailInfo(__instance);
                 }
             }
         }
@@ -300,60 +253,46 @@ namespace Hikaria.Core.Features.Accessibility
         [ArchivePatch(typeof(SNet_Lobby_STEAM), nameof(SNet_Lobby_STEAM.PlayerLeft))]
         private class SNet_Lobby_STEAM__PlayerLeft__Patch
         {
-            private static void Postfix(SNet_Player player)
+            private static void Postfix(SNet_Lobby_STEAM __instance, SNet_Player player)
             {
                 if (SNet.IsMaster && SNet.IsInLobby)
                 {
-                    if (player.IsLocal)
+                    if (!player.IsLocal)
                     {
-                        CurrentLiveLobby = null;
+                        UpdateLobbyDetailInfo(__instance);
                     }
-                    else
-                    {
-                        UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
-                    }
-
                 }
             }
-        }
-
-        public static async Task CreateLobby()
-        {
-            CurrentLiveLobby = new(LiveLobbyPresenceManager.Identifier, LiveLobbyPresenceManager.PrivacySettings, LiveLobbyPresenceManager.DetailedInfo);
-
-            await HttpHelper.PutAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/CreateLobby", CurrentLiveLobby);
-        }
-
-        public static async Task KeepLobbyAlive(SNet_Lobby_STEAM lobby)
-        {
-            CurrentLiveLobby.KeepAlive();
-            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/KeepLobbyAlive?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", string.Empty);
-        }
-
-        public static async Task UpdateLobbyDetailInfo(SNet_Lobby_STEAM lobby)
-        {
-            var detailedInfo = LiveLobbyPresenceManager.DetailedInfo;
-            CurrentLiveLobby.UpdateInfo(detailedInfo);
-            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyDetailedInfo?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", detailedInfo);
-        }
-
-        public static async Task UpdateLobbyPrivacySettings(SNet_Lobby_STEAM lobby)
-        {
-            var settings = LiveLobbyPresenceManager.PrivacySettings;
-            CurrentLiveLobby.UpdatePrivacySettings(settings);
-            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyPrivacySettings?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", settings);
-        }
-
-        public static async Task UpdateLobbyStatusInfo(SNet_Lobby_STEAM lobby)
-        {
-            var statusInfo = LiveLobbyPresenceManager.StatusInfo;
-            CurrentLiveLobby.UpdateStatusInfo(statusInfo);
-            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyStatusInfo?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", statusInfo);
         }
 
         public static async Task<IEnumerable<LiveLobby>> QueryLiveLobby(LiveLobbyQueryBase filter)
         {
             return await HttpHelper.PostAsync<List<LiveLobby>>($"{CoreGlobal.ServerUrl}/LiveLobby/QueryLobby", filter);
+        }
+
+        public static async Task CreateLobby()
+        {
+            await HttpHelper.PutAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/CreateLobby", new LiveLobby(LiveLobbyPresenceManager.Identifier, LiveLobbyPresenceManager.PrivacySettings, LiveLobbyPresenceManager.DetailedInfo));
+        }
+
+        public static async Task KeepLobbyAlive(SNet_Lobby_STEAM lobby)
+        {
+            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/KeepLobbyAlive?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", string.Empty);
+        }
+
+        public static async Task UpdateLobbyDetailInfo(SNet_Lobby_STEAM lobby)
+        {
+            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyDetailedInfo?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", LiveLobbyPresenceManager.DetailedInfo);
+        }
+
+        public static async Task UpdateLobbyPrivacySettings(SNet_Lobby_STEAM lobby)
+        {
+            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyPrivacySettings?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", LiveLobbyPresenceManager.PrivacySettings);
+        }
+
+        public static async Task UpdateLobbyStatusInfo(SNet_Lobby_STEAM lobby)
+        {
+            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyStatusInfo?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", LiveLobbyPresenceManager.StatusInfo);
         }
     }
 }

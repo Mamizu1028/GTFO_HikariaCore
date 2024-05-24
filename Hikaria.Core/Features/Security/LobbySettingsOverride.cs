@@ -19,7 +19,6 @@ using TheArchive.Utilities;
 
 namespace Hikaria.Core.Features.Security;
 
-[DoNotSaveToConfig]
 [DisallowInGameToggle]
 [EnableFeatureByDefault]
 internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
