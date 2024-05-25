@@ -12,6 +12,7 @@ namespace Hikaria.Core.EntityFramework
 
         public DbSet<BannedPlayer> BannedPlayers { get; set; }
         public DbSet<SteamUser> SteamUsers { get; set; }
+        public DbSet<LiveLobby> LiveLobbies { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -21,6 +22,9 @@ namespace Hikaria.Core.EntityFramework
 
             modelBuilder.ApplyConfiguration(new SteamUserMap());
             modelBuilder.Entity<SteamUser>();
+
+            modelBuilder.ApplyConfiguration(new LiveLobbyMap());
+            modelBuilder.Entity<LiveLobby>();
         }
     }
 }

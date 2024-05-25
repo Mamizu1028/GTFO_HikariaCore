@@ -23,7 +23,7 @@ namespace Hikaria.Core.Features.Security
 
         public class GlobalBanListSettings
         {
-            private List<BannedPlayerEntry> _bannedPlayersEntry = new();
+            private List<BannedPlayerEntry> _bannedPlayersEnties = new();
 
             [FSDisplayName("封禁玩家")]
             public List<BannedPlayerEntry> BannedPlayers
@@ -32,12 +32,12 @@ namespace Hikaria.Core.Features.Security
                 {
                     for (int i = 0; i < _bannedPlayers.Count; i++)
                     {
-                        if (!_bannedPlayersEntry.Any(p => p.SteamID == _bannedPlayers[i].SteamID))
+                        if (!_bannedPlayersEnties.Any(p => p.SteamID == _bannedPlayers[i].SteamID))
                         {
-                            _bannedPlayersEntry.Add(new(_bannedPlayers[i]));
+                            _bannedPlayersEnties.Add(new(_bannedPlayers[i]));
                         }
                     }
-                    return _bannedPlayersEntry;
+                    return _bannedPlayersEnties;
                 }
                 set
                 {

@@ -6,33 +6,33 @@ namespace Hikaria.Core.EntityFramework.Repositories
 {
     public abstract class BaseRepository<T> : IBaseRepository<T> where T : class
     {
-        protected GTFODbContext GTFODbContext { get; set; }
+        protected GTFODbContext _dbContext { get; set; }
         protected BaseRepository(GTFODbContext repositoryContext)
         {
-            GTFODbContext = repositoryContext;
+            _dbContext = repositoryContext;
         }
 
         public void Create(T entity)
         {
-            GTFODbContext.Set<T>().Add(entity);
+            _dbContext.Set<T>().Add(entity);
         }
         public void Delete(T entity)
         {
-            GTFODbContext.Set<T>().Remove(entity);
+            _dbContext.Set<T>().Remove(entity);
         }
         public void Update(T entity)
         {
-            GTFODbContext.Set<T>().Update(entity);
+            _dbContext.Set<T>().Update(entity);
         }
 
         public IQueryable<T> FindAll()
         {
-            return GTFODbContext.Set<T>().AsNoTracking();
+            return _dbContext.Set<T>().AsNoTracking();
         }
 
         public IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression)
         {
-            return GTFODbContext.Set<T>().Where(expression).AsNoTracking();
+            return _dbContext.Set<T>().Where(expression).AsNoTracking();
         }
     }
 }

@@ -1,8 +1,6 @@
-﻿using Hikaria.Core.Entities;
-using Hikaria.Core.WebAPI.Attributes;
-using Hikaria.Core.WebAPI.Managers;
+﻿using Hikaria.Core.Contracts;
+using Hikaria.Core.Entities;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 namespace Hikaria.Core.WebAPI.Controllers
 {
@@ -12,8 +10,11 @@ namespace Hikaria.Core.WebAPI.Controllers
     {
         private readonly ILogger<LiveLobbyController> _logger;
 
-        public LiveLobbyController(ILogger<LiveLobbyController> logger)
+        private readonly IRepositoryWrapper _repository;
+
+        public LiveLobbyController(IRepositoryWrapper repository, ILogger<LiveLobbyController> logger)
         {
+            _repository = repository;
             _logger = logger;
         }
 
@@ -22,7 +23,8 @@ namespace Hikaria.Core.WebAPI.Controllers
         {
             try
             {
-                await LiveLobbyManager.CreateLobby(lobby.Identifier, lobby.PrivacySettings, lobby.DetailedInfo);
+                await _repository.LiveLobbies.CreateOrUpdateLobby(lobby);
+                await _repository.Save();
                 return Ok();
             }
             catch (Exception ex)
@@ -37,7 +39,7 @@ namespace Hikaria.Core.WebAPI.Controllers
         {
             try
             {
-                return Ok(await LiveLobbyManager.QueryLobby(lobbyQuery));
+                return Ok(await _repository.LiveLobbies.QueryLobby(lobbyQuery));
             }
             catch (Exception ex)
             {
@@ -46,13 +48,13 @@ namespace Hikaria.Core.WebAPI.Controllers
             }
         }
 
-        [UserPrivilegeAuthorize(UserPrivilege.Admin)]
+        //[UserPrivilegeAuthorize(UserPrivilege.Admin)]
         [HttpGet]
         public async Task<IActionResult> GetLobbyLookup()
         {
             try
             {
-                return Ok(await LiveLobbyManager.GetLobbyLookup());
+                return Ok(await _repository.LiveLobbies.GetLobbyLookupNotTracking());
             }
             catch (Exception ex)
             {
@@ -62,11 +64,13 @@ namespace Hikaria.Core.WebAPI.Controllers
         }
 
         [HttpPatch]
-        public async Task<IActionResult> KeepLobbyAlive(int revision, ulong lobbyID)
+        public async Task<IActionResult> KeepLobbyAlive(ulong lobbyID)
         {
             try
             {
-                return Ok(await LiveLobbyManager.KeepLobbyAlive(revision, lobbyID));
+                await _repository.LiveLobbies.KeepLobbyAlive(lobbyID);
+                await _repository.Save();
+                return Ok();
             }
             catch (Exception ex)
             {
@@ -80,7 +84,9 @@ namespace Hikaria.Core.WebAPI.Controllers
         {
             try
             {
-                return Ok(await LiveLobbyManager.UpdateLobbyDetailInfo(lobbyID, lobbyDetailedInfo));
+                await _repository.LiveLobbies.UpdateLobbyDetailInfo(lobbyID, lobbyDetailedInfo);
+                await _repository.Save();
+                return Ok();
             }
             catch (Exception ex)
             {
@@ -90,11 +96,13 @@ namespace Hikaria.Core.WebAPI.Controllers
         }
 
         [HttpPatch]
-        public async Task<IActionResult> UpdateLobbyPrivacySettings(int revision, ulong lobbyID, [FromBody] LobbyPrivacySettings lobbyPrivacySettings)
+        public async Task<IActionResult> UpdateLobbyPrivacySettings(ulong lobbyID, [FromBody] LobbyPrivacySettings lobbyPrivacySettings)
         {
             try
             {
-                return Ok(await LiveLobbyManager.UpdateLobbyPrivacySettings(revision, lobbyID, lobbyPrivacySettings));
+                await _repository.LiveLobbies.UpdateLobbyPrivacySettings(lobbyID, lobbyPrivacySettings);
+                await _repository.Save();
+                return Ok();
             }
             catch (Exception ex)
             {

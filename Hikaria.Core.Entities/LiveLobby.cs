@@ -2,44 +2,29 @@
 {
     public class LiveLobby
     {
-        public LobbyIdentifier Identifier { get; private set; } = new();
-        public LobbyPrivacySettings PrivacySettings { get; private set; } = new();
-        public DetailedLobbyInfo DetailedInfo { get; private set; } = new();
-        public LobbyStatusInfo StatusInfo { get; private set; } = new();
+        public ulong LobbyID { get; set; }
+        public string LobbyName { get; set; }
+        public LobbyPrivacySettings PrivacySettings { get; set; }
+        public DetailedLobbyInfo DetailedInfo { get; set; }
+        public LobbyStatusInfo StatusInfo { get; set; }
 
-        public DateTime ExpirationTime { get; private set; }
+        public DateTime ExpirationTime { get; set; }
 
         public LiveLobby()
         {
+            LobbyName = string.Empty;
+            PrivacySettings = new();
+            DetailedInfo = new();
+            StatusInfo = new();
             ExpirationTime = DateTime.Now.AddSeconds(30);
         }
 
-        public LiveLobby(LobbyIdentifier identifier, LobbyPrivacySettings lobbyPrivacySettings, DetailedLobbyInfo detailedInfo)
+        public LiveLobby(ulong lobbyID, string lobbyName, LobbyPrivacySettings lobbyPrivacySettings, DetailedLobbyInfo detailedInfo) : this()
         {
+            LobbyID = lobbyID;
+            LobbyName = lobbyName;
             PrivacySettings = lobbyPrivacySettings;
-            Identifier = identifier;
             DetailedInfo = detailedInfo;
-            ExpirationTime = DateTime.Now.AddSeconds(30);
-        }
-
-        public void KeepAlive()
-        {
-            ExpirationTime = DateTime.Now.AddSeconds(30);
-        }
-
-        public void UpdateInfo(DetailedLobbyInfo detailedInfo)
-        {
-            DetailedInfo = detailedInfo;
-        }
-
-        public void UpdatePrivacySettings(LobbyPrivacySettings settings)
-        {
-            PrivacySettings = settings;
-        }
-
-        public void UpdateStatusInfo(LobbyStatusInfo statusInfo)
-        {
-            StatusInfo = statusInfo;
         }
     }
 
@@ -68,25 +53,32 @@
     public class DetailedLobbyInfo
     {
         public ulong HostSteamID { get; set; }
-        public string Expedition { get; set; } = string.Empty;
-        public string ExpeditionName { get; set; } = string.Empty;
+        public string Expedition { get; set; }
+        public string ExpeditionName { get; set; }
         public int OpenSlots { get; set; }
         public int MaxPlayerSlots { get; set; }
-        public string RegionName { get; set; } = string.Empty;
+        public string RegionName { get; set; }
         public int Revision { get; set; }
         public bool IsPlayingModded { get; set; }
-        public HashSet<ulong> SteamIDsInLobby { get; set; } = new();
+        public HashSet<ulong> SteamIDsInLobby { get; set; }
+
+        public DetailedLobbyInfo()
+        {
+            Expedition = string.Empty;
+            ExpeditionName = string.Empty;
+            RegionName = string.Empty;
+            SteamIDsInLobby = new();
+        }
     }
 
     public class LobbyStatusInfo
     {
-        public string StatusInfo { get; set; } = string.Empty;
-    }
+        public string StatusInfo { get; set; }
 
-    public class LobbyIdentifier
-    {
-        public ulong ID { get; set; }
-        public string Name { get; set; }
+        public LobbyStatusInfo()
+        {
+            StatusInfo = string.Empty;
+        }
     }
 
     public class LiveLobbyQueryBase

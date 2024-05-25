@@ -1,5 +1,4 @@
-﻿using Hikaria.Core.Features.Accessibility;
-using Hikaria.Core.Features.Security;
+﻿using Hikaria.Core.Features.Security;
 using Hikaria.Core.Managers;
 using Hikaria.Core.SNetworkExt;
 using SNetwork;
@@ -58,7 +57,6 @@ internal class CoreBootstrap : Feature
         }
         PopupMessageManager.Setup();
 
-        FeatureManager.EnableAutomatedFeature(typeof(LiveLobbyList));
         FeatureManager.EnableAutomatedFeature(typeof(GlobalBan));
     }
 

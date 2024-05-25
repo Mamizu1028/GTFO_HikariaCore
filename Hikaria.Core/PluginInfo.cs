@@ -6,5 +6,5 @@ public static class PluginInfo
 
     public const string NAME = "HikariaCore";
 
-    public const string VERSION = "0.0.11";
+    public const string VERSION = "0.0.12";
 }

@@ -11,7 +11,7 @@ namespace Hikaria.Core.EntityFramework.Repositories
 
         public async Task<SteamUser?> FindUser(ulong steamid)
         {
-            return await GTFODbContext.Set<SteamUser>().FindAsync(steamid);
+            return await _dbContext.Set<SteamUser>().FindAsync(steamid);
         }
     }
 }

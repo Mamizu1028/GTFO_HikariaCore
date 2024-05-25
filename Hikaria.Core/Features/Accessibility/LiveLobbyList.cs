@@ -97,14 +97,14 @@ namespace Hikaria.Core.Features.Accessibility
         {
             public LiveLobbyEntry(LiveLobby lobby)
             {
-                LobbyID = lobby.Identifier.ID;
+                LobbyID = lobby.LobbyID;
+                LobbyName = lobby.LobbyName;
                 Privacy = lobby.PrivacySettings.Privacy;
-                LobbyName = lobby.Identifier.Name;
                 ExpeditionInfo = $"{lobby.DetailedInfo.Expedition} \"{lobby.DetailedInfo.ExpeditionName}\"";
-                RegionName = new RegionInfo(lobby.DetailedInfo.RegionName).DisplayName;
-                StatusInfo = lobby.StatusInfo?.StatusInfo ?? string.Empty;
+                SecondaryEntry.RegionName = new RegionInfo(lobby.DetailedInfo.RegionName).DisplayName;
+                SecondaryEntry.StatusInfo = lobby.StatusInfo?.StatusInfo ?? string.Empty;
                 SlotsInfo = $"{lobby.DetailedInfo.MaxPlayerSlots - lobby.DetailedInfo.OpenSlots}/{lobby.DetailedInfo.MaxPlayerSlots}";
-                IsPlayeringModded = lobby.DetailedInfo.IsPlayingModded;
+                SecondaryEntry.IsPlayeringModded = lobby.DetailedInfo.IsPlayingModded;
                 JoinButton = new("加入", "加入", () =>
                 {
                     if (Privacy == LobbyPrivacy.Private)
@@ -128,6 +128,22 @@ namespace Hikaria.Core.Features.Accessibility
             [FSDisplayName("人数")]
             [FSReadOnly]
             public string SlotsInfo { get; set; }
+            [FSDisplayName("权限")]
+            [FSReadOnly]
+            public LobbyPrivacy Privacy { get; set; }
+            [FSDisplayName("大厅详情")]
+            public LiveLobbySecondaryEntry SecondaryEntry { get; set; } = new();
+            [FSHeader("加入大厅")]
+            [FSDescription("若为大厅权限为私密则必须输入正确密码才可加入")]
+            [FSDisplayName("加入密码")]
+            [FSMaxLength(25)]
+            public string Password { get; set; }
+            [FSDisplayName("加入大厅")]
+            public FButton JoinButton { get; set; }
+        }
+
+        public class LiveLobbySecondaryEntry
+        {
             [FSDisplayName("MTFO标记")]
             [FSReadOnly]
             public bool IsPlayeringModded { get; set; }
@@ -137,15 +153,6 @@ namespace Hikaria.Core.Features.Accessibility
             [FSDisplayName("状态")]
             [FSReadOnly]
             public string StatusInfo { get; set; }
-            [FSDisplayName("权限")]
-            [FSReadOnly]
-            public LobbyPrivacy Privacy { get; set; }
-            [FSDescription("若为大厅权限为私密则必须输入正确密码才可加入")]
-            [FSDisplayName("加入密码")]
-            [FSMaxLength(25)]
-            public string Password { get; set; }
-            [FSDisplayName("加入大厅")]
-            public FButton JoinButton { get; set; }
         }
 
         public override void Init()
@@ -272,7 +279,7 @@ namespace Hikaria.Core.Features.Accessibility
 
         public static async Task CreateLobby()
         {
-            await HttpHelper.PutAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/CreateLobby", new LiveLobby(LiveLobbyPresenceManager.Identifier, LiveLobbyPresenceManager.PrivacySettings, LiveLobbyPresenceManager.DetailedInfo));
+            await HttpHelper.PutAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/CreateLobby", new LiveLobby(LiveLobbyPresenceManager.LobbyID, LiveLobbyPresenceManager.LobbyName, LiveLobbyPresenceManager.PrivacySettings, LiveLobbyPresenceManager.DetailedInfo));
         }
 
         public static async Task KeepLobbyAlive(SNet_Lobby_STEAM lobby)

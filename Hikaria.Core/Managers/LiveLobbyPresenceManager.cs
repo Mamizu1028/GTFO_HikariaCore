@@ -18,12 +18,9 @@ namespace Hikaria.Core.Managers
         public static int MaxPlayerSlots => SNet.Slots.m_playerSlotPermissions.Where((_, i) => SNet.Slots.IsHumanPermittedInSlot(i)).Count();
         public static int OpenSlots => SNet.Slots.m_playerSlotPermissions.Where((_, i) => SNet.Slots.IsHumanPermittedInSlot(i) && (SNet.Slots.PlayerSlots[i].player == null || SNet.Slots.PlayerSlots[i].player.IsBot)).Count();
         public static bool IsLobbyFull => !SNet.Slots.HasFreeHumanSlot();
+        public static ulong LobbyID => SNet.Lobby?.Identifier.ID ?? 0UL;
+        public static string LobbyName => SNet.Lobby?.Identifier.Name ?? string.Empty;
 
-        public static LobbyIdentifier Identifier => new()
-        {
-            ID = SNet.Lobby?.Identifier?.ID ?? 0UL,
-            Name = SNet.Lobby?.Identifier?.Name ?? string.Empty,
-        };
         public static LobbyPrivacySettings PrivacySettings => new()
         {
             Privacy = LobbySettingsOverride.LobbySettingsManager.CurrentSettings.Privacy,
