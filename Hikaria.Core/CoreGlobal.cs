@@ -1,9 +1,7 @@
-﻿using Clonesoft.Json;
-using Hikaria.Core.Entities;
+﻿using Hikaria.Core.Entities;
 using Hikaria.Core.Managers;
 using Hikaria.Core.Utility;
 using SNetwork;
-using System.Net.NetworkInformation;
 
 namespace Hikaria.Core
 {
@@ -18,41 +16,41 @@ namespace Hikaria.Core
         public static int Revision => SNet.GameRevision;
         public static string RevisionString => SNet.GameRevisionString;
 
-        public static bool ServerOnline { get; private set; }
+        public static bool ServerOnline { get; private set; } = true;
 
         public static IPLocationInfo IPLocation { get; private set; }
 
         public static void CheckIsServerOnline()
         {
-            try
+            Task.Run(async () =>
             {
-                using (Ping ping = new Ping())
+                try
                 {
-                    PingReply reply = ping.Send(new Uri(ServerUrl).Host);
-                    ServerOnline = reply.Status == IPStatus.Success;
+                    ServerOnline = true;
+                    ServerOnline = await HttpHelper.GetAsync<bool>($"{ServerUrl}/alive/checkalive");
                 }
-            }
-            catch
-            {
-                ServerOnline = false;
-            }
-            finally
-            {
-                if (!ServerOnline)
+                catch
                 {
-                    Logs.LogError($"Server: \"{ServerUrl}\" is offline!!!");
-                    PopupMessageManager.ShowPopup(new()
+                    ServerOnline = false;
+                }
+                finally
+                {
+                    if (!ServerOnline)
                     {
-                        BlinkInContent = true,
-                        BlinkTimeInterval = 0.5f,
-                        Header = "Hikaria.Core <color=red>警告</color>",
-                        UpperText = "<color=red><size=200%>当前服务端不在线，依赖在线服务的功能无法工作！</size></color>",
-                        LowerText = string.Empty,
-                        PopupType = PopupType.BoosterImplantMissed,
-                        OnCloseCallback = PopupMessageManager.EmptyAction
-                    });
+                        Logs.LogError($"Server: \"{ServerUrl}\" is offline!!!");
+                        PopupMessageManager.ShowPopup(new()
+                        {
+                            BlinkInContent = true,
+                            BlinkTimeInterval = 0.5f,
+                            Header = "Hikaria.Core",
+                            UpperText = "<color=#FF8C00><size=125%>警告 Warning</size></color>\n\n<size=150%><color=red>当前服务端不在线，某些功能无法正常工作！\nThe server is offline, some features won't work!</size></color>",
+                            LowerText = string.Empty,
+                            PopupType = PopupType.BoosterImplantMissed,
+                            OnCloseCallback = PopupMessageManager.EmptyAction
+                        });
+                    }
                 }
-            }
+            });
         }
 
         public static void GetIPLocationInfo()

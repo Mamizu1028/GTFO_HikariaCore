@@ -10,6 +10,7 @@ using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.FeaturesAPI.Components;
+using TheArchive.Core.Localization;
 using TMPro;
 using static Hikaria.Core.Features.Security.LobbySettingsOverride;
 using LobbyPrivacy = Hikaria.Core.Entities.LobbyPrivacy;
@@ -29,6 +30,8 @@ namespace Hikaria.Core.Features.Accessibility
             typeof(LobbyPrivacy)
         };
 
+        public static ILocalizationService LocalizationService { get; set; }
+
         [FeatureConfig]
         public static LiveLobbyListSetting Settings { get; set; }
 
@@ -47,18 +50,22 @@ namespace Hikaria.Core.Features.Accessibility
         {
             public LiveLobbyQueryEntry()
             {
-                QueryButton = new("搜索", "搜索", () =>
+                if (PromptLabel.HasPrimaryText)
+                    PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText(LocalizationService?.Get(4) ?? string.Empty);
+                PromptLabel.LabelText = LocalizationService?.Get(4) ?? string.Empty;
+
+                QueryButton = new(LocalizationService?.Get(1) ?? "Search", null, () =>
                 {
                     Task.Run(async () =>
                     {
-                        PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText($"正在搜索...");
+                        PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText(LocalizationService.Get(2));
                         Settings.LiveLobbyEntries = new();
-                        var result = await QueryLiveLobby(this);
+                        var result = await QueryLiveLobby(Settings.LobbyQueryEntry);
                         foreach (var lobby in result)
                         {
                             Settings.LiveLobbyEntries.Add(new(lobby));
                         }
-                        PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText($"已搜索到{Settings.LiveLobbyEntries.Count}个符合条件的大厅");
+                        PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText(LocalizationService.Format(3, Settings.LiveLobbyEntries.Count));
                     });
                 });
             }
@@ -85,7 +92,7 @@ namespace Hikaria.Core.Features.Accessibility
             [JsonIgnore]
             public FLabel EmptyLabel1 { get; set; } = new();
             [JsonIgnore]
-            public FLabel PromptLabel { get; set; } = new("点按下方按钮搜索符合条件的大厅");
+            public FLabel PromptLabel { get; set; } = new("Prompt");
             [JsonIgnore]
             [FSDisplayName("搜索大厅")]
             public FButton QueryButton { get; set; }
@@ -105,7 +112,7 @@ namespace Hikaria.Core.Features.Accessibility
                 SecondaryEntry.StatusInfo = lobby.StatusInfo?.StatusInfo ?? string.Empty;
                 SlotsInfo = $"{lobby.DetailedInfo.MaxPlayerSlots - lobby.DetailedInfo.OpenSlots}/{lobby.DetailedInfo.MaxPlayerSlots}";
                 SecondaryEntry.IsPlayeringModded = lobby.DetailedInfo.IsPlayingModded;
-                JoinButton = new("加入", "加入", () =>
+                JoinButton = new(LocalizationService.Get(5), null, () =>
                 {
                     if (Privacy == LobbyPrivacy.Private)
                     {
@@ -131,7 +138,7 @@ namespace Hikaria.Core.Features.Accessibility
             [FSDisplayName("权限")]
             [FSReadOnly]
             public LobbyPrivacy Privacy { get; set; }
-            [FSDisplayName("大厅详情")]
+            [FSDisplayName("详细信息")]
             public LiveLobbySecondaryEntry SecondaryEntry { get; set; } = new();
             [FSHeader("加入大厅")]
             [FSDescription("若为大厅权限为私密则必须输入正确密码才可加入")]
@@ -157,6 +164,8 @@ namespace Hikaria.Core.Features.Accessibility
 
         public override void Init()
         {
+            LocalizationService = Localization;
+
             GameEventAPI.RegisterSelf(this);
         }
 
@@ -284,22 +293,22 @@ namespace Hikaria.Core.Features.Accessibility
 
         public static async Task KeepLobbyAlive(SNet_Lobby_STEAM lobby)
         {
-            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/KeepLobbyAlive?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", string.Empty);
+            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/KeepLobbyAlive?LobbyID={lobby.Identifier.ID}", string.Empty);
         }
 
         public static async Task UpdateLobbyDetailInfo(SNet_Lobby_STEAM lobby)
         {
-            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyDetailedInfo?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", LiveLobbyPresenceManager.DetailedInfo);
+            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyDetailedInfo?LobbyID={lobby.Identifier.ID}", LiveLobbyPresenceManager.DetailedInfo);
         }
 
         public static async Task UpdateLobbyPrivacySettings(SNet_Lobby_STEAM lobby)
         {
-            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyPrivacySettings?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", LiveLobbyPresenceManager.PrivacySettings);
+            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyPrivacySettings?LobbyID={lobby.Identifier.ID}", LiveLobbyPresenceManager.PrivacySettings);
         }
 
         public static async Task UpdateLobbyStatusInfo(SNet_Lobby_STEAM lobby)
         {
-            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyStatusInfo?revision={SNet.GameRevision}&lobbyID={lobby.Identifier.ID}", LiveLobbyPresenceManager.StatusInfo);
+            await HttpHelper.PatchAsync<object>($"{CoreGlobal.ServerUrl}/LiveLobby/UpdateLobbyStatusInfo?LobbyID={lobby.Identifier.ID}", LiveLobbyPresenceManager.StatusInfo);
         }
     }
 }

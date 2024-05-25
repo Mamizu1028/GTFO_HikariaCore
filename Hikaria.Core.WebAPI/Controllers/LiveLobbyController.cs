@@ -1,5 +1,6 @@
 ﻿using Hikaria.Core.Contracts;
 using Hikaria.Core.Entities;
+using Hikaria.Core.WebAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Hikaria.Core.WebAPI.Controllers
@@ -23,6 +24,10 @@ namespace Hikaria.Core.WebAPI.Controllers
         {
             try
             {
+                if (lobby.LobbyID == 0)
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest);
+                }
                 await _repository.LiveLobbies.CreateOrUpdateLobby(lobby);
                 await _repository.Save();
                 return Ok();
@@ -48,7 +53,7 @@ namespace Hikaria.Core.WebAPI.Controllers
             }
         }
 
-        //[UserPrivilegeAuthorize(UserPrivilege.Admin)]
+        [UserPrivilegeAuthorize(UserPrivilege.Admin)]
         [HttpGet]
         public async Task<IActionResult> GetLobbyLookup()
         {

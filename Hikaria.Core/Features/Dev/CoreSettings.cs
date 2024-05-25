@@ -1,5 +1,4 @@
-﻿using System.Net.NetworkInformation;
-using TheArchive.Core.Attributes;
+﻿using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.FeaturesAPI.Settings;
@@ -7,6 +6,7 @@ using TheArchive.Core.FeaturesAPI.Settings;
 namespace Hikaria.Core.Features.Dev
 {
     [EnableFeatureByDefault]
+    [HideInModSettings]
     [DisallowInGameToggle]
     internal class CoreSettings : Feature
     {
@@ -28,7 +28,14 @@ namespace Hikaria.Core.Features.Dev
 
         public override void Init()
         {
-            CoreGlobal.CheckIsServerOnline();
+            Task.Run(() =>
+            {
+                while (CoreGlobal.ServerOnline)
+                {
+                    CoreGlobal.CheckIsServerOnline();
+                    Thread.Sleep(TimeSpan.FromMinutes(5));
+                }
+            });
             //CoreGlobal.GetIPLocationInfo();
         }
 
