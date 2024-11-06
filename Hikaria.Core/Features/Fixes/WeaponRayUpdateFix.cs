@@ -20,7 +20,7 @@ public class WeaponRayUpdateFix : Feature
     {
         private static void Prefix(BulletWeapon __instance)
         {
-            if (__instance.Owner?.IsLocallyOwned ?? false || !__instance.AimButtonPressed)
+            if (__instance.Owner?.IsLocallyOwned ?? false || !__instance.FireButtonPressed)
             {
                 if (_camera == null)
                     _camera = __instance.Owner.FPSCamera;
@@ -34,7 +34,7 @@ public class WeaponRayUpdateFix : Feature
     {
         private static void Prefix(Shotgun __instance)
         {
-            if (__instance.Owner?.IsLocallyOwned ?? false || !__instance.AimButtonPressed)
+            if (__instance.Owner?.IsLocallyOwned ?? false || !__instance.FireButtonPressed)
             {
                 if (_camera == null)
                     _camera = __instance.Owner.FPSCamera;
