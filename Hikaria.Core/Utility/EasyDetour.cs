@@ -74,7 +74,7 @@ public unsafe static class EasyDetour
             }
             else
             {
-                Logger.Fail($"NativeDetour Success: {descriptor}");
+                Logger.Fail($"NativeDetour Fail: {descriptor}");
             }
             return result;
         }

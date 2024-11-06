@@ -30,7 +30,7 @@ namespace Hikaria.Core.Features.Accessibility
             typeof(LobbyPrivacy)
         };
 
-        public static ILocalizationService LocalizationService { get; set; }
+        public static new ILocalizationService Localization { get; set; }
 
         [FeatureConfig]
         public static LiveLobbyListSetting Settings { get; set; }
@@ -51,21 +51,21 @@ namespace Hikaria.Core.Features.Accessibility
             public LiveLobbyQueryEntry()
             {
                 if (PromptLabel.HasPrimaryText)
-                    PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText(LocalizationService?.Get(4) ?? string.Empty);
-                PromptLabel.LabelText = LocalizationService?.Get(4) ?? string.Empty;
+                    PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText(Localization?.Get(4) ?? string.Empty);
+                PromptLabel.LabelText = Localization?.Get(4) ?? string.Empty;
 
-                QueryButton = new(LocalizationService?.Get(1) ?? "Search", null, () =>
+                QueryButton = new(Localization?.Get(1) ?? "Search", null, () =>
                 {
                     Task.Run(async () =>
                     {
-                        PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText(LocalizationService.Get(2));
+                        PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText(Localization.Get(2));
                         Settings.LiveLobbyEntries = new();
                         var result = await QueryLiveLobby(Settings.LobbyQueryEntry);
                         foreach (var lobby in result)
                         {
                             Settings.LiveLobbyEntries.Add(new(lobby));
                         }
-                        PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText(LocalizationService.Format(3, Settings.LiveLobbyEntries.Count));
+                        PromptLabel.PrimaryText.Cast<TextMeshPro>().SetText(Localization.Format(3, Settings.LiveLobbyEntries.Count));
                     });
                 });
             }
@@ -112,7 +112,7 @@ namespace Hikaria.Core.Features.Accessibility
                 SecondaryEntry.StatusInfo = lobby.StatusInfo?.StatusInfo ?? string.Empty;
                 SlotsInfo = $"{lobby.DetailedInfo.MaxPlayerSlots - lobby.DetailedInfo.OpenSlots}/{lobby.DetailedInfo.MaxPlayerSlots}";
                 SecondaryEntry.IsPlayeringModded = lobby.DetailedInfo.IsPlayingModded;
-                JoinButton = new(LocalizationService.Get(5), null, () =>
+                JoinButton = new(Localization.Get(5), null, () =>
                 {
                     if (Privacy == LobbyPrivacy.Private)
                     {
@@ -164,8 +164,6 @@ namespace Hikaria.Core.Features.Accessibility
 
         public override void Init()
         {
-            LocalizationService = Localization;
-
             GameEventAPI.RegisterSelf(this);
         }
 

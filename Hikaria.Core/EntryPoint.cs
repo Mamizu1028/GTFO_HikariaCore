@@ -18,13 +18,11 @@ public class EntryPoint : IArchiveModule
 
     public ArchiveLegacyPatcher Patcher { get; set; }
 
-    public string ModuleGroup => FeatureGroups.GetOrCreateModuleGroup("Hikaria Core");
-
-    public Dictionary<Language, string> ModuleGroupLanguages => new()
+    public string ModuleGroup => FeatureGroups.GetOrCreateModuleGroup("Hikaria Core", new()
     {
         { Language.English, "Hikaria Core" },
         { Language.Chinese, "Hikaria 核心" },
-    };
+    });
 
     public void Init()
     {

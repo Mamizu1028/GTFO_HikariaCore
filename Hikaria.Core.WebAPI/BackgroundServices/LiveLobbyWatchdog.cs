@@ -33,6 +33,7 @@ namespace Hikaria.Core.WebAPI.BackgroundServices
             {
                 IRepositoryWrapper repository = scope.ServiceProvider.GetService<IRepositoryWrapper>();
                 await repository.LiveLobbies.DeleteExpiredLobbies();
+                await repository.Save();
             }
         }
 

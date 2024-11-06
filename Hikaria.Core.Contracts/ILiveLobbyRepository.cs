@@ -12,7 +12,6 @@ namespace Hikaria.Core.Contracts
         Task UpdateLobbyDetailInfo(ulong lobbyID, DetailedLobbyInfo detailInfo);
         Task UpdateLobbyStatusInfo(ulong lobbyID, LobbyStatusInfo statusInfo);
         Task UpdateLobbyPrivacySettings(ulong lobbyID, LobbyPrivacySettings lobbySettings);
-        Task DeleteLobby(params ulong[] lobbyIDs);
         Task<IEnumerable<LiveLobby>> QueryLobby(LiveLobbyQueryBase filter);
         Task DeleteExpiredLobbies();
         Task KeepLobbyAlive(ulong lobbyID);

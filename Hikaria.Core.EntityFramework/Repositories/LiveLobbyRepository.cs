@@ -47,6 +47,7 @@ namespace Hikaria.Core.EntityFramework.Repositories
                 dbLobby.LobbyName = lobby.LobbyName;
                 dbLobby.PrivacySettings = lobby.PrivacySettings;
                 dbLobby.DetailedInfo = lobby.DetailedInfo;
+                dbLobby.StatusInfo = lobby.StatusInfo;
             }
             else
             {
@@ -76,14 +77,6 @@ namespace Hikaria.Core.EntityFramework.Repositories
             return await _dbContext.LiveLobbies.AsNoTracking().ToDictionaryAsync(p => p.LobbyID);
         }
 
-        public async Task DeleteLobby(params ulong[] lobbyIDs)
-        {
-            var IDs = lobbyIDs.ToList();
-            var lobbies = await _dbContext.LiveLobbies.Where(p => IDs.Contains(p.LobbyID)).ToListAsync();
-            _dbContext.LiveLobbies.RemoveRange(lobbies);
-            await _dbContext.SaveChangesAsync();
-        }
-
         public async Task KeepLobbyAlive(ulong lobbyID)
         {
             var lobby = await FindByLobbyIDAsync(lobbyID);
@@ -102,7 +95,6 @@ namespace Hikaria.Core.EntityFramework.Repositories
         {
             var alllobbies = await _dbContext.LiveLobbies.Where(p => p.ExpirationTime < DateTime.Now).ToListAsync();
             _dbContext.LiveLobbies.RemoveRange(alllobbies);
-            await _dbContext.SaveChangesAsync();
         }
     }
 }

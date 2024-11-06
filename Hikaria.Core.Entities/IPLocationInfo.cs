@@ -1,6 +1,4 @@
-﻿using System.Net;
-
-namespace Hikaria.Core.Entities;
+﻿namespace Hikaria.Core.Entities;
 
 public class IPLocationInfo
 {

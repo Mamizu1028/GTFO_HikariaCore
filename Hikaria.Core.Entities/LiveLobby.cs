@@ -1,13 +1,24 @@
-﻿namespace Hikaria.Core.Entities
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Hikaria.Core.Entities
 {
     public class LiveLobby
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public ulong LobbyID { get; set; }
+        [Required]
+        [MaxLength(100)]
         public string LobbyName { get; set; }
+        [Required]
         public LobbyPrivacySettings PrivacySettings { get; set; }
+        [Required]
         public DetailedLobbyInfo DetailedInfo { get; set; }
+        [Required]
         public LobbyStatusInfo StatusInfo { get; set; }
-
+        [Required]
         public DateTime ExpirationTime { get; set; }
 
         public LiveLobby()
@@ -31,6 +42,7 @@
 
     public class LobbyPrivacySettings
     {
+        [Required]
         public LobbyPrivacy Privacy
         {
             get
@@ -44,7 +56,7 @@
                 _privacy = value;
             }
         }
-
+        [Required]
         public bool HasPassword { get; set; }
 
         private LobbyPrivacy _privacy = LobbyPrivacy.Public;
@@ -52,14 +64,26 @@
 
     public class DetailedLobbyInfo
     {
+        [Required]
         public ulong HostSteamID { get; set; }
+        [Required]
+        [MaxLength(100)]
         public string Expedition { get; set; }
+        [Required]
+        [MaxLength(100)]
         public string ExpeditionName { get; set; }
+        [Required]
         public int OpenSlots { get; set; }
+        [Required]
         public int MaxPlayerSlots { get; set; }
+        [Required]
+        [MaxLength(100)]
         public string RegionName { get; set; }
+        [Required]
         public int Revision { get; set; }
+        [Required]
         public bool IsPlayingModded { get; set; }
+        [Required]
         public HashSet<ulong> SteamIDsInLobby { get; set; }
 
         public DetailedLobbyInfo()
@@ -73,6 +97,8 @@
 
     public class LobbyStatusInfo
     {
+        [Required]
+        [MaxLength(500)]
         public string StatusInfo { get; set; }
 
         public LobbyStatusInfo()

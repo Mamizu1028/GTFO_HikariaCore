@@ -2,7 +2,7 @@
 
 namespace Hikaria.Core.WebAPI.Controllers
 {
-    [Route("api/gtfo/[controller]/[action]")]
+    [Route("api/gtfo/[controller]")]
     [ApiController]
     public class AliveController : ControllerBase
     {

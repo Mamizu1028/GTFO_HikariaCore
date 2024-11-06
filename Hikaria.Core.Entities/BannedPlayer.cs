@@ -1,16 +1,19 @@
 ﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Hikaria.Core.Entities
 {
     public class BannedPlayer
     {
-        [DisplayName("SteamID")]
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public ulong SteamID { get; set; }
-        [DisplayName("玩家名称")]
+        [Required]
         public string Name { get; set; }
-        [DisplayName("封禁原因")]
+        [Required]
         public string Reason { get; set; }
-        [DisplayName("封禁时间")]
+        [Required]
         public DateTime DateBanned { get; set; }
     }
 }

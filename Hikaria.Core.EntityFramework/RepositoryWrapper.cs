@@ -12,7 +12,6 @@ namespace Hikaria.Core.EntityFramework
 
         public IBannedPlayerRepository BannedPlayers => _bannedPlayers ??= new BannedPlayersRepository(_gtfoDbContext);
         public ISteamUserRepository SteamUsers => _steamUsers ??= new SteamUserRepository(_gtfoDbContext);
-
         public ILiveLobbyRepository LiveLobbies => _liveLobbies ??= new LiveLobbyRepository(_gtfoDbContext);
 
         public RepositoryWrapper(GTFODbContext gtfoDbContext)

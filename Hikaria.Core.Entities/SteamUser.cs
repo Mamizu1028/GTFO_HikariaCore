@@ -1,10 +1,18 @@
-﻿namespace Hikaria.Core.Entities
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Hikaria.Core.Entities
 {
     public class SteamUser
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public ulong SteamID { get; set; }
+        [Required]
         public string UserName { get; set; }
+        [Required]
         public string Password { get; set; }
+        [Required]
         public UserPrivilege Privilege { get; set; }
     }
 

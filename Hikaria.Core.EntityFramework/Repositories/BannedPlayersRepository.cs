@@ -15,15 +15,31 @@ namespace Hikaria.Core.EntityFramework.Repositories
             return await FindAll().OrderBy(p => p.SteamID).ToListAsync();
         }
 
-        public void BanPlayer(BannedPlayer player)
+        public async Task BanPlayer(BannedPlayer player)
         {
-            player.DateBanned = DateTime.UtcNow;
-            Create(player);
+            var dbPlayer = await _dbContext.BannedPlayers.FindAsync(player.SteamID);
+            if (dbPlayer == null)
+            {
+                await _dbContext.BannedPlayers.AddAsync(player);
+            }
+            else
+            {
+                dbPlayer.DateBanned = DateTime.UtcNow;
+            }
         }
 
-        public void UnbanPlayer(BannedPlayer player)
+        public async Task UnbanPlayer(ulong steamid)
         {
-            Delete(player);
+            var player = await _dbContext.BannedPlayers.FindAsync(steamid);
+            if (player != null)
+            {
+                _dbContext.BannedPlayers.Remove(player);
+            }
+        }
+
+        public async Task<BannedPlayer?> GetBannedPlayerBySteamID(ulong steamid)
+        {
+            return await FindByCondition(p => p.SteamID == steamid).FirstOrDefaultAsync();
         }
     }
 }
