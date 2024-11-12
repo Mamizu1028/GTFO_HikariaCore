@@ -182,7 +182,7 @@ namespace Hikaria.Core.Features.Fixes
                 for (int i = 0; i < __instance.ArchetypeData.ShotgunBulletCount; i++)
                 {
                     Vector3 firePos = __instance.Owner.FPSCamera.Position;
-                    float num = __instance.m_segmentSize;
+                    float num = __instance.m_segmentSize * i;
                     float angOffsetX = 0f;
                     float angOffsetY = 0f;
                     if (i > 0)
