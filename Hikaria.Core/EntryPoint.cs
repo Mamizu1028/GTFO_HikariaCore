@@ -12,7 +12,7 @@ namespace Hikaria.Core;
 [ArchiveModule(PluginInfo.GUID, PluginInfo.NAME, PluginInfo.VERSION)]
 public class EntryPoint : IArchiveModule
 {
-    public bool ApplyHarmonyPatches => false;
+    public bool ApplyHarmonyPatches => true;
 
     public bool UsesLegacyPatches => false;
 
