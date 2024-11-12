@@ -41,7 +41,7 @@ namespace Hikaria.Core.Features.Fixes
             }
         }
 
-        [HarmonyAfter($"{ArchiveMod.MOD_NAME}_FeaturesAPI_AccuracyTracker")]
+        [HarmonyAfter(new string[] { $"{ArchiveMod.MOD_NAME}_FeaturesAPI_AccuracyTracker", $"{ArchiveMod.MOD_NAME}_FeaturesAPI_{nameof(WeaponRayUpdateFix)}" })]
         [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.Fire))]
         private class BulletWeapon__Fire__Patch
         {
@@ -173,7 +173,7 @@ namespace Hikaria.Core.Features.Fixes
             }
         }
 
-        [HarmonyAfter($"{ArchiveMod.MOD_NAME}_FeaturesAPI_AccuracyTracker")]
+        [HarmonyAfter(new string[] { $"{ArchiveMod.MOD_NAME}_FeaturesAPI_AccuracyTracker", $"{ArchiveMod.MOD_NAME}_FeaturesAPI_{nameof(WeaponRayUpdateFix)}" })]
         [HarmonyPatch(typeof(Shotgun), nameof(Shotgun.Fire))]
         private class Shotgun__Fire__Patch
         {
