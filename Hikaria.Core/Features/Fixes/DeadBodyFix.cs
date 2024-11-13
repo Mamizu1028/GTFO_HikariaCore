@@ -1,7 +1,9 @@
-﻿using Enemies;
+﻿using Agents;
+using Enemies;
 using SNetwork;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
+using UnityEngine;
 
 namespace Hikaria.Core.Features.Fixes
 {
@@ -14,7 +16,7 @@ namespace Hikaria.Core.Features.Fixes
 
         public override FeatureGroup Group => EntryPoint.Groups.Fixes;
 
-        [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.BulletDamage))]
+        [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.BulletDamage), new Type[] { typeof(float), typeof(Agent), typeof(Vector3), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(int), typeof(float), typeof(float), typeof(uint) })]
         private class Dam_EnemyDamageBase__BulletDamage__Patch
         {
             private static void Postfix(Dam_EnemyDamageBase __instance, float dam)
