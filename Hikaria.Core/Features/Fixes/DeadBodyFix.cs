@@ -4,6 +4,8 @@ using SNetwork;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
 using UnityEngine;
+using static Il2CppSystem.Globalization.CultureInfo;
+using static TenChambers.Backend;
 
 namespace Hikaria.Core.Features.Fixes
 {
@@ -24,7 +26,25 @@ namespace Hikaria.Core.Features.Fixes
                 if (SNet.IsMaster)
                     return;
 
-                if (__instance.RegisterDamage(AgentModifierManager.ApplyModifier(__instance.Owner, AgentModifier.ProjectileResistance, dam)))
+                var enemy = __instance.Owner;
+                if (__instance.RegisterDamage(AgentModifierManager.ApplyModifier(enemy, AgentModifier.MeleeResistance, dam)))
+                    ChangeEnemyDamagableLayerToDead(enemy);
+            }
+        }
+
+        [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.MeleeDamage), new Type[] { typeof(float), typeof(Agent), typeof(Vector3), typeof(Vector3), typeof(int), typeof(float), typeof(float), typeof(float), typeof(float), typeof(bool), typeof(DamageNoiseLevel), typeof(uint) })]
+        private class Dam_EnemyDamageBase__MeleeDamage__Patch
+        {
+            private static void Postfix(Dam_EnemyDamageBase __instance, float dam, float sleeperMulti)
+            {
+                if (SNet.IsMaster)
+                    return;
+
+                var enemy = __instance.Owner;
+                float realDam = AgentModifierManager.ApplyModifier(__instance.Owner, AgentModifier.ProjectileResistance, dam);
+                if (enemy.Locomotion.CurrentStateEnum == ES_StateEnum.Hibernate)
+                    realDam *= sleeperMulti;
+                if (__instance.RegisterDamage(realDam))
                     ChangeEnemyDamagableLayerToDead(__instance.Owner);
             }
         }
