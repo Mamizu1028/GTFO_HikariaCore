@@ -4,8 +4,6 @@ using SNetwork;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
 using UnityEngine;
-using static Il2CppSystem.Globalization.CultureInfo;
-using static TenChambers.Backend;
 
 namespace Hikaria.Core.Features.Fixes
 {
