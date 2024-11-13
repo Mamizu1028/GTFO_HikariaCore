@@ -45,7 +45,7 @@ namespace Hikaria.Core.Features.Fixes
                 if (enemy.Locomotion.CurrentStateEnum == ES_StateEnum.Hibernate)
                     realDam *= sleeperMulti;
                 if (__instance.RegisterDamage(realDam))
-                    ChangeEnemyDamagableLayerToDead(__instance.Owner);
+                    ChangeEnemyDamagableLayerToDead(enemy);
             }
         }
 
