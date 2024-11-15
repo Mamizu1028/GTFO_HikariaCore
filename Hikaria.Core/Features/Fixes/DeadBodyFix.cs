@@ -10,11 +10,13 @@ namespace Hikaria.Core.Features.Fixes
     [EnableFeatureByDefault]
     public class DeadBodyFix : Feature
     {
-        public override string Name => "尸体穿透修复";
+        public override string Name => "敌人尸体穿透修复";
 
-        public override string Description => "使子弹可以穿透敌人的尸体";
+        public override string Description => "使攻击可以穿透敌人的尸体";
 
         public override FeatureGroup Group => EntryPoint.Groups.Fixes;
+
+        private static Dictionary<uint, bool> EnemyDeathLookup = new();
 
         [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.BulletDamage), new Type[] { typeof(float), typeof(Agent), typeof(Vector3), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(int), typeof(float), typeof(float), typeof(uint) })]
         private class Dam_EnemyDamageBase__BulletDamage__Patch
@@ -26,7 +28,10 @@ namespace Hikaria.Core.Features.Fixes
 
                 var enemy = __instance.Owner;
                 if (__instance.RegisterDamage(AgentModifierManager.ApplyModifier(enemy, AgentModifier.MeleeResistance, dam)))
-                    ChangeEnemyDamagableLayerToDead(enemy);
+                {
+                    EnemyDeathLookup[enemy.GlobalID] = true;
+                    ChangeEnemyDamagableLayer(enemy, LayerManager.LAYER_ENEMY_DEAD);
+                }
             }
         }
 
@@ -43,12 +48,38 @@ namespace Hikaria.Core.Features.Fixes
                 if (enemy.Locomotion.CurrentStateEnum == ES_StateEnum.Hibernate)
                     realDam *= sleeperMulti;
                 if (__instance.RegisterDamage(realDam))
-                    ChangeEnemyDamagableLayerToDead(enemy);
+                {
+                    EnemyDeathLookup[enemy.GlobalID] = true;
+                    ChangeEnemyDamagableLayer(enemy, LayerManager.LAYER_ENEMY_DEAD);
+                }
             }
         }
 
-        [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveBulletDamage))]
-        private class Dam_EnemyDamageBase__ReceiveBulletDamage__Patch
+        [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveSetHealth))]
+        private class Dam_EnemyDamageBase__ReceiveSetHealth__Patch
+        {
+            private static void Postfix(Dam_EnemyDamageBase __instance, pSetHealthData data)
+            {
+                if (SNet.IsMaster)
+                    return;
+
+                var id = __instance.Owner.GlobalID;
+                if (data.health.Get(__instance.HealthMax) <= 0f)
+                {
+                    EnemyDeathLookup[id] = true;
+                    ChangeEnemyDamagableLayer(__instance.Owner, LayerManager.LAYER_ENEMY_DEAD);
+                }
+                else if (__instance.Health <= 0f)
+                {
+                    EnemyDeathLookup[id] = false;
+                    ChangeEnemyDamagableLayer(__instance.Owner, LayerManager.LAYER_ENEMY_DAMAGABLE);
+                }
+
+            }
+        }
+
+        [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ProcessReceivedDamage))]
+        private class Dam_EnemyDamageBase__ProcessReceivedDamage__Patch
         {
             private static void Postfix(Dam_EnemyDamageBase __instance)
             {
@@ -56,7 +87,7 @@ namespace Hikaria.Core.Features.Fixes
                     return;
 
                 if (__instance.Health <= 0f)
-                    ChangeEnemyDamagableLayerToDead(__instance.Owner);
+                    ChangeEnemyDamagableLayer(__instance.Owner, LayerManager.LAYER_ENEMY_DEAD);
             }
         }
 
@@ -65,18 +96,78 @@ namespace Hikaria.Core.Features.Fixes
         {
             private static void Postfix(ES_HitreactBase __instance, ES_HitreactType value)
             {
-                if (value != ES_HitreactType.ToDeath || SNet.IsMaster)
+                if (SNet.IsMaster)
                     return;
 
-                ChangeEnemyDamagableLayerToDead(__instance.m_enemyAgent);
+                if (CurrentGameState < (int)eGameStateName.InLevel)
+                    return;
+
+                var enemy = __instance.m_enemyAgent;
+                var id = enemy.GlobalID;
+                if (value == ES_HitreactType.ToDeath)
+                {
+                    EnemyDeathLookup[id] = true;
+                    ChangeEnemyDamagableLayer(enemy, LayerManager.LAYER_ENEMY_DEAD);
+                }
+                else if (EnemyDeathLookup.TryGetValue(id, out var isDead) && isDead)
+                {
+                    EnemyDeathLookup[id] = false;
+                    ChangeEnemyDamagableLayer(__instance.m_enemyAgent, LayerManager.LAYER_ENEMY_DAMAGABLE);
+                }
             }
         }
 
-        private static void ChangeEnemyDamagableLayerToDead(EnemyAgent enemy)
+        [ArchivePatch(typeof(EnemyAgent), nameof(EnemyAgent.UpdateEnemyAgent))]
+        private class EnemyAgent__UpdateEmemyAgent__Patch
+        {
+            private static void Postfix(EnemyAgent __instance)
+            {
+                if (SNet.IsMaster)
+                    return;
+
+                if (__instance.Alive && __instance.Damage.Health <= 0f)
+                {
+                    if (__instance.Sync.m_enemyStateData.agentMode == AgentMode.Off)
+                        return;
+
+                    var id = __instance.GlobalID;
+                    if (EnemyDeathLookup.TryGetValue(__instance.GlobalID, out var isDead) && isDead)
+                    {
+                        EnemyDeathLookup[id] = false;
+                        ChangeEnemyDamagableLayer(__instance, LayerManager.LAYER_ENEMY_DAMAGABLE);
+                    }
+                }
+            }
+        }
+
+        [ArchivePatch(typeof(EnemyAgent), nameof(EnemyAgent.Enable))]
+        private class EnemyAgent__Enable__Patch
+        {
+            private static void Prefix(EnemyAgent __instance)
+            {
+                var id = __instance.GlobalID;
+                if (EnemyDeathLookup.TryGetValue(id, out var isDead) && isDead)
+                {
+                    EnemyDeathLookup[id] = false;
+                    ChangeEnemyDamagableLayer(__instance, LayerManager.LAYER_ENEMY_DAMAGABLE);
+                }
+            }
+        }
+
+        [ArchivePatch(typeof(EnemyAgent), nameof(EnemyAgent.OnDestroy))]
+        private class EnemyAgent__OnDestroy__Patch
+        {
+            private static void Prefix(EnemyAgent __instance)
+            {
+                EnemyDeathLookup.Remove(__instance.GlobalID);
+            }
+        }
+
+        private static void ChangeEnemyDamagableLayer(EnemyAgent enemy, int layer)
         {
             foreach (var limb in enemy.Damage.DamageLimbs)
             {
-                limb.gameObject.layer = LayerManager.LAYER_ENEMY_DEAD;
+                limb.gameObject.layer = layer;
             }
         }
 
@@ -86,6 +177,7 @@ namespace Hikaria.Core.Features.Fixes
             private static void Postfix(LayerManager __instance)
             {
                 LayerManager.MASK_BULLETWEAPON_PIERCING_PASS = __instance.GetMask(new string[] { "EnemyDamagable", "PlayerSynced", "EnemyDead" });
+                LayerManager.MASK_MELEE_ATTACK_TARGETS_WITH_STATIC = __instance.GetMask(new string[] { "EnemyDamagable", "Dynamic", "Default", "Default_NoGraph", "Default_BlockGraph" });
             }
         }
     }
