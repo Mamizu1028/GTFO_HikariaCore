@@ -232,11 +232,6 @@ namespace Hikaria.Core.Features.Fixes
                                 firePos = Weapon.s_weaponRayData.rayHit.point + Weapon.s_weaponRayData.fireDir * 0.1f;
                                 additionalDis += Weapon.s_weaponRayData.rayHit.distance;
                                 Weapon.s_weaponRayData.maxRayDist -= Weapon.s_weaponRayData.rayHit.distance;
-
-                                if (rayData.GetHashCode() != Weapon.s_weaponRayData.GetHashCode())
-                                {
-                                    Logs.LogError("RayHitData Not Match!");
-                                }
                             }
                             else
                             {

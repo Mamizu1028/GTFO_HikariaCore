@@ -64,12 +64,12 @@ namespace Hikaria.Core.Features.Fixes
                     return;
 
                 var id = __instance.Owner.GlobalID;
-                if (data.health.Get(__instance.HealthMax) <= 0f)
+                if (__instance.Health <= 0f)
                 {
                     EnemyDeathLookup[id] = true;
                     ChangeEnemyDamagableLayer(__instance.Owner, LayerManager.LAYER_ENEMY_DEAD);
                 }
-                else if (__instance.Health <= 0f)
+                else
                 {
                     EnemyDeathLookup[id] = false;
                     ChangeEnemyDamagableLayer(__instance.Owner, LayerManager.LAYER_ENEMY_DAMAGABLE);
