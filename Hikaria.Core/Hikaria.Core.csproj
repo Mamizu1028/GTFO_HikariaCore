@@ -18,6 +18,9 @@
     <Reference Include="BepInEx.Unity.IL2CPP">
       <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\core\BepInEx.Unity.IL2CPP.dll</HintPath>
     </Reference>
+    <Reference Include="CellSound-ASM">
+      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\CellSound-ASM.dll</HintPath>
+    </Reference>
     <Reference Include="Clonesoft.Json">
       <HintPath>..\..\GTFO_TheArchive\lib\net60\Clonesoft.Json.dll</HintPath>
     </Reference>
@@ -83,6 +86,9 @@
     </Reference>
     <Reference Include="Utils-ASM">
       <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\Utils-ASM.dll</HintPath>
+    </Reference>
+    <Reference Include="Wwise-ASM">
+      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\Wwise-ASM.dll</HintPath>
     </Reference>
   </ItemGroup>
 

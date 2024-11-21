@@ -5,6 +5,7 @@ using TheArchive.Core;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.Localization;
+using TheArchive.Loader;
 
 namespace Hikaria.Core;
 
@@ -43,6 +44,10 @@ public class EntryPoint : IArchiveModule
 
             return settings;
         });
+
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2CppWithInterfaces<Components.Interact_Base>(false, typeof(IInteractable));
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<Components.Interact_Timed>(false);
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<Components.Interact_ManualTimedWithCallback>(false);
 
         Logs.LogMessage("OK");
     }
