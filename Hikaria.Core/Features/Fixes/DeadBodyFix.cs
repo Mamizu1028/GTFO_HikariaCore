@@ -112,7 +112,7 @@ namespace Hikaria.Core.Features.Fixes
                 else if (EnemyDeathLookup.TryGetValue(id, out var isDead) && isDead)
                 {
                     EnemyDeathLookup[id] = false;
-                    ChangeEnemyDamagableLayer(__instance.m_enemyAgent, LayerManager.LAYER_ENEMY_DAMAGABLE);
+                    ChangeEnemyDamagableLayer(enemy, LayerManager.LAYER_ENEMY_DAMAGABLE);
                 }
             }
         }
@@ -131,7 +131,7 @@ namespace Hikaria.Core.Features.Fixes
                         return;
 
                     var id = __instance.GlobalID;
-                    if (EnemyDeathLookup.TryGetValue(__instance.GlobalID, out var isDead) && isDead)
+                    if (EnemyDeathLookup.TryGetValue(id, out var isDead) && isDead)
                     {
                         EnemyDeathLookup[id] = false;
                         ChangeEnemyDamagableLayer(__instance, LayerManager.LAYER_ENEMY_DAMAGABLE);
