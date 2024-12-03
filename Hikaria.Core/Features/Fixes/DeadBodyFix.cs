@@ -44,7 +44,7 @@ namespace Hikaria.Core.Features.Fixes
                     return;
 
                 var enemy = __instance.Owner;
-                float realDam = AgentModifierManager.ApplyModifier(__instance.Owner, AgentModifier.MeleeResistance, dam);
+                float realDam = AgentModifierManager.ApplyModifier(enemy, AgentModifier.MeleeResistance, dam);
                 if (enemy.Locomotion.CurrentStateEnum == ES_StateEnum.Hibernate)
                     realDam *= sleeperMulti;
                 if (__instance.RegisterDamage(realDam))
