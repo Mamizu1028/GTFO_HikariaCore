@@ -1,7 +1,4 @@
 ﻿using Hikaria.Core.Interfaces;
-using Hikaria.Core.Utility;
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Il2CppInterop.Runtime.Runtime;
 using SNetwork;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
@@ -21,34 +18,6 @@ internal class GameEventListener : Feature
     public override FeatureGroup Group => EntryPoint.Groups.Dev;
 
     public static new IArchiveLogger FeatureLogger { get; set; }
-
-    public override void Init()
-    {
-        EasyDetour.CreateAndApply<SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour>(out _);
-    }
-
-    private unsafe class SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour : EasyDetourBase<SNet_PlayerSlotManager__Internal_ManageSlot__NativeDetour.Internal_ManageSlotDel>
-    {
-        public delegate bool Internal_ManageSlotDel(IntPtr instancePtr, IntPtr playerPtr, IntPtr slotPtr, IntPtr slotsPtr, SNet_SlotType type, SNet_SlotHandleType handle, int index, Il2CppMethodInfo* methodInfo);
-
-        public override Internal_ManageSlotDel DetourTo => Detour;
-
-        public override DetourDescriptor Descriptor => new()
-        {
-            Type = typeof(SNet_PlayerSlotManager),
-            MethodName = nameof(SNet_PlayerSlotManager.Internal_ManageSlot),
-            ArgTypes = new Type[] { typeof(SNet_Player), typeof(SNet_Slot), typeof(Il2CppReferenceArray<SNet_Slot>), typeof(SNet_SlotType), typeof(SNet_SlotHandleType), typeof(int) },
-            ReturnType = typeof(bool),
-            IsGeneric = false
-        };
-
-        private bool Detour(IntPtr instancePtr, IntPtr playerPtr, IntPtr slotPtr, IntPtr slotsPtr, SNet_SlotType type, SNet_SlotHandleType handle, int index, Il2CppMethodInfo* methodInfo)
-        {
-            var result = Original(instancePtr, playerPtr, slotPtr, slotsPtr, type, handle, index, methodInfo);
-            OnPlayerSlotChangedM(new SNet_Player(playerPtr), type, handle, index);
-            return result;
-        }
-    }
 
     [ArchivePatch(typeof(SNet_GlobalManager), nameof(SNet_GlobalManager.Setup))]
     private class SNet_GlobalManager__Setup__Patch
@@ -309,32 +278,6 @@ internal class GameEventListener : Feature
         }
     }
 
-    private static void OnPlayerSlotChangedM(SNet_Player player, SNet_SlotType type, SNet_SlotHandleType handle, int index)
-    {
-        foreach (var Listener in PlayerSlotChangedListener)
-        {
-            try
-            {
-                Listener.OnPlayerSlotChanged(player, type, handle, index);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-
-        try
-        {
-            var onPlayerSlotChanged = OnPlayerSlotChanged;
-            onPlayerSlotChanged?.Invoke(player, type, handle, index);
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
-    }
-
-
     private static void OnMasterCommandM(pMasterCommand command)
     {
         foreach (var Listener in MasterCommandListeners)
@@ -436,8 +379,6 @@ internal class GameEventListener : Feature
             MasterChangedListeners.Add((IOnMasterChanged)instance);
         if (typeof(IOnMasterCommand).IsAssignableFrom(type))
             MasterCommandListeners.Add((IOnMasterCommand)instance);
-        if (typeof(IOnPlayerSlotChanged).IsAssignableFrom(type))
-            PlayerSlotChangedListener.Add((IOnPlayerSlotChanged)instance);
         if (typeof(IOnAfterLevelCleanup).IsAssignableFrom(type))
             AfterLevelCleanupListeners.Add((IOnAfterLevelCleanup)instance);
         if (typeof(IOnResetSession).IsAssignableFrom(type))
@@ -469,8 +410,6 @@ internal class GameEventListener : Feature
             MasterChangedListeners.Remove((IOnMasterChanged)instance);
         if (typeof(IOnMasterCommand).IsAssignableFrom(type))
             MasterCommandListeners.Remove((IOnMasterCommand)instance);
-        if (typeof(IOnPlayerSlotChanged).IsAssignableFrom(type))
-            PlayerSlotChangedListener.Remove((IOnPlayerSlotChanged)instance);
         if (typeof(IOnAfterLevelCleanup).IsAssignableFrom(type))
             AfterLevelCleanupListeners.Remove((IOnAfterLevelCleanup)instance);
         if (typeof(IOnResetSession).IsAssignableFrom(type))
@@ -486,7 +425,6 @@ internal class GameEventListener : Feature
     private static HashSet<IOnSessionMemberChanged> SessionMemberChangedListeners = new();
     private static HashSet<IOnMasterChanged> MasterChangedListeners = new();
     private static HashSet<IOnMasterCommand> MasterCommandListeners = new();
-    private static HashSet<IOnPlayerSlotChanged> PlayerSlotChangedListener = new();
     private static HashSet<IOnPrepareForRecall> PrepareForRecallListeners = new();
     private static HashSet<IOnRecallDone> RecallDoneListeners = new();
     private static HashSet<IOnAfterLevelCleanup> AfterLevelCleanupListeners = new();
@@ -496,13 +434,12 @@ internal class GameEventListener : Feature
     public static event Action<eBufferType> OnRecallComplete;
     public static event Action<eBufferType> OnPrepareForRecall;
     public static event Action<eBufferType> OnRecallDone;
-    public static event Action<eGameStateName, eGameStateName> OnGameStateChanged;
+    public static new event Action<eGameStateName, eGameStateName> OnGameStateChanged;
     public static event Action<SNet_Player, string> OnReceiveChatMessage;
     public static event Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason> OnPlayerEvent;
     public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged;
     public static event Action OnMasterChanged;
     public static event Action<eMasterCommandType, int> OnMasterCommand;
-    public static event Action<SNet_Player, SNet_SlotType, SNet_SlotHandleType, int> OnPlayerSlotChanged;
     public static event Action OnAfterLevelCleanup;
     public static event Action OnResetSession;
 }

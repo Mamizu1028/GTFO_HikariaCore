@@ -6,9 +6,13 @@ using TheArchive.Loader;
 
 namespace Hikaria.Core.Utility;
 
+
 public interface IEasyDetour
 {
+    INativeDetour NativeDetour { get; }
+
     bool Apply();
+
     void Unpatch();
 }
 
@@ -23,34 +27,35 @@ public abstract class EasyDetourBase<TDelegate> : IEasyDetour where TDelegate : 
     public abstract TDelegate DetourTo { get; }
     public abstract DetourDescriptor Descriptor { get; }
 
-    public TDelegate Original => s_Original;
-    public INativeDetour NativeDetour => s_Detour;
+    public TDelegate Original => _original;
+    public INativeDetour NativeDetour => _detour;
 
-    private static TDelegate s_Original;
-    private static INativeDetour s_Detour;
+    private TDelegate _original;
+    private INativeDetour _detour;
 
     public bool Apply()
     {
-        if (s_Detour != null)
+        if (_detour != null)
         {
-            s_Detour.Undo();
-            s_Detour.Free();
-            s_Detour.Dispose();
+            _detour.Undo();
+            _detour.Free();
+            _detour.Dispose();
         }
 
-        return EasyDetour.TryCreate(Descriptor, DetourTo, out s_Original, out s_Detour);
+        return EasyDetour.CreateAndApply(Descriptor, DetourTo, out _original, out _detour);
     }
 
     public void Unpatch()
     {
-        if (s_Detour != null)
+        if (_detour != null)
         {
-            s_Detour.Undo();
-            s_Detour.Free();
-            s_Detour.Dispose();
+            _detour.Undo();
+            _detour.Free();
+            _detour.Dispose();
         }
     }
 }
+
 
 public unsafe static class EasyDetour
 {
@@ -61,13 +66,13 @@ public unsafe static class EasyDetour
 
     public delegate void InstanceVoidDelegate(IntPtr instancePtr, Il2CppMethodInfo* methodInfo);
 
-    public static bool TryCreate<T>(DetourDescriptor descriptor, T to, out T originalCall, out INativeDetour detourInstance) where T : Delegate
+    public static bool CreateAndApply<T>(DetourDescriptor descriptor, T to, out T original, out INativeDetour detour) where T : Delegate
     {
         try
         {
             var ptr = descriptor.GetMethodPointer();
-            detourInstance = INativeDetour.CreateAndApply(ptr, to, out originalCall);
-            var result = detourInstance != null;
+            detour = INativeDetour.CreateAndApply(ptr, to, out original);
+            var result = detour != null;
             if (result)
             {
                 Logger.Success($"NativeDetour Success: {descriptor}");
@@ -83,15 +88,15 @@ public unsafe static class EasyDetour
             Logger.Error($"Exception Thrown while creating Detour:");
             Logger.Error(e.ToString());
         }
-
-        originalCall = null;
-        detourInstance = null;
+        original = null;
+        detour = null;
         return false;
     }
 
-    public static bool CreateAndApply<T>(out T easyDetour) where T : IEasyDetour
+    public static bool CreateAndApply<T>(out IEasyDetour easyDetour) where T : IEasyDetour
     {
-        easyDetour = Activator.CreateInstance<T>();
+        easyDetour = (IEasyDetour)Activator.CreateInstance(typeof(T));
+
         return easyDetour.Apply();
     }
 }

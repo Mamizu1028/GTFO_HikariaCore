@@ -19,7 +19,7 @@ namespace Hikaria.Core.Features.Accessibility
 {
     [EnableFeatureByDefault]
     [DisallowInGameToggle]
-    internal class LiveLobbyList : Feature, IOnMasterChanged, IOnPlayerSlotChanged
+    internal class LiveLobbyList : Feature, IOnMasterChanged, IOnPlayerEvent
     {
         public override string Name => "在线大厅列表";
 
@@ -181,9 +181,9 @@ namespace Hikaria.Core.Features.Accessibility
             }
         }
 
-        public void OnPlayerSlotChanged(SNet_Player player, SNet_SlotType type, SNet_SlotHandleType handle, int index)
+        public void OnPlayerEvent(SNet_Player player, SNet_PlayerEvent playerEvent, SNet_PlayerEventReason reason)
         {
-            if (SNet.IsMaster && SNet.IsInLobby)
+            if (SNet.IsMaster && SNet.IsInLobby && playerEvent == SNet_PlayerEvent.PlayerIsSynced)
             {
                 UpdateLobbyDetailInfo(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
             }
