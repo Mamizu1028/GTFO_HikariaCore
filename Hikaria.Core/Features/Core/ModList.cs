@@ -12,6 +12,7 @@ namespace Hikaria.Core.Features.Core;
 
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
+[DoNotSaveToConfig]
 internal class ModList : Feature, IOnSessionMemberChanged
 {
     public override string Name => "插件列表";

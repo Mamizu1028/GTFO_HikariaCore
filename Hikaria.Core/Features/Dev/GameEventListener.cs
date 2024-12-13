@@ -9,6 +9,7 @@ namespace Hikaria.Core.Features.Dev;
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
 [HideInModSettings]
+[DoNotSaveToConfig]
 internal class GameEventListener : Feature
 {
     public override string Name => "游戏事件监听";
@@ -39,6 +40,15 @@ internal class GameEventListener : Feature
         private static void Postfix()
         {
             CleanupAfterExpeditionM();
+        }
+    }
+
+    [ArchivePatch(typeof(SNet_Capture), nameof(SNet_Capture.OnBufferCommand))]
+    private class SNet_Capture__OnBufferCommand__Patch
+    {
+        private static void Postfix(pBufferCommand command)
+        {
+            OnBufferCommandM(command);
         }
     }
 
@@ -191,6 +201,30 @@ internal class GameEventListener : Feature
         {
             var onPrepareForRecall = OnPrepareForRecall;
             onPrepareForRecall?.Invoke(bufferType);
+        }
+        catch (Exception ex)
+        {
+            FeatureLogger.Exception(ex);
+        }
+    }
+
+    private static void OnBufferCommandM(pBufferCommand command)
+    {
+        foreach (var listener in BufferCommandListeners)
+        {
+            try
+            {
+                listener.OnBufferCommand(command);
+            }
+            catch (Exception ex)
+            {
+                FeatureLogger.Exception(ex);
+            }
+        }
+        try
+        {
+            var onBufferCommand = OnBufferCommand;
+            onBufferCommand?.Invoke(command);
         }
         catch (Exception ex)
         {
@@ -383,6 +417,8 @@ internal class GameEventListener : Feature
             AfterLevelCleanupListeners.Add((IOnAfterLevelCleanup)instance);
         if (typeof(IOnResetSession).IsAssignableFrom(type))
             ResetSessionListeners.Add((IOnResetSession)instance);
+        if (typeof(IOnBufferCommand).IsAssignableFrom(type))
+            BufferCommandListeners.Add((IOnBufferCommand)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.RegisterPauseable((IPauseable)instance);
     }
@@ -414,6 +450,8 @@ internal class GameEventListener : Feature
             AfterLevelCleanupListeners.Remove((IOnAfterLevelCleanup)instance);
         if (typeof(IOnResetSession).IsAssignableFrom(type))
             ResetSessionListeners.Remove((IOnResetSession)instance);
+        if (typeof(IOnBufferCommand).IsAssignableFrom(type))
+            BufferCommandListeners.Remove((IOnBufferCommand)instance);
         if (typeof(IPauseable).IsAssignableFrom(type))
             Managers.PauseManager.UnregisterPauseable((IPauseable)instance);
     }
@@ -427,10 +465,12 @@ internal class GameEventListener : Feature
     private static HashSet<IOnMasterCommand> MasterCommandListeners = new();
     private static HashSet<IOnPrepareForRecall> PrepareForRecallListeners = new();
     private static HashSet<IOnRecallDone> RecallDoneListeners = new();
+    private static HashSet<IOnBufferCommand> BufferCommandListeners = new();
     private static HashSet<IOnAfterLevelCleanup> AfterLevelCleanupListeners = new();
     private static HashSet<IOnResetSession> ResetSessionListeners = new();
 
     public static event Action OnGameDataInited;
+    public static event Action<pBufferCommand> OnBufferCommand;
     public static event Action<eBufferType> OnRecallComplete;
     public static event Action<eBufferType> OnPrepareForRecall;
     public static event Action<eBufferType> OnRecallDone;

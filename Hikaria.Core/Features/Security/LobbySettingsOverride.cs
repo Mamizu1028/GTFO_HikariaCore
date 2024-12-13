@@ -21,6 +21,7 @@ namespace Hikaria.Core.Features.Security;
 
 [DisallowInGameToggle]
 [EnableFeatureByDefault]
+[DoNotSaveToConfig]
 internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 {
     public override string Name => "大厅设置覆盖";

@@ -8,6 +8,7 @@ namespace Hikaria.Core.Features.Dev
     [EnableFeatureByDefault]
     [HideInModSettings]
     [DisallowInGameToggle]
+    [DoNotSaveToConfig]
     internal class CoreSettings : Feature
     {
         public override string Name => "Core Settings";

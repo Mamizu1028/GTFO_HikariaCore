@@ -48,6 +48,9 @@
     <Reference Include="SemanticVersioning">
       <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\core\SemanticVersioning.dll</HintPath>
     </Reference>
+    <Reference Include="Shards-ASM">
+      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\Shards-ASM.dll</HintPath>
+    </Reference>
     <Reference Include="SNet_ASM">
       <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\GTFO\BepInEx\interop\SNet_ASM.dll</HintPath>
     </Reference>

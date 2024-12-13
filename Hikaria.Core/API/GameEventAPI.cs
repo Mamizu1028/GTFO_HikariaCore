@@ -18,6 +18,7 @@ public static class GameEventAPI
     public static event Action OnResetSession { add => GameEventListener.OnResetSession += value; remove => GameEventListener.OnResetSession -= value; }
     public static event Action<eBufferType> OnRecallDone { add => GameEventListener.OnRecallDone += value; remove => GameEventListener.OnRecallDone -= value; }
     public static event Action<eBufferType> OnPrepareForRecall { add => GameEventListener.OnPrepareForRecall += value; remove => GameEventListener.OnPrepareForRecall -= value; }
+    public static event Action<pBufferCommand> OnBufferCommand { add => GameEventListener.OnBufferCommand += value; remove => GameEventListener.OnBufferCommand -= value; }
 
     public static void RegisterSelf<T>(T instance)
     {

@@ -12,6 +12,7 @@ namespace Hikaria.Core.Features.Dev;
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
 [HideInModSettings]
+[DoNotSaveToConfig]
 internal class CoreBootstrap : Feature
 {
     public override string Name => "核心引导";

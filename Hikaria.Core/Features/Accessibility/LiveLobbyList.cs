@@ -19,6 +19,7 @@ namespace Hikaria.Core.Features.Accessibility
 {
     [EnableFeatureByDefault]
     [DisallowInGameToggle]
+    [DoNotSaveToConfig]
     internal class LiveLobbyList : Feature, IOnMasterChanged, IOnPlayerEvent
     {
         public override string Name => "在线大厅列表";
