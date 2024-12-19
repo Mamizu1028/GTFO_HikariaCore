@@ -1,10 +1,13 @@
 ﻿using Hikaria.Core.Entities;
 using Hikaria.Core.Utility;
+using SNetwork;
+using Steamworks;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Features.Security;
 using TheArchive.Interfaces;
+using UnityEngine;
 
 namespace Hikaria.Core.Features.Security
 {
@@ -107,6 +110,11 @@ namespace Hikaria.Core.Features.Security
                     });
                     FeatureLogger.Notice($"SteamID: {player.SteamID}, Name: {player.Name}, DateBanned: {player.DateBanned.ToLongDateString()}");
                 }
+            }
+            if (_bannedPlayers.Find(p => p.SteamID == SNet.LocalPlayer.Lookup) != null)
+            {
+                Application.Quit();
+                return;
             }
             MarkSettingsAsDirty(PlayerLobbyManagement.Settings);
             FeatureManager.DisableAutomatedFeature(typeof(GlobalBan));

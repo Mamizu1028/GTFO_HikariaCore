@@ -390,7 +390,7 @@ internal class GameEventListener : Feature
     }
 
 
-    public static void RegisterSelf<T>(T instance)
+    public static void RegisterListener<T>(T instance)
     {
         Type type = instance.GetType();
         if (type.IsInterface || type.IsAbstract)
@@ -423,7 +423,7 @@ internal class GameEventListener : Feature
             Managers.PauseManager.RegisterPauseable((IPauseable)instance);
     }
 
-    public static void UnregisterSelf<T>(T instance)
+    public static void UnregisterListener<T>(T instance)
     {
         Type type = instance.GetType();
         if (type.IsInterface || type.IsAbstract)

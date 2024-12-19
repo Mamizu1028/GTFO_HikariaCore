@@ -105,11 +105,11 @@ namespace Hikaria.Core.Features.Accessibility
         {
             public LiveLobbyEntry(LiveLobby lobby)
             {
-                LobbyID = lobby.LobbyID;
+                SecondaryEntry.LobbyID = lobby.LobbyID;
                 LobbyName = lobby.LobbyName;
                 Privacy = lobby.PrivacySettings.Privacy;
                 ExpeditionInfo = $"{lobby.DetailedInfo.Expedition} \"{lobby.DetailedInfo.ExpeditionName}\"";
-                SecondaryEntry.RegionName = new RegionInfo(lobby.DetailedInfo.RegionName).DisplayName;
+                RegionName = new RegionInfo(lobby.DetailedInfo.RegionName).DisplayName;
                 SecondaryEntry.StatusInfo = lobby.StatusInfo?.StatusInfo ?? string.Empty;
                 SlotsInfo = $"{lobby.DetailedInfo.MaxPlayerSlots - lobby.DetailedInfo.OpenSlots}/{lobby.DetailedInfo.MaxPlayerSlots}";
                 SecondaryEntry.IsPlayeringModded = lobby.DetailedInfo.IsPlayingModded;
@@ -119,14 +119,11 @@ namespace Hikaria.Core.Features.Accessibility
                     {
                         LobbySettingsManager.PasswordForJoinOtherLobby = Password;
                     }
-                    SNet.Lobbies.JoinLobby(LobbyID);
+                    SNet.Lobbies.JoinLobby(SecondaryEntry.LobbyID);
                 });
             }
 
-            [FSSeparator]
-            [FSDisplayName("大厅ID")]
-            [FSReadOnly]
-            public ulong LobbyID { get; set; }
+
             [FSDisplayName("大厅名称")]
             [FSReadOnly]
             public string LobbyName { get; set; }
@@ -139,6 +136,9 @@ namespace Hikaria.Core.Features.Accessibility
             [FSDisplayName("权限")]
             [FSReadOnly]
             public LobbyPrivacy Privacy { get; set; }
+            [FSDisplayName("国家/地区")]
+            [FSReadOnly]
+            public string RegionName { get; set; }
             [FSDisplayName("详细信息")]
             public LiveLobbySecondaryEntry SecondaryEntry { get; set; } = new();
             [FSHeader("加入大厅")]
@@ -152,12 +152,14 @@ namespace Hikaria.Core.Features.Accessibility
 
         public class LiveLobbySecondaryEntry
         {
+            [FSSeparator]
+            [FSDisplayName("大厅ID")]
+            [FSReadOnly]
+            public ulong LobbyID { get; set; }
             [FSDisplayName("MTFO标记")]
             [FSReadOnly]
             public bool IsPlayeringModded { get; set; }
-            [FSDisplayName("国家/地区")]
-            [FSReadOnly]
-            public string RegionName { get; set; }
+
             [FSDisplayName("状态")]
             [FSReadOnly]
             public string StatusInfo { get; set; }
@@ -165,7 +167,7 @@ namespace Hikaria.Core.Features.Accessibility
 
         public override void Init()
         {
-            GameEventAPI.RegisterSelf(this);
+            GameEventAPI.RegisterListener(this);
         }
 
         public void OnMasterChanged()

@@ -6,8 +6,8 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
 {
     ~SNetExt_SyncedAction()
     {
-        GameEventAPI.UnregisterSelf(this);
-        CoreAPI.UnregisterSelf(this);
+        GameEventAPI.UnregisterListener(this);
+        CoreAPI.UnregisterListener(this);
     }
 
     protected void Setup(string eventName, Action<ulong, T> incomingAction, Action<T> incomingActionValidation = null, Func<SNetwork.SNet_Player, bool> listenerFilter = null, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
@@ -16,8 +16,8 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
         m_incomingAction = incomingAction;
         m_listenerFilter = listenerFilter;
         m_hasListenerFilter = listenerFilter != null;
-        GameEventAPI.RegisterSelf(this);
-        CoreAPI.RegisterSelf(this);
+        GameEventAPI.RegisterListener(this);
+        CoreAPI.RegisterListener(this);
     }
 
     public void SyncToPlayer(SNetwork.SNet_Player player, T data)

@@ -15,12 +15,12 @@ internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
 
     public override void OnEnable()
     {
-        GameEventAPI.RegisterSelf(this);
+        GameEventAPI.RegisterListener(this);
     }
 
     public override void OnDisable()
     {
-        GameEventAPI.UnregisterSelf(this);
+        GameEventAPI.UnregisterListener(this);
     }
 
     public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)

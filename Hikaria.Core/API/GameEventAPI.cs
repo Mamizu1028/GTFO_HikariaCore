@@ -20,14 +20,14 @@ public static class GameEventAPI
     public static event Action<eBufferType> OnPrepareForRecall { add => GameEventListener.OnPrepareForRecall += value; remove => GameEventListener.OnPrepareForRecall -= value; }
     public static event Action<pBufferCommand> OnBufferCommand { add => GameEventListener.OnBufferCommand += value; remove => GameEventListener.OnBufferCommand -= value; }
 
-    public static void RegisterSelf<T>(T instance)
+    public static void RegisterListener<T>(T instance)
     {
-        GameEventListener.RegisterSelf(instance);
+        GameEventListener.RegisterListener(instance);
     }
 
-    public static void UnregisterSelf<T>(T instance)
+    public static void UnregisterListener<T>(T instance)
     {
-        GameEventListener.UnregisterSelf(instance);
+        GameEventListener.UnregisterListener(instance);
     }
 
     public static bool IsGamePaused { get => global::PauseManager.IsPaused; set => global::PauseManager.IsPaused = value; }

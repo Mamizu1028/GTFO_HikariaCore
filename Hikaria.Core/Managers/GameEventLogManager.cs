@@ -9,12 +9,12 @@ public class GameEventLogManager : MonoBehaviour, IPauseable
     private void Awake()
     {
         Instance = this;
-        GameEventAPI.RegisterSelf(this);
+        GameEventAPI.RegisterListener(this);
     }
 
     private void OnDestroy()
     {
-        GameEventAPI.UnregisterSelf(this);
+        GameEventAPI.UnregisterListener(this);
     }
 
     private void FixedUpdate()
