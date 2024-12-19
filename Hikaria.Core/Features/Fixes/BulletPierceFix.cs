@@ -6,6 +6,7 @@ using Player;
 using TheArchive;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Features.Fixes;
 using UnityEngine;
 
 namespace Hikaria.Core.Features.Fixes

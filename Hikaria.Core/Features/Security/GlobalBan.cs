@@ -1,7 +1,6 @@
 ﻿using Hikaria.Core.Entities;
 using Hikaria.Core.Utility;
 using SNetwork;
-using Steamworks;
 using TheArchive.Core.Attributes;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
