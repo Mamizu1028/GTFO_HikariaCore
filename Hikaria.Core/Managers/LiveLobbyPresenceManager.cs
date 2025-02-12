@@ -26,6 +26,7 @@ namespace Hikaria.Core.Managers
             Privacy = LobbySettingsOverride.LobbySettingsManager.CurrentSettings.Privacy,
             HasPassword = LobbySettingsOverride.LobbySettingsManager.CurrentSettings.HasPassword,
         };
+
         public static DetailedLobbyInfo DetailedInfo => new()
         {
             Expedition = Expedition,
@@ -36,8 +37,9 @@ namespace Hikaria.Core.Managers
             OpenSlots = OpenSlots,
             RegionName = RegionInfo.CurrentRegion.TwoLetterISORegionName,
             Revision = Revision,
-            SteamIDsInLobby = SNet.Lobby?.TryCast<SNet_Lobby_STEAM>()?.m_steamIDsInLobby.ToSystemList().ToHashSet() ?? new(),
+            SteamIDsInLobby = SNet.LobbyPlayers.ToSystemList().Select(p => p.Lookup).ToHashSet() ?? new(),
         };
+
         public static LobbyStatusInfo StatusInfo => new();
 
         public static LobbyPrivacy GetLobbyTypeFromSNetLobbyType(LobbyType type)

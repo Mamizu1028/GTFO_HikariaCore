@@ -109,7 +109,7 @@ namespace Hikaria.Core.Features.Accessibility
                 LobbyName = lobby.LobbyName;
                 Privacy = lobby.PrivacySettings.Privacy;
                 ExpeditionInfo = $"{lobby.DetailedInfo.Expedition} \"{lobby.DetailedInfo.ExpeditionName}\"";
-                RegionName = new RegionInfo(lobby.DetailedInfo.RegionName).DisplayName;
+                RegionName = new RegionInfo(lobby.DetailedInfo.RegionName).TwoLetterISORegionName;
                 SecondaryEntry.StatusInfo = lobby.StatusInfo?.StatusInfo ?? string.Empty;
                 SlotsInfo = $"{lobby.DetailedInfo.MaxPlayerSlots - lobby.DetailedInfo.OpenSlots}/{lobby.DetailedInfo.MaxPlayerSlots}";
                 SecondaryEntry.IsPlayeringModded = lobby.DetailedInfo.IsPlayingModded;
@@ -123,25 +123,36 @@ namespace Hikaria.Core.Features.Accessibility
                 });
             }
 
-
+            [FSSeparator]
             [FSDisplayName("大厅名称")]
             [FSReadOnly]
             public string LobbyName { get; set; }
-            [FSDisplayName("关卡")]
-            [FSReadOnly]
+
+            [FSIgnore]
             public string ExpeditionInfo { get; set; }
-            [FSDisplayName("人数")]
-            [FSReadOnly]
+            [FSIgnore]
             public string SlotsInfo { get; set; }
+            [FSIgnore]
+            public string RegionName { get; set; }
+
+            [FSReadOnly]
+            [FSDisplayName("大厅信息")]
+            public string LobbyInfo
+            {
+                get => $"{ExpeditionInfo} ({SlotsInfo}) [{RegionName}]";
+                set
+                {
+                }
+            }
+
+            [FSDisplayName("详细信息")]
+            public LiveLobbySecondaryEntry SecondaryEntry { get; set; } = new();
+
             [FSDisplayName("权限")]
             [FSReadOnly]
             public LobbyPrivacy Privacy { get; set; }
-            [FSDisplayName("国家/地区")]
-            [FSReadOnly]
-            public string RegionName { get; set; }
-            [FSDisplayName("详细信息")]
-            public LiveLobbySecondaryEntry SecondaryEntry { get; set; } = new();
-            [FSHeader("加入大厅")]
+
+            //[FSHeader("加入大厅")]
             [FSDescription("若为大厅权限为私密则必须输入正确密码才可加入")]
             [FSDisplayName("加入密码")]
             [FSMaxLength(25)]
