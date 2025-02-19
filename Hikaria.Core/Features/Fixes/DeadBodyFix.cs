@@ -18,6 +18,8 @@ namespace Hikaria.Core.Features.Fixes
 
         private static Dictionary<uint, bool> EnemyDeathLookup = new();
 
+        private static pFullDamageData s_fullDamageData = new();
+
         [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.BulletDamage), new Type[] { typeof(float), typeof(Agent), typeof(Vector3), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(int), typeof(float), typeof(float), typeof(uint) })]
         private class Dam_EnemyDamageBase__BulletDamage__Patch
         {
@@ -27,7 +29,8 @@ namespace Hikaria.Core.Features.Fixes
                     return;
 
                 var enemy = __instance.Owner;
-                if (__instance.RegisterDamage(AgentModifierManager.ApplyModifier(enemy, AgentModifier.ProjectileResistance, dam)))
+                s_fullDamageData.damage.Set(dam, __instance.HealthMax);
+                if (__instance.RegisterDamage(AgentModifierManager.ApplyModifier(enemy, AgentModifier.ProjectileResistance, s_fullDamageData.damage.Get(__instance.HealthMax))))
                 {
                     EnemyDeathLookup[enemy.GlobalID] = true;
                     ChangeEnemyDamagableLayer(enemy, LayerManager.LAYER_ENEMY_DEAD);
@@ -44,10 +47,8 @@ namespace Hikaria.Core.Features.Fixes
                     return;
 
                 var enemy = __instance.Owner;
-                float realDam = AgentModifierManager.ApplyModifier(enemy, AgentModifier.MeleeResistance, dam);
-                if (enemy.Locomotion.CurrentStateEnum == ES_StateEnum.Hibernate)
-                    realDam *= sleeperMulti;
-                if (__instance.RegisterDamage(realDam))
+                s_fullDamageData.damage.Set(dam, __instance.HealthMax);
+                if (__instance.RegisterDamage(AgentModifierManager.ApplyModifier(enemy, AgentModifier.MeleeResistance, s_fullDamageData.damage.Get(__instance.HealthMax))))
                 {
                     EnemyDeathLookup[enemy.GlobalID] = true;
                     ChangeEnemyDamagableLayer(enemy, LayerManager.LAYER_ENEMY_DEAD);
@@ -94,12 +95,12 @@ namespace Hikaria.Core.Features.Fixes
         [ArchivePatch(typeof(ES_HitreactBase), nameof(ES_HitreactBase.CurrentReactionType), null, ArchivePatch.PatchMethodType.Setter)]
         private class ES_HitreactBase__set_CurrentReactionType__Patch
         {
-            private static void Postfix(ES_HitreactBase __instance, ES_HitreactType value)
+            private static void Postfix(ES_Hitreact __instance, ES_HitreactType value)
             {
                 if (SNet.IsMaster)
                     return;
 
-                if (CurrentGameState < (int)eGameStateName.InLevel)
+                if (CurrentGameState != (int)eGameStateName.InLevel)
                     return;
 
                 var enemy = __instance.m_enemyAgent;
@@ -116,6 +117,7 @@ namespace Hikaria.Core.Features.Fixes
                 }
             }
         }
+
 
         [ArchivePatch(typeof(EnemyAgent), nameof(EnemyAgent.UpdateEnemyAgent))]
         private class EnemyAgent__UpdateEmemyAgent__Patch
