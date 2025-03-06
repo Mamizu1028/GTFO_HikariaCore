@@ -1,7 +1,6 @@
 ﻿using TheArchive.Core.Attributes;
 using TheArchive.Core.FeaturesAPI;
 using UnityEngine;
-using static UnityEngine.UI.GridLayoutGroup;
 
 namespace Hikaria.Core.Features.Fixes
 {

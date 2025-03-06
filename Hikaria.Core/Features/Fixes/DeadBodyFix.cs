@@ -17,8 +17,10 @@ namespace Hikaria.Core.Features.Fixes
         public override FeatureGroup Group => EntryPoint.Groups.Fixes;
 
         private static Dictionary<uint, bool> EnemyDeathLookup = new();
-
+        private static Dictionary<uint, float> AuthoritativeEnemyHealthLookup = new();
         private static pFullDamageData s_fullDamageData = new();
+
+        public static bool IsEnemyDead(EnemyAgent enemy) => EnemyDeathLookup.TryGetValue(enemy.GlobalID, out var result) && result;
 
         [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.BulletDamage), new Type[] { typeof(float), typeof(Agent), typeof(Vector3), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(int), typeof(float), typeof(float), typeof(uint) })]
         private class Dam_EnemyDamageBase__BulletDamage__Patch
@@ -65,6 +67,7 @@ namespace Hikaria.Core.Features.Fixes
                     return;
 
                 var id = __instance.Owner.GlobalID;
+                AuthoritativeEnemyHealthLookup[id] = __instance.Health;
                 if (__instance.Health <= 0f)
                 {
                     EnemyDeathLookup[id] = true;
@@ -114,10 +117,12 @@ namespace Hikaria.Core.Features.Fixes
                 {
                     EnemyDeathLookup[id] = false;
                     ChangeEnemyDamagableLayer(enemy, LayerManager.LAYER_ENEMY_DAMAGABLE);
+                    if (AuthoritativeEnemyHealthLookup.TryGetValue(id, out var health))
+                        enemy.Damage.Health = health;
+                    enemy.Damage.DeathIndicatorShown = false;
                 }
             }
         }
-
 
         [ArchivePatch(typeof(EnemyAgent), nameof(EnemyAgent.UpdateEnemyAgent))]
         private class EnemyAgent__UpdateEmemyAgent__Patch
@@ -137,6 +142,9 @@ namespace Hikaria.Core.Features.Fixes
                     {
                         EnemyDeathLookup[id] = false;
                         ChangeEnemyDamagableLayer(__instance, LayerManager.LAYER_ENEMY_DAMAGABLE);
+                        if (AuthoritativeEnemyHealthLookup.TryGetValue(id, out var health))
+                            __instance.Damage.Health = health;
+                        __instance.Damage.DeathIndicatorShown = false;
                     }
                 }
             }
@@ -162,6 +170,7 @@ namespace Hikaria.Core.Features.Fixes
             private static void Prefix(EnemyAgent __instance)
             {
                 EnemyDeathLookup.Remove(__instance.GlobalID);
+                AuthoritativeEnemyHealthLookup.Remove(__instance.GlobalID);
             }
         }
 
