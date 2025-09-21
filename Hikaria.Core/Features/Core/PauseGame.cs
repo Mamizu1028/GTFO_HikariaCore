@@ -2,9 +2,12 @@
 using LevelGeneration;
 using Player;
 using SNetwork;
-using TheArchive.Core.Attributes;
+using TheArchive.Core.Attributes.Feature;
+using TheArchive.Core.Attributes.Feature.Members;
+using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Groups;
 using TheArchive.Core.Localization;
 using UnityEngine;
 
@@ -19,7 +22,7 @@ internal class PauseGame : Feature
 
     public override string Description => "为暂停游戏提供图形化交互。";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Core;
+    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Core");
 
     [FeatureConfig]
     public static PauseGameSettings Settings { get; set; }
@@ -152,14 +155,8 @@ internal class PauseGame : Feature
                 switch (reactor.m_currentState.status)
                 {
                     case eReactorStatus.Startup_intro:
-                        reactor.m_progressUpdateEnabled = !paused;
-                        break;
                     case eReactorStatus.Startup_intense:
-                        reactor.m_progressUpdateEnabled = !paused;
-                        break;
                     case eReactorStatus.Startup_waitForVerify:
-                        reactor.m_progressUpdateEnabled = !paused;
-                        break;
                     case eReactorStatus.Shutdown_intro:
                         reactor.m_progressUpdateEnabled = !paused;
                         break;

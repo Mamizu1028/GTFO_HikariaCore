@@ -1,6 +1,8 @@
-﻿using TheArchive.Core.Attributes;
+﻿using TheArchive.Core.Attributes.Feature;
+using TheArchive.Core.Attributes.Feature.Members;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Groups;
 using TheArchive.Core.FeaturesAPI.Settings;
 
 namespace Hikaria.Core.Features.Dev
@@ -12,9 +14,10 @@ namespace Hikaria.Core.Features.Dev
     internal class CoreSettings : Feature
     {
         public override string Name => "Core Settings";
-        public override FeatureGroup Group => EntryPoint.Groups.Dev;
 
         public override bool RequiresRestart => true;
+
+        public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Develop", true);
 
         [FeatureConfig]
         public static CoreSettingsSettings Settings { get; set; }
@@ -37,7 +40,6 @@ namespace Hikaria.Core.Features.Dev
                     Thread.Sleep(TimeSpan.FromMinutes(5));
                 }
             });
-            //CoreGlobal.GetIPLocationInfo();
         }
 
         public override void OnFeatureSettingChanged(FeatureSetting setting)

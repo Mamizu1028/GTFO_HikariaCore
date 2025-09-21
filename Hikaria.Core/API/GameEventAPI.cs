@@ -1,33 +1,32 @@
 ﻿using Hikaria.Core.Features.Dev;
-using Hikaria.Core.Interfaces;
 using SNetwork;
 
 namespace Hikaria.Core;
 
 public static class GameEventAPI
 {
-    public static event Action<eBufferType> OnRecallComplete { add => GameEventListener.OnRecallComplete += value; remove => GameEventListener.OnRecallComplete -= value; }
-    public static event Action OnGameDataInited { add => GameEventListener.OnGameDataInited += value; remove => GameEventListener.OnGameDataInited -= value; }
-    public static event Action<eGameStateName, eGameStateName> OnGameStateChanged { add => GameEventListener.OnGameStateChanged += value; remove => GameEventListener.OnGameStateChanged -= value; }
-    public static event Action<SNet_Player, string> OnReceiveChatMessage { add => GameEventListener.OnReceiveChatMessage += value; remove => GameEventListener.OnReceiveChatMessage -= value; }
-    public static event Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason> OnPlayerEvent { add => GameEventListener.OnPlayerEvent += value; remove => GameEventListener.OnPlayerEvent -= value; }
-    public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged { add => GameEventListener.OnSessionMemberChanged += value; remove => GameEventListener.OnSessionMemberChanged -= value; }
-    public static event Action OnMasterChanged { add => GameEventListener.OnMasterChanged += value; remove => GameEventListener.OnMasterChanged -= value; }
-    public static event Action<eMasterCommandType, int> OnMasterCommand { add => GameEventListener.OnMasterCommand += value; remove => GameEventListener.OnMasterCommand -= value; }
-    public static event Action OnAfterLevelCleanup { add => GameEventListener.OnAfterLevelCleanup += value; remove => GameEventListener.OnAfterLevelCleanup -= value; }
-    public static event Action OnResetSession { add => GameEventListener.OnResetSession += value; remove => GameEventListener.OnResetSession -= value; }
-    public static event Action<eBufferType> OnRecallDone { add => GameEventListener.OnRecallDone += value; remove => GameEventListener.OnRecallDone -= value; }
-    public static event Action<eBufferType> OnPrepareForRecall { add => GameEventListener.OnPrepareForRecall += value; remove => GameEventListener.OnPrepareForRecall -= value; }
-    public static event Action<pBufferCommand> OnBufferCommand { add => GameEventListener.OnBufferCommand += value; remove => GameEventListener.OnBufferCommand -= value; }
+    public static event Action<eBufferType> OnRecallComplete { add => GameEventAPI_Impl.OnRecallComplete += value; remove => GameEventAPI_Impl.OnRecallComplete -= value; }
+    public static event Action OnGameDataInited { add => GameEventAPI_Impl.OnGameDataInited += value; remove => GameEventAPI_Impl.OnGameDataInited -= value; }
+    public static event Action<eGameStateName, eGameStateName> OnGameStateChanged { add => GameEventAPI_Impl.OnGameStateChanged += value; remove => GameEventAPI_Impl.OnGameStateChanged -= value; }
+    public static event Action<SNet_Player, string> OnReceiveChatMessage { add => GameEventAPI_Impl.OnReceiveChatMessage += value; remove => GameEventAPI_Impl.OnReceiveChatMessage -= value; }
+    public static event Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason> OnPlayerEvent { add => GameEventAPI_Impl.OnPlayerEvent += value; remove => GameEventAPI_Impl.OnPlayerEvent -= value; }
+    public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged { add => GameEventAPI_Impl.OnSessionMemberChanged += value; remove => GameEventAPI_Impl.OnSessionMemberChanged -= value; }
+    public static event Action OnMasterChanged { add => GameEventAPI_Impl.OnMasterChanged += value; remove => GameEventAPI_Impl.OnMasterChanged -= value; }
+    public static event Action<eMasterCommandType, int> OnMasterCommand { add => GameEventAPI_Impl.OnMasterCommand += value; remove => GameEventAPI_Impl.OnMasterCommand -= value; }
+    public static event Action OnAfterLevelCleanup { add => GameEventAPI_Impl.OnAfterLevelCleanup += value; remove => GameEventAPI_Impl.OnAfterLevelCleanup -= value; }
+    public static event Action OnResetSession { add => GameEventAPI_Impl.OnResetSession += value; remove => GameEventAPI_Impl.OnResetSession -= value; }
+    public static event Action<eBufferType> OnRecallDone { add => GameEventAPI_Impl.OnRecallDone += value; remove => GameEventAPI_Impl.OnRecallDone -= value; }
+    public static event Action<eBufferType> OnPrepareForRecall { add => GameEventAPI_Impl.OnPrepareForRecall += value; remove => GameEventAPI_Impl.OnPrepareForRecall -= value; }
+    public static event Action<pBufferCommand> OnBufferCommand { add => GameEventAPI_Impl.OnBufferCommand += value; remove => GameEventAPI_Impl.OnBufferCommand -= value; }
 
     public static void RegisterListener<T>(T instance)
     {
-        GameEventListener.RegisterListener(instance);
+        GameEventAPI_Impl.RegisterListener(instance);
     }
 
     public static void UnregisterListener<T>(T instance)
     {
-        GameEventListener.UnregisterListener(instance);
+        GameEventAPI_Impl.UnregisterListener(instance);
     }
 
     public static bool IsGamePaused { get => global::PauseManager.IsPaused; set => global::PauseManager.IsPaused = value; }

@@ -1,12 +1,12 @@
 ﻿using Agents;
 using FX_EffectSystem;
 using Gear;
-using HarmonyLib;
 using Player;
-using TheArchive;
-using TheArchive.Core.Attributes;
+using TheArchive.Core.Attributes.Feature;
+using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
-using TheArchive.Features.Fixes;
+using TheArchive.Core.FeaturesAPI.Groups;
+using TheArchive.Interfaces;
 using UnityEngine;
 
 namespace Hikaria.Core.Features.Fixes
@@ -21,10 +21,14 @@ namespace Hikaria.Core.Features.Fixes
             "2. 穿透后扩散增加 --> 穿透后将扩散设为0\n" +
             "3. 穿透次数代表最多可命中敌人数 --> 穿透次数代表可穿透敌人数";
 
-        public override FeatureGroup Group => EntryPoint.Groups.Fixes;
+        public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Fixes");
+
+        public new static IArchiveLogger FeatureLogger { get; set; }
+
+        public static readonly int PatchPriority = 0;
 
         [ArchivePatch(typeof(Weapon), nameof(Weapon.CastWeaponRay))]
-        private class Weapon__CastWeaponRay__Patch
+        private static class Weapon__CastWeaponRay__Patch
         {
             public static Type[] ParameterTypes() => new[]
             {
@@ -42,10 +46,11 @@ namespace Hikaria.Core.Features.Fixes
             }
         }
 
-        [HarmonyAfter(new string[] { $"{ArchiveMod.MOD_NAME}_FeaturesAPI_AccuracyTracker", $"{ArchiveMod.MOD_NAME}_FeaturesAPI_{nameof(WeaponRayUpdateFix)}" })]
-        [HarmonyPatch(typeof(BulletWeapon), nameof(BulletWeapon.Fire))]
-        private class BulletWeapon__Fire__Patch
+        [ArchivePatch(typeof(BulletWeapon), nameof(BulletWeapon.Fire))]
+        private static class BulletWeapon__Fire__Patch
         {
+            private static int Priority() => PatchPriority;
+
             private static bool Prefix(BulletWeapon __instance, bool resetRecoilSimilarity = true)
             {
                 float num;
@@ -174,10 +179,11 @@ namespace Hikaria.Core.Features.Fixes
             }
         }
 
-        [HarmonyAfter(new string[] { $"{ArchiveMod.MOD_NAME}_FeaturesAPI_AccuracyTracker", $"{ArchiveMod.MOD_NAME}_FeaturesAPI_{nameof(WeaponRayUpdateFix)}" })]
-        [HarmonyPatch(typeof(Shotgun), nameof(Shotgun.Fire))]
-        private class Shotgun__Fire__Patch
+        [ArchivePatch(typeof(Shotgun), nameof(Shotgun.Fire))]
+        private static class Shotgun__Fire__Patch
         {
+            public static int Priority() => PatchPriority;
+
             private static bool Prefix(Shotgun __instance, bool resetRecoilSimilarity = true)
             {
                 for (int i = 0; i < __instance.ArchetypeData.ShotgunBulletCount; i++)

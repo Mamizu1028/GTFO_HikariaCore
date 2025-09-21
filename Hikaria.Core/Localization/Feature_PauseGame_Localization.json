@@ -1,6 +1,6 @@
-{
+﻿{
   "Internal": {
-    "FeatureSettingsTexts": {
+    "FeatureSettingTexts": {
       "Hikaria.Core.Features.Core.PauseGame.Name": {
         "FName": {
           "English": "Pause Game",
@@ -47,7 +47,7 @@
         }
       }
     },
-    "FeatureSettingsEnumTexts": {
+    "EnumTexts": {
       "Hikaria.Core.Features.Core.PauseGame+PauseGameStatus": {
         "English": {
           "Unpaused": "Unpaused",
@@ -95,10 +95,10 @@
         }
       }
     },
-    "ExtraTexts": []
+    "GenericTexts": {}
   },
   "External": {
-    "ExternalFeatureSettingsTexts": {},
-    "ExternalEnumTexts": {}
+    "FeatureSettingTexts": {},
+    "EnumTexts": {}
   }
 }

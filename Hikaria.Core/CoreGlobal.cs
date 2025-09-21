@@ -1,12 +1,22 @@
-﻿using Hikaria.Core.Entities;
+﻿using Clonesoft.Json;
+using Clonesoft.Json.Converters;
+using Clonesoft.Json.Serialization;
 using Hikaria.Core.Managers;
 using Hikaria.Core.Utility;
 using SNetwork;
+using TheArchive.Core;
+using TheArchive.Core.Localization;
 
 namespace Hikaria.Core
 {
     public static class CoreGlobal
     {
+        public const string GUID = "Hikaria.Core";
+
+        public const string NAME = "HikariaCore";
+
+        public const string VERSION = "1.0.0";
+
         public const string OfficialServerUrl = "https://q1w2e3r4t5y6u7i8o9p0.top:50001/api/gtfo";
         public static string ThirdPartyServerUrl = string.Empty;
         public static bool UseThirdPartyServer = false;
@@ -18,7 +28,29 @@ namespace Hikaria.Core
 
         public static bool ServerOnline { get; private set; } = true;
 
-        public static IPLocationInfo IPLocation { get; private set; }
+        internal static ILocalizationService Localization { get; private set; }
+
+        internal static JsonSerializerSettings JsonSerializerSettings { get; private set; }
+
+        public static void Setup(IArchiveModule module)
+        {
+            Localization = module.LocalizationService;
+
+            Logs.Setup(module.Logger);
+
+            JsonSerializerSettings = new JsonSerializerSettings()
+            {
+                Formatting = Formatting.Indented,
+                ContractResolver = new DefaultContractResolver(),
+                DateFormatHandling = DateFormatHandling.MicrosoftDateFormat,
+                DateFormatString = "yyyy-MM-dd HH:mm:ss",
+                NullValueHandling = NullValueHandling.Include
+
+            };
+
+            JsonSerializerSettings.Converters.Add(new IsoDateTimeConverter() { DateTimeFormat = "yyyy-MM-dd HH:mm:ss" });
+            JsonSerializerSettings.Converters.Add(new StringEnumConverter());
+        }
 
         public static void CheckIsServerOnline()
         {
@@ -50,14 +82,6 @@ namespace Hikaria.Core
                         });
                     }
                 }
-            });
-        }
-
-        public static void GetIPLocationInfo()
-        {
-            Task.Run(async () =>
-            {
-                IPLocation = await HttpHelper.GetAsync<IPLocationInfo>("https://api.ip.sb/geoip");
             });
         }
     }

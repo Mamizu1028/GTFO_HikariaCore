@@ -7,9 +7,12 @@ using Hikaria.Core.SNetworkExt;
 using SNetwork;
 using Steamworks;
 using System.Runtime.InteropServices;
-using TheArchive.Core.Attributes;
+using TheArchive.Core.Attributes.Feature;
+using TheArchive.Core.Attributes.Feature.Members;
+using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Groups;
 using TheArchive.Core.FeaturesAPI.Settings;
 using TheArchive.Core.Localization;
 using TheArchive.Features.Security;
@@ -28,13 +31,11 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 
     public override string Description => "提供大厅权限和密码的设置。";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Security;
+    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Security");
 
-    public static new IArchiveLogger FeatureLogger { get; set; }
+    public static new ILocalizationService Localization { get; set; }
 
-    public static ILocalizationService LocalizationService { get; private set; }
-
-    public override Type[] LocalizationExternalTypes => new[]
+    public override Type[] ExternalLocalizedTypes => new[]
     {
         typeof(LobbyPrivacy)
     };
@@ -138,7 +139,6 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 
     public override void Init()
     {
-        LocalizationService = Localization;
         LobbySettingsManager.Setup();
     }
 
@@ -259,7 +259,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             BlinkInContent = true,
             BlinkTimeInterval = 0.5f,
-            Header = LocalizationService.Get(1),
+            Header = Localization.GetById(1),
             UpperText = "<color=red>无法加入大厅</color>\n\n原因：被封禁的玩家",
             LowerText = string.Empty,
             PopupType = PopupType.BoosterImplantMissed,
@@ -276,7 +276,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             BlinkInContent = true,
             BlinkTimeInterval = 0.5f,
-            Header = LocalizationService.Get(1),
+            Header = Localization.GetById(1),
             UpperText = "<color=red>无法加入大厅</color>\n\n原因：大厅已锁定",
             LowerText = string.Empty,
             PopupType = PopupType.BoosterImplantMissed,
@@ -293,7 +293,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             BlinkInContent = true,
             BlinkTimeInterval = 0.5f,
-            Header = LocalizationService.Get(1),
+            Header = Localization.GetById(1),
             UpperText = "<color=red>无法加入大厅</color>\n\n原因：密码错误",
             LowerText = string.Empty,
             PopupType = PopupType.BoosterImplantMissed,
@@ -310,7 +310,7 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         {
             BlinkInContent = true,
             BlinkTimeInterval = 0.5f,
-            Header = LocalizationService.Get(1),
+            Header = Localization.GetById(1),
             UpperText = "<color=red>无法加入大厅</color>\n\n原因：您不是房主好友",
             LowerText = string.Empty,
             PopupType = PopupType.BoosterImplantMissed,
@@ -435,17 +435,17 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         }
 
         [Flags]
-        public enum MasterAnswerReason
+        public enum MasterAnswerReason : int
         {
-            None,
-            Public,
-            Banned,
-            PasswordMismatch,
-            IsNotFriend,
-            InvisibleLobby,
-            PasswordMatch,
-            IsFriend,
-            Whitelist
+            None = 0,
+            Public = 1 << 0,
+            Banned = 1 << 1,
+            PasswordMismatch = 1 << 2,
+            IsNotFriend = 1 << 3,
+            InvisibleLobby = 1 << 4,
+            PasswordMatch = 1 << 5,
+            IsFriend = 1 << 6,
+            Whitelist = 1 << 7
         }
 
         public struct pSlaveRequest

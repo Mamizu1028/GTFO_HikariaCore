@@ -7,8 +7,11 @@
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Dtos\" />
-  </ItemGroup>
+	<PropertyGroup>
+		<CopyBuildToPluginFolder>true</CopyBuildToPluginFolder>
+		<PluginOutputPath>../output/Hikaria.Core/plugins/</PluginOutputPath>
+	</PropertyGroup>
+
+	<Import Project="../Dependencies.props" />
 
 </Project>

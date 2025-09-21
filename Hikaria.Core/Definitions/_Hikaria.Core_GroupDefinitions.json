@@ -1,0 +1,189 @@
+﻿{
+  "ModuleGroup": {
+    "LocalizationData": {
+      "DisplayName": {
+        "English": "Hikaria Core",
+        "Chinese": "Hikaria 核心",
+        "French": null,
+        "Italian": null,
+        "German": null,
+        "Spanish": null,
+        "Russian": null,
+        "Portuguese_Brazil": null,
+        "Polish": null,
+        "Japanese": null,
+        "Korean": null
+      },
+      "Description": {
+        "English": null,
+        "Chinese": null,
+        "French": null,
+        "Italian": null,
+        "German": null,
+        "Spanish": null,
+        "Russian": null,
+        "Portuguese_Brazil": null,
+        "Polish": null,
+        "Japanese": null,
+        "Korean": null
+      }
+    },
+    "SubGroups": [
+      {
+        "Id": "Hikaria.Core.Accessibility",
+        "LocalizationData": {
+          "DisplayName": {
+            "English": "Accessibility",
+            "Chinese": "辅助功能",
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          },
+          "Description": {
+            "English": null,
+            "Chinese": null,
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          }
+        }
+      },
+      {
+        "Id": "Hikaria.Core.Core",
+        "LocalizationData": {
+          "DisplayName": {
+            "English": "Core",
+            "Chinese": "核心",
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          },
+          "Description": {
+            "English": null,
+            "Chinese": null,
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          }
+        }
+      },
+      {
+        "Id": "Hikaria.Core.Fixes",
+        "LocalizationData": {
+          "DisplayName": {
+            "English": "Fixes",
+            "Chinese": "修复",
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          },
+          "Description": {
+            "English": null,
+            "Chinese": null,
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          }
+        }
+      },
+      {
+        "Id": "Hikaria.Core.Developer",
+        "LocalizationData": {
+          "DisplayName": {
+            "English": "Developer",
+            "Chinese": "开发者选项",
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          },
+          "Description": {
+            "English": null,
+            "Chinese": null,
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          }
+        }
+      },
+      {
+        "Id": "Hikaria.Core.Security",
+        "LocalizationData": {
+          "DisplayName": {
+            "English": "Security",
+            "Chinese": "安全",
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          },
+          "Description": {
+            "English": null,
+            "Chinese": null,
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          }
+        }
+      }
+    ]
+  }
+}

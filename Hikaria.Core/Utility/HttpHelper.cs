@@ -23,12 +23,12 @@ public static class HttpHelper
             HttpResponseMessage response = await _httpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
             string responseData = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(responseData);
+            return JsonConvert.DeserializeObject<T>(responseData, CoreGlobal.JsonSerializerSettings);
         }
         catch (Exception ex)
         {
-            Logger.Error("Error occurred while sending GET request");
-            Logger.Exception(ex);
+            Logger.Error($"Error occurred while sending GET request. [{url}]");
+            //Logger.Exception(ex);
             return new();
         }
     }
@@ -38,17 +38,17 @@ public static class HttpHelper
         if (!CoreGlobal.ServerOnline) return new();
         try
         {
-            string jsonContent = JsonConvert.SerializeObject(content);
+            string jsonContent = JsonConvert.SerializeObject(content, CoreGlobal.JsonSerializerSettings);
             var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PostAsync(url, httpContent);
             response.EnsureSuccessStatusCode();
             string responseData = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(responseData);
+            return JsonConvert.DeserializeObject<T>(responseData, CoreGlobal.JsonSerializerSettings);
         }
         catch (Exception ex)
         {
-            Logger.Error("Error occurred while sending POST request");
-            Logger.Exception(ex);
+            Logger.Error($"Error occurred while sending POST request. [{url}]");
+            //Logger.Exception(ex);
             return new();
         }
     }
@@ -58,17 +58,17 @@ public static class HttpHelper
         if (!CoreGlobal.ServerOnline) return new();
         try
         {
-            string jsonContent = JsonConvert.SerializeObject(content);
+            string jsonContent = JsonConvert.SerializeObject(content, CoreGlobal.JsonSerializerSettings);
             var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PutAsync(url, httpContent);
             response.EnsureSuccessStatusCode();
             string responseData = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(responseData);
+            return JsonConvert.DeserializeObject<T>(responseData, CoreGlobal.JsonSerializerSettings);
         }
         catch (Exception ex)
         {
-            Logger.Error("Error occurred while sending PUT request");
-            Logger.Exception(ex);
+            Logger.Error($"Error occurred while sending PUT request. [{url}]");
+            //Logger.Exception(ex);
             return new();
         }
     }
@@ -78,17 +78,17 @@ public static class HttpHelper
         if (!CoreGlobal.ServerOnline) return new();
         try
         {
-            string jsonContent = JsonConvert.SerializeObject(content);
+            string jsonContent = JsonConvert.SerializeObject(content, CoreGlobal.JsonSerializerSettings);
             var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PatchAsync(url, httpContent);
             response.EnsureSuccessStatusCode();
             string responseData = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(responseData);
+            return JsonConvert.DeserializeObject<T>(responseData, CoreGlobal.JsonSerializerSettings);
         }
         catch (Exception ex)
         {
-            Logger.Error("Error occurred while sending PATCH request");
-            Logger.Exception(ex);
+            Logger.Error($"Error occurred while sending PATCH request. [{url}]");
+            //Logger.Exception(ex);
             return new();
         }
     }

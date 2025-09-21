@@ -1,4 +1,6 @@
-﻿namespace Hikaria.Core.SNetworkExt;
+﻿using TheArchive.Utilities;
+
+namespace Hikaria.Core.SNetworkExt;
 
 public class SNetExt_ReplicatedPlayerData<A> where A : struct
 {
@@ -14,11 +16,10 @@ public class SNetExt_ReplicatedPlayerData<A> where A : struct
 
     private static void OnReceiveData(ulong sender, A wrappedData)
     {
-        if (((IReplicatedPlayerData)wrappedData).PlayerData.TryGetPlayer(out var snet_Player) && !snet_Player.IsLocal)
+        if ((wrappedData as IReplicatedPlayerData).PlayerData.TryGetPlayer(out var snet_Player) && !snet_Player.IsLocal)
         {
             snet_Player.StoreCustomData(wrappedData);
-            Action<SNetwork.SNet_Player, A> onChangeCallback = s_singleton.m_onChangeCallback;
-            onChangeCallback?.Invoke(snet_Player, wrappedData);
+            Utils.SafeInvoke(s_singleton.m_onChangeCallback, snet_Player, wrappedData);
         }
     }
 
@@ -32,7 +33,7 @@ public class SNetExt_ReplicatedPlayerData<A> where A : struct
         {
             SNetwork.SNetStructs.pPlayer pPlayer = new();
             pPlayer.SetPlayer(player);
-            IReplicatedPlayerData replicatedPlayerData = (IReplicatedPlayerData)data;
+            IReplicatedPlayerData replicatedPlayerData = data as IReplicatedPlayerData;
             replicatedPlayerData.PlayerData = pPlayer;
             data = (A)replicatedPlayerData;
             if (toPlayer != null)

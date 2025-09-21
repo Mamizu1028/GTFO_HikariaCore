@@ -2,11 +2,15 @@
 using Hikaria.Core.Interfaces;
 using Hikaria.Core.SNetworkExt;
 using SNetwork;
-using System.Runtime.InteropServices;
-using TheArchive.Core.Attributes;
+using TheArchive.Core.Attributes.Feature;
+using TheArchive.Core.Attributes.Feature.Members;
+using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.Bootstrap;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Groups;
+using TheArchive.Utilities;
+using static Hikaria.Core.CoreAPI;
 
 namespace Hikaria.Core.Features.Core;
 
@@ -17,13 +21,12 @@ internal class ModList : Feature, IOnSessionMemberChanged
 {
     public override string Name => "插件列表";
 
-    public override string Description => "获取所有安装了本插件的玩家的插件列表。\n本功能属于核心功能，所有插件的正常运作离不开该功能。";
+    public override string Description => "获取所有安装了本插件的玩家的插件列表。\n" +
+        "本功能属于核心功能，所有插件的正常运作离不开该功能。";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Core;
+    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Core");
 
-    public static event Action<SNet_Player, IEnumerable<pModInfo>> OnPlayerModsSynced;
-
-    public static HashSet<IOnPlayerModsSynced> PlayerModsSyncedListeners = new();
+    public static event PlayerModsSynced OnPlayerModsSynced;
 
     [FeatureConfig]
     public static ModListSetting Settings { get; set; }
@@ -157,33 +160,12 @@ internal class ModList : Feature, IOnSessionMemberChanged
         for (int i = 0; i < data.ModCount; i++)
         {
             var mod = data.Mods[i];
-            PlayerModsLookup[player.Lookup].Add(mod.GUID, mod);
+            if (string.IsNullOrWhiteSpace(mod.GUID))
+                continue;
+            PlayerModsLookup[player.Lookup][mod.GUID] = mod;
         }
 
-        foreach (var listener in PlayerModsSyncedListeners)
-        {
-            try
-            {
-                listener.OnPlayerModsSynced(player, data.Mods);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-        try
-        {
-            var onPlayerModsSynced = OnPlayerModsSynced;
-            if (onPlayerModsSynced != null)
-            {
-                onPlayerModsSynced(player, data.Mods);
-            }
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
-
+        Utils.SafeInvoke(OnPlayerModsSynced, player, data.Mods);
     }
 
     private void OnPluginLoaded(BepInEx.PluginInfo pluginInfo)
@@ -250,32 +232,4 @@ internal class ModList : Feature, IOnSessionMemberChanged
 
     public static Dictionary<string, pModInfo> InstalledMods = new();
     public static Dictionary<ulong, Dictionary<string, pModInfo>> PlayerModsLookup = new();
-
-    public struct pModList : SNetworkExt.IReplicatedPlayerData
-    {
-        public pModList(SNet_Player player, List<pModInfo> modList)
-        {
-            Array.Fill(Mods, new());
-            PlayerData.SetPlayer(player);
-            ModCount = Math.Clamp(modList.Count, 0, MOD_SYNC_COUNT);
-            for (int i = 0; i < ModCount; i++)
-            {
-                Mods[i] = modList[i];
-            }
-        }
-
-        public pModList()
-        {
-            Array.Fill(Mods, new());
-        }
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = MOD_SYNC_COUNT)]
-        public pModInfo[] Mods = new pModInfo[MOD_SYNC_COUNT];
-
-        public int ModCount = 0;
-
-        public const int MOD_SYNC_COUNT = 100;
-
-        public SNetStructs.pPlayer PlayerData { get; set; } = new();
-    }
 }

@@ -1,6 +1,6 @@
-{
+﻿{
   "Internal": {
-    "FeatureSettingsTexts": {
+    "FeatureSettingTexts": {
       "Hikaria.Core.Features.Security.LobbySettingsOverride.Name": {
         "FName": {
           "English": "Lobby Settings",
@@ -90,22 +90,20 @@
         }
       }
     },
-    "FeatureSettingsEnumTexts": {},
-    "ExtraTexts": [
-      {
-        "UntranslatedText": "大厅设置",
-        "Description": "Popup Header",
-        "ID": 1,
-        "Languages": {
+    "EnumTexts": {},
+    "GenericTexts": {
+      "1": {
+        "Comment": "Popup Header",
+        "Data": {
           "English": "Lobby Settings",
           "Chinese": "大厅设置"
         }
       }
-    ]
+    }
   },
   "External": {
-    "ExternalFeatureSettingsTexts": {},
-    "ExternalEnumTexts": {
+    "FeatureSettingTexts": {},
+    "EnumTexts": {
       "Hikaria.Core.Entities.LobbyPrivacy": {
         "English": {
           "Public": "Public",

@@ -1,13 +1,14 @@
 ﻿using Hikaria.Core.Interfaces;
+using TheArchive.Utilities;
 
 namespace Hikaria.Core.SNetworkExt;
 
-public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlayerModsSynced where T : struct
+public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T : struct
 {
     ~SNetExt_SyncedAction()
     {
         GameEventAPI.UnregisterListener(this);
-        CoreAPI.UnregisterListener(this);
+        CoreAPI.OnPlayerModsSynced += OnPlayerModsSynced;
     }
 
     protected void Setup(string eventName, Action<ulong, T> incomingAction, Action<T> incomingActionValidation = null, Func<SNetwork.SNet_Player, bool> listenerFilter = null, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
@@ -17,7 +18,7 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
         m_listenerFilter = listenerFilter;
         m_hasListenerFilter = listenerFilter != null;
         GameEventAPI.RegisterListener(this);
-        CoreAPI.RegisterListener(this);
+        CoreAPI.OnPlayerModsSynced -= OnPlayerModsSynced;
     }
 
     public void SyncToPlayer(SNetwork.SNet_Player player, T data)
@@ -75,8 +76,7 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
         m_listeners.Add(player);
         m_listenersLookup[player.Lookup] = player;
 
-        var onPlayerAddedToListeners = OnPlayerAddedToListeners;
-        onPlayerAddedToListeners?.Invoke(player);
+        Utils.SafeInvoke(OnPlayerAddedToListeners, player);
     }
 
     private void Internal_RemovePlayerFromListeners(SNetwork.SNet_Player player)
@@ -88,16 +88,14 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged, IOnPlay
             {
                 m_listeners.RemoveAll(p => p.Lookup == player.Lookup);
                 m_listenersLookup.Remove(player.Lookup);
-                onPlayerRemovedFromListeners?.Invoke(listener);
+                Utils.SafeInvoke(OnPlayerRemovedFromListeners, listener);
             }
         }
         else
         {
             m_listeners.RemoveAll(p => p.Lookup == player.Lookup);
             m_listenersLookup.Remove(player.Lookup);
-
-            var onPlayerRemovedFromListeners = OnPlayerRemovedFromListeners;
-            onPlayerRemovedFromListeners?.Invoke(player);
+            Utils.SafeInvoke(OnPlayerRemovedFromListeners, player);
         }
     }
 

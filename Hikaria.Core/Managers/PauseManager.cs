@@ -4,6 +4,7 @@ using SNetwork;
 using System.Collections;
 using TheArchive.Interfaces;
 using TheArchive.Loader;
+using TheArchive.Utilities;
 using UnityEngine;
 
 namespace Hikaria.Core.Managers;
@@ -36,8 +37,8 @@ internal class PauseManager : MonoBehaviour
             {
             }
         }
-        var onPaused = OnPaused;
-        onPaused?.Invoke();
+
+        Utils.SafeInvoke(OnPaused);
         Logger.Notice("Game Paused");
     }
 
@@ -58,8 +59,7 @@ internal class PauseManager : MonoBehaviour
             {
             }
         }
-        var onUnpaused = OnUnpaused;
-        onUnpaused?.Invoke();
+        Utils.SafeInvoke(OnUnpaused);
         if (SNet.IsMaster && GameStateManager.CurrentStateName == eGameStateName.InLevel)
         {
             SNet.Sync.StartRecallWithAllSyncedPlayers(eBufferType.Migration_A, false);

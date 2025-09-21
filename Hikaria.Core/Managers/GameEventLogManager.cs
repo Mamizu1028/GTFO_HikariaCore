@@ -1,5 +1,4 @@
-﻿using Hikaria.Core.Extensions;
-using Hikaria.Core.Interfaces;
+﻿using Hikaria.Core.Interfaces;
 using UnityEngine;
 
 namespace Hikaria.Core.Managers;
@@ -46,7 +45,7 @@ public class GameEventLogManager : MonoBehaviour, IPauseable
     public void PausedUpdate()
     {
         timer += PauseManager.PauseUpdateInterval;
-        if (timer < 0.333)
+        if (timer < (1 / 3f))
             return;
         timer = 0f;
         if (queue.TryDequeue(out var log))

@@ -1,6 +1,6 @@
 {
   "Internal": {
-    "FeatureSettingsTexts": {
+    "FeatureSettingTexts": {
       "Hikaria.Core.Features.Accessibility.LiveLobbyList.Name": {
         "FName": {
           "English": "Live Lobby List",
@@ -412,12 +412,48 @@
         }
       }
     },
-    "FeatureSettingsEnumTexts": {},
-    "ExtraTexts": []
+    "EnumTexts": {},
+    "GenericTexts": {
+      "1": {
+        "Comment": "Query Button Text",
+        "Data": {
+          "English": "Search",
+          "Chinese": "搜索"
+        }
+      },
+      "2": {
+        "Comment": "Query Prompt Searching",
+        "Data": {
+          "English": "Searching...",
+          "Chinese": "正在搜索..."
+        }
+      },
+      "3": {
+        "Comment": "Query Prompt Search Finish",
+        "Data": {
+          "English": "Found {0} matching lobby(s)",
+          "Chinese": "已搜索到{0}个符合条件的大厅"
+        }
+      },
+      "4": {
+        "Comment": "Query Prompt before search",
+        "Data": {
+          "English": "Click the button to search for lobbies",
+          "Chinese": "点按下方按钮搜索符合条件的大厅"
+        }
+      },
+      "5": {
+        "Comment": "Join Lobby Button Text",
+        "Data": {
+          "English": "Join",
+          "Chinese": "加入"
+        }
+      }
+    }
   },
   "External": {
-    "ExternalFeatureSettingsTexts": {},
-    "ExternalEnumTexts": {
+    "FeatureSettingTexts": {},
+    "EnumTexts": {
       "Hikaria.Core.Entities.LobbyPrivacy": {
         "English": {
           "Public": "Public",

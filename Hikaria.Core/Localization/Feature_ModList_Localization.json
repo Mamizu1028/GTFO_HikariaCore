@@ -1,6 +1,6 @@
-{
+﻿{
   "Internal": {
-    "FeatureSettingsTexts": {
+    "FeatureSettingTexts": {
       "Hikaria.Core.Features.Core.ModList.Name": {
         "FName": {
           "English": "Mod List",
@@ -137,11 +137,11 @@
         }
       }
     },
-    "FeatureSettingsEnumTexts": {},
-    "ExtraTexts": []
+    "EnumTexts": {},
+    "GenericTexts": {}
   },
   "External": {
-    "ExternalFeatureSettingsTexts": {},
-    "ExternalEnumTexts": {}
+    "FeatureSettingTexts": {},
+    "EnumTexts": {}
   }
 }

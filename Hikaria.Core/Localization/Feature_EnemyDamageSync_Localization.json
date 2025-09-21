@@ -1,6 +1,6 @@
-{
+﻿{
   "Internal": {
-    "FeatureSettingsTexts": {
+    "FeatureSettingTexts": {
       "Hikaria.Core.Features.Fixes.EnemyDamageSync.Name": {
         "FName": {
           "English": "Enemy Damage Sync",
@@ -32,11 +32,11 @@
         }
       }
     },
-    "FeatureSettingsEnumTexts": {},
-    "ExtraTexts": []
+    "EnumTexts": {},
+    "GenericTexts": {}
   },
   "External": {
-    "ExternalFeatureSettingsTexts": {},
-    "ExternalEnumTexts": {}
+    "FeatureSettingTexts": {},
+    "EnumTexts": {}
   }
 }

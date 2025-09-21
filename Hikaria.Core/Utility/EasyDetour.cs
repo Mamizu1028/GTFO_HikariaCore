@@ -6,40 +6,36 @@ using TheArchive.Loader;
 
 namespace Hikaria.Core.Utility;
 
-
 public interface IEasyDetour
 {
     INativeDetour NativeDetour { get; }
-
     bool Apply();
-
     void Unpatch();
 }
 
-
-public abstract class EasyDetourBase<TDelegate> : IEasyDetour where TDelegate : Delegate
+public abstract class EasyDetourBase<TDelegate> : IEasyDetour, IDisposable where TDelegate : Delegate
 {
+    private TDelegate _original;
+    private INativeDetour _detour;
+
     ~EasyDetourBase()
     {
-        Unpatch();
+        Dispose(false);
     }
 
-    public abstract TDelegate DetourTo { get; }
     public abstract DetourDescriptor Descriptor { get; }
+
+    public abstract TDelegate DetourTo { get; }
 
     public TDelegate Original => _original;
     public INativeDetour NativeDetour => _detour;
-
-    private TDelegate _original;
-    private INativeDetour _detour;
 
     public bool Apply()
     {
         if (_detour != null)
         {
-            _detour.Undo();
-            _detour.Free();
-            _detour.Dispose();
+            _detour.Apply();
+            return true;
         }
 
         return EasyDetour.CreateAndApply(Descriptor, DetourTo, out _original, out _detour);
@@ -50,12 +46,27 @@ public abstract class EasyDetourBase<TDelegate> : IEasyDetour where TDelegate : 
         if (_detour != null)
         {
             _detour.Undo();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_detour != null)
+        {
+            EasyDetour.s_NativeDetours.Remove(_detour);
+            _detour.Undo();
             _detour.Free();
             _detour.Dispose();
+            _detour = null;
         }
     }
 }
-
 
 public unsafe static class EasyDetour
 {
@@ -63,8 +74,9 @@ public unsafe static class EasyDetour
     private static IArchiveLogger Logger => _logger ??= LoaderWrapper.CreateArSubLoggerInstance(nameof(EasyDetour));
 
     public delegate void StaticVoidDelegate(Il2CppMethodInfo* methodInfo);
-
     public delegate void InstanceVoidDelegate(IntPtr instancePtr, Il2CppMethodInfo* methodInfo);
+
+    internal static HashSet<INativeDetour> s_NativeDetours = new HashSet<INativeDetour>();
 
     public static bool CreateAndApply<T>(DetourDescriptor descriptor, T to, out T original, out INativeDetour detour) where T : Delegate
     {
@@ -72,21 +84,18 @@ public unsafe static class EasyDetour
         {
             var ptr = descriptor.GetMethodPointer();
             detour = INativeDetour.CreateAndApply(ptr, to, out original);
-            var result = detour != null;
-            if (result)
+            if (detour != null)
             {
-                Logger.Success($"NativeDetour Success: {descriptor}");
+                s_NativeDetours.Add(detour);
+                Logger.Success($"NativeDetour 创建成功: {descriptor}");
+                return true;
             }
-            else
-            {
-                Logger.Fail($"NativeDetour Fail: {descriptor}");
-            }
-            return result;
+            Logger.Fail($"NativeDetour 创建失败: {descriptor}");
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Logger.Error($"Exception Thrown while creating Detour:");
-            Logger.Error(e.ToString());
+            Logger.Error($"NativeDetour 创建错误");
+            Logger.Exception(ex);
         }
         original = null;
         detour = null;
@@ -96,7 +105,6 @@ public unsafe static class EasyDetour
     public static bool CreateAndApply<T>(out IEasyDetour easyDetour) where T : IEasyDetour
     {
         easyDetour = (IEasyDetour)Activator.CreateInstance(typeof(T));
-
         return easyDetour.Apply();
     }
 }
@@ -104,76 +112,36 @@ public unsafe static class EasyDetour
 public struct DetourDescriptor
 {
     public Type Type;
-    public Type ReturnType;
-    public Type[] ArgTypes;
     public string MethodName;
+    public Type[] ArgTypes;
+    public Type ReturnType;
     public bool IsGeneric;
 
     public unsafe nint GetMethodPointer()
     {
-        if (Type == null)
-        {
-            throw new MissingFieldException($"Field {nameof(Type)} is not set!");
-        }
+        ValidateDescriptor();
 
-        if (ReturnType == null)
-        {
-            throw new MissingFieldException($"Field {nameof(ReturnType)} is not set! If you mean 'void' do typeof(void)");
-        }
-
-        if (string.IsNullOrEmpty(MethodName))
-        {
-            throw new MissingFieldException($"Field {nameof(MethodName)} is not set or valid!");
-        }
-
-        var type = Il2CppType.From(Type, throwOnFailure: true);
         var typePtr = Il2CppClassPointerStore.GetNativeClassPointer(Type);
-
         var returnTypeName = GetFullName(ReturnType);
-        string[] argTypeNames;
-        if (ArgTypes == null || ArgTypes.Length <= 0)
-        {
-            argTypeNames = Array.Empty<string>();
-        }
-        else
-        {
-            var length = ArgTypes.Length;
-            argTypeNames = new string[length];
-            for (int i = 0; i < length; i++)
-            {
-                var argType = ArgTypes[i];
-                argTypeNames[i] = GetFullName(argType);
-            }
-        }
+        var argTypeNames = ArgTypes?.Select(GetFullName).ToArray() ?? Array.Empty<string>();
 
         var methodPtr = (void**)IL2CPP.GetIl2CppMethod(typePtr, IsGeneric, MethodName, returnTypeName, argTypeNames).ToPointer();
-        if (methodPtr == null)
-        {
-            return (nint)methodPtr;
-        }
+        return methodPtr != null ? (nint)(*methodPtr) : 0;
+    }
 
-        return (nint)(*methodPtr);
+    private void ValidateDescriptor()
+    {
+        if (Type == null) throw new ArgumentNullException(nameof(Type), "目标类型不可为空");
+        if (ReturnType == null) throw new ArgumentNullException(nameof(ReturnType), "返回类型不可为空");
+        if (string.IsNullOrWhiteSpace(MethodName)) throw new ArgumentException("目标方法名称不可为空", nameof(MethodName));
     }
 
     private static string GetFullName(Type type)
     {
         bool isPointer = type.IsPointer;
-        if (isPointer)
-        {
-            type = type.GetElementType();
-        }
+        if (isPointer) type = type.GetElementType();
 
-        if (type.IsPrimitive || type == typeof(string))
-        {
-            if (isPointer) return type.MakePointerType().FullName;
-            else return type.FullName;
-        }
-        else
-        {
-            var il2cppType = Il2CppType.From(type, throwOnFailure: true);
-            if (isPointer) return il2cppType.MakePointerType().FullName;
-            else return il2cppType.FullName;
-        }
+        return isPointer ? type.MakePointerType().FullName : type.FullName;
     }
 
     public override string ToString()

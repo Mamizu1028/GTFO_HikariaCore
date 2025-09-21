@@ -6,9 +6,3 @@ public interface IOnSessionMemberChanged
 {
     void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent);
 }
-
-public enum SessionMemberEvent
-{
-    JoinSessionHub,
-    LeftSessionHub
-}

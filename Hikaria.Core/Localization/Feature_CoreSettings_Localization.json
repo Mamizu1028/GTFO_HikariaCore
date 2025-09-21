@@ -1,6 +1,6 @@
-{
+﻿{
   "Internal": {
-    "FeatureSettingsTexts": {
+    "FeatureSettingTexts": {
       "Hikaria.Core.Features.Dev.CoreSettings.Name": {
         "FName": {
           "English": null,
@@ -17,11 +17,11 @@
         }
       }
     },
-    "FeatureSettingsEnumTexts": {},
-    "ExtraTexts": []
+    "EnumTexts": {},
+    "GenericTexts": {}
   },
   "External": {
-    "ExternalFeatureSettingsTexts": {},
-    "ExternalEnumTexts": {}
+    "FeatureSettingTexts": {},
+    "EnumTexts": {}
   }
 }

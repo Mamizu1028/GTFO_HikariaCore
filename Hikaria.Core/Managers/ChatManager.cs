@@ -1,5 +1,4 @@
-﻿using Hikaria.Core.Extensions;
-using Hikaria.Core.Interfaces;
+﻿using Hikaria.Core.Interfaces;
 using Player;
 using SNetwork;
 using UnityEngine;

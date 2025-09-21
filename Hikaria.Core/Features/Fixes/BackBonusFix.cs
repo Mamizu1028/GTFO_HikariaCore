@@ -1,5 +1,7 @@
-﻿using TheArchive.Core.Attributes;
+﻿using TheArchive.Core.Attributes.Feature;
+using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Groups;
 using UnityEngine;
 
 namespace Hikaria.Core.Features.Fixes
@@ -11,7 +13,7 @@ namespace Hikaria.Core.Features.Fixes
 
         public override string Description => "使得背伤加成通过敌人的背部实际朝向计算";
 
-        public override FeatureGroup Group => EntryPoint.Groups.Fixes;
+        public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Fixes");
 
         [ArchivePatch(typeof(Dam_EnemyDamageLimb), nameof(Dam_EnemyDamageLimb.ApplyDamageFromBehindBonus))]
         private class Dam_EnemyDamageLimb__ApplyDamageFromBehindBonus__Patch

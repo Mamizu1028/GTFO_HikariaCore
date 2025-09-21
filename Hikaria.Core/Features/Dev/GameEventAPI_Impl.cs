@@ -1,8 +1,11 @@
 ﻿using Hikaria.Core.Interfaces;
 using SNetwork;
-using TheArchive.Core.Attributes;
+using TheArchive.Core.Attributes.Feature;
+using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Groups;
 using TheArchive.Interfaces;
+using TheArchive.Utilities;
 
 namespace Hikaria.Core.Features.Dev;
 
@@ -10,13 +13,14 @@ namespace Hikaria.Core.Features.Dev;
 [DisallowInGameToggle]
 [HideInModSettings]
 [DoNotSaveToConfig]
-internal class GameEventListener : Feature
+internal class GameEventAPI_Impl : Feature
 {
     public override string Name => "游戏事件监听";
 
-    public override string Description => "负责游戏事件的钩子。\n属于核心功能，插件的正常运作离不开该功能。";
+    public override string Description => "负责游戏事件的钩子。\n" +
+        "属于核心功能，插件的正常运作离不开该功能。";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Dev;
+    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Develop", true);
 
     public static new IArchiveLogger FeatureLogger { get; set; }
 
@@ -93,15 +97,7 @@ internal class GameEventListener : Feature
                     FeatureLogger.Exception(ex);
                 }
             }
-            try
-            {
-                var onGameStateChanged = OnGameStateChanged;
-                onGameStateChanged?.Invoke(preState, nextState);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
+            Utils.SafeInvoke(OnGameStateChanged, preState, nextState);
         }
     }
 
@@ -110,7 +106,7 @@ internal class GameEventListener : Feature
     {
         private static void Postfix(PlayerChatManager.pChatMessage data)
         {
-            if (data.fromPlayer.TryGetPlayer(out SNet_Player fromPlayer))
+            if (data.fromPlayer.TryGetPlayer(out var fromPlayer))
             {
                 foreach (var listener in ChatMessageListeners)
                 {
@@ -123,15 +119,7 @@ internal class GameEventListener : Feature
                         FeatureLogger.Exception(ex);
                     }
                 }
-                try
-                {
-                    var onReceiveChatMessage = OnReceiveChatMessage;
-                    onReceiveChatMessage?.Invoke(fromPlayer, data.message.data);
-                }
-                catch (Exception ex)
-                {
-                    FeatureLogger.Exception(ex);
-                }
+                Utils.SafeInvoke(OnReceiveChatMessage, fromPlayer, data.message.data);
             }
         }
     }
@@ -149,15 +137,7 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        try
-        {
-            var onAfterLevelCleanup = OnAfterLevelCleanup;
-            onAfterLevelCleanup?.Invoke();
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
+        Utils.SafeInvoke(OnAfterLevelCleanup);
     }
 
     private static void OnMasterChangedM()
@@ -173,15 +153,7 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        try
-        {
-            var onMasterChanged = OnMasterChanged;
-            onMasterChanged?.Invoke();
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
+        Utils.SafeInvoke(OnMasterChanged);
     }
 
     private static void OnPrepareForRecallM(eBufferType bufferType)
@@ -197,15 +169,7 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        try
-        {
-            var onPrepareForRecall = OnPrepareForRecall;
-            onPrepareForRecall?.Invoke(bufferType);
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
+        Utils.SafeInvoke(OnPrepareForRecall, bufferType);
     }
 
     private static void OnBufferCommandM(pBufferCommand command)
@@ -221,15 +185,7 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        try
-        {
-            var onBufferCommand = OnBufferCommand;
-            onBufferCommand?.Invoke(command);
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
+        Utils.SafeInvoke(OnBufferCommand, command);
     }
 
     private static void OnRecallDoneM(eBufferType bufferType)
@@ -245,15 +201,7 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        try
-        {
-            var onRecallDone = OnRecallDone;
-            onRecallDone?.Invoke(bufferType);
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
+        Utils.SafeInvoke(OnRecallDone, bufferType);
     }
 
     private static void OnRecallCompleteM(eBufferType bufferType)
@@ -269,15 +217,7 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        try
-        {
-            var onRecallComplete = OnRecallComplete;
-            onRecallComplete?.Invoke(bufferType);
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
+        Utils.SafeInvoke(OnRecallComplete, bufferType);
     }
 
     private static void OnPlayerEventM(SNet_Player player, SNet_PlayerEvent playerEvent, SNet_PlayerEventReason reason)
@@ -294,15 +234,7 @@ internal class GameEventListener : Feature
             }
         }
 
-        try
-        {
-            var onPlayerEvent = OnPlayerEvent;
-            onPlayerEvent?.Invoke(player, playerEvent, reason);
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
+        Utils.SafeInvoke(OnPlayerEvent, player, playerEvent, reason);
 
         switch (playerEvent)
         {
@@ -325,15 +257,7 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        try
-        {
-            var onMasterCommand = OnMasterCommand;
-            onMasterCommand?.Invoke(command.type, command.refA);
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
+        Utils.SafeInvoke(OnMasterCommand, command.type, command.refA);
     }
 
 
@@ -351,18 +275,8 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        try
-        {
-            var onSessionMemberChanged = OnSessionMemberChanged;
-            if (onSessionMemberChanged != null)
-            {
-                onSessionMemberChanged(player, playerEvent);
-            }
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
+
+        Utils.SafeInvoke(OnSessionMemberChanged, player, playerEvent);
     }
 
     private static void OnResetSessionM()
@@ -378,15 +292,8 @@ internal class GameEventListener : Feature
                 FeatureLogger.Exception(ex);
             }
         }
-        try
-        {
-            var onResetSession = OnResetSession;
-            onResetSession?.Invoke();
-        }
-        catch (Exception ex)
-        {
-            FeatureLogger.Exception(ex);
-        }
+
+        Utils.SafeInvoke(OnResetSession);
     }
 
 

@@ -1,10 +1,10 @@
-{
+﻿{
   "Internal": {
-    "FeatureSettingsTexts": {
-      "Hikaria.Core.Features.Dev.GameEventListener.Name": {
+    "FeatureSettingTexts": {
+      "Hikaria.Core.Features.Fixes.LobbyGhostPlayerFix.Name": {
         "FName": {
-          "English": "Game Event Listener",
-          "Chinese": "游戏事件监听",
+          "English": "Lobby Ghost Player Fix",
+          "Chinese": "卡房修复",
           "French": null,
           "Italian": null,
           "German": null,
@@ -16,7 +16,7 @@
           "Korean": null
         }
       },
-      "Hikaria.Core.Features.Dev.GameEventListener.Description": {
+      "Hikaria.Core.Features.Fixes.LobbyGhostPlayerFix.Description": {
         "FDescription": {
           "English": null,
           "Chinese": null,
@@ -32,11 +32,11 @@
         }
       }
     },
-    "FeatureSettingsEnumTexts": {},
-    "ExtraTexts": []
+    "EnumTexts": {},
+    "GenericTexts": {}
   },
   "External": {
-    "ExternalFeatureSettingsTexts": {},
-    "ExternalEnumTexts": {}
+    "FeatureSettingTexts": {},
+    "EnumTexts": {}
   }
 }

@@ -2,8 +2,10 @@
 using Hikaria.Core.Managers;
 using Hikaria.Core.SNetworkExt;
 using SNetwork;
-using TheArchive.Core.Attributes;
+using TheArchive.Core.Attributes.Feature;
+using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Groups;
 using TheArchive.Loader;
 using UnityEngine;
 
@@ -19,10 +21,14 @@ internal class CoreBootstrap : Feature
 
     public override string Description => "负责一些主要部件的初始化和钩子";
 
-    public override FeatureGroup Group => EntryPoint.Groups.Dev;
+    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Develop", true);
 
     public override void Init()
     {
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2CppWithInterfaces<Components.Interact_Base>(false, typeof(IInteractable));
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<Components.Interact_Timed>(false);
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<Components.Interact_ManualTimedWithCallback>(false);
+
         LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<ChatManager>();
         LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<GameEventLogManager>();
         LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<Managers.PauseManager>();
@@ -41,7 +47,7 @@ internal class CoreBootstrap : Feature
     {
         if (CompsObj == null)
         {
-            CompsObj = new(CompsObjName);
+            CompsObj = new GameObject(CompsObjName);
             UnityEngine.Object.DontDestroyOnLoad(CompsObj);
         }
         if (CompsObj.GetComponent<Managers.PauseManager>() == null)
