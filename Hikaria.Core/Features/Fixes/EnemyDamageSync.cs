@@ -81,7 +81,7 @@ public class EnemyDamageSync : Feature
         if (s_Il2Cpp_players.Count == 0)
             return;
 
-        s_pDestroyLimbData.limbID = (byte)(-limb.m_limbID - 1);
+        s_pDestroyLimbData.limbID = (byte)(byte.MaxValue - limb.m_limbID);
         s_pDestroyLimbData.destructionEventData.atPos_Local.SetToLowResVector3(limb.m_health, limb.m_healthMax);
         limb.m_base.m_destroyLimbPacket.Send(s_pDestroyLimbData, SNet_ChannelType.GameReceiveCritical, s_Il2Cpp_players);
     }

@@ -48,6 +48,7 @@ public class DeadBodyFix : Feature
         EnemyAPI.OnEnemyHealthReceived += OnEnemyHealthReceived;
         EnemyAPI.OnEnemyLimbHealthReceived += OnEnemyLimbHealthReceived;
         EnemyAPI.OnEnemyLimbDestroyed += OnEnemyLimbDestroyed;
+        EnemyAPI.OnEnemyDead += OnEnemyDead;
 
         if (CurrentGameState == (int)eGameStateName.InLevel)
         {
@@ -67,6 +68,7 @@ public class DeadBodyFix : Feature
         EnemyAPI.OnEnemyHealthReceived -= OnEnemyHealthReceived;
         EnemyAPI.OnEnemyLimbHealthReceived -= OnEnemyLimbHealthReceived;
         EnemyAPI.OnEnemyLimbDestroyed -= OnEnemyLimbDestroyed;
+        EnemyAPI.OnEnemyDead -= OnEnemyDead;
 
         s_EnemyDamageableHelpers.Clear();
     }
@@ -302,19 +304,6 @@ public class DeadBodyFix : Feature
             data.ReceivedHealth();
         }
     }
-
-    [ArchivePatch(typeof(EnemyAgent), nameof(EnemyAgent.OnDead))]
-    private class EnemyAgent__OnDead__Patch
-    {
-        private static void Prefix(EnemyAgent __instance)
-        {
-            if (s_EnemyDamageableHelpers.TryGetValue(__instance.GlobalID, out var data))
-            {
-                data.ReceivedDead();
-                s_EnemyDamageableHelpers.Remove(__instance.GlobalID);
-            }
-        }
-    }
     #endregion
 
     #region 非权威血量更新
@@ -394,25 +383,6 @@ public class DeadBodyFix : Feature
         }
     }
 
-    [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.SendDestroyLimb))]
-    private class Dam_EnemyDamageBase__SendDestroyLimb__Patch
-    {
-        private static bool Prefix(Dam_EnemyDamageBase __instance, int limbID)
-        {
-            if (!SNet.IsMaster)
-                return true;
-
-            if (!_blockCustomLimbDamageOverflow || limbID < 0)
-                return true;
-
-            var limb = __instance.DamageLimbs[limbID];
-            if (!limb.IsDestroyed || limb.DestructionType != eLimbDestructionType.Custom)
-                return true;
-
-            return false;
-        }
-    }
-
     [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ProcessReceivedDamage))]
     private class Dam_EnemyDamageBase__ProcessReceivedDamage__Patch
     {
@@ -426,7 +396,7 @@ public class DeadBodyFix : Feature
                 return true;
 
             var limb = __instance.DamageLimbs[limbID];
-            if (!limb.IsDestroyed || limb.DestructionType != eLimbDestructionType.Custom)
+            if (limb.m_health > 0 || limb.DestructionType != eLimbDestructionType.Custom)
                 return true;
 
             damage = 0;
@@ -461,6 +431,15 @@ public class DeadBodyFix : Feature
     private static void OnEnemyLimbDestroyed(Dam_EnemyDamageLimb limb)
     {
         s_EnemyDamageableHelpers[limb.m_base.Owner.GlobalID][limb.m_limbID].ReceiveDestroyed();
+    }
+
+    private static void OnEnemyDead(EnemyAgent enemy)
+    {
+        if (s_EnemyDamageableHelpers.TryGetValue(enemy.GlobalID, out var data))
+        {
+            data.ReceivedDead();
+            s_EnemyDamageableHelpers.Remove(enemy.GlobalID);
+        }
     }
     #endregion
 

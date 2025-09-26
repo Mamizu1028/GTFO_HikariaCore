@@ -41,22 +41,24 @@ internal class EnemyAPI_Impl : Feature
     {
         private static bool Prefix(Dam_EnemyDamageBase __instance, ref Dam_EnemyDamageBase.pDestroyLimbData data)
         {
-            if (data.limbID >= 0)
-                return true;
+            if (data.limbID <= __instance.DamageLimbs.Count)
+                return ArchivePatch.RUN_OG;
 
-            var limb = __instance.DamageLimbs[-data.limbID - 1];
+            // 会有超过128个部位的怪吗?
+            var limb = __instance.DamageLimbs[byte.MaxValue - data.limbID];
             limb.m_health = data.destructionEventData.atPos_Local.GetFromLowResVector3(limb.m_healthMax);
 
             Utils.SafeInvoke(OnEnemyLimbHealthReceived, __instance);
-            return false;
+            return ArchivePatch.SKIP_OG;
         }
 
         private static void Postfix(Dam_EnemyDamageBase __instance, ref Dam_EnemyDamageBase.pDestroyLimbData data)
         {
-            if (data.limbID < 0)
+            if (data.limbID > __instance.DamageLimbs.Count)
                 return;
 
-            Utils.SafeInvoke(OnEnemyLimbDestroyed, __instance);
+            var limb = __instance.DamageLimbs[byte.MaxValue - data.limbID];
+            Utils.SafeInvoke(OnEnemyLimbDestroyed, limb);
         }
     }
 
