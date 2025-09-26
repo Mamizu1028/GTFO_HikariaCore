@@ -48,7 +48,7 @@ internal class EnemyAPI_Impl : Feature
             var limb = __instance.DamageLimbs[byte.MaxValue - data.limbID];
             limb.m_health = data.destructionEventData.atPos_Local.GetFromLowResVector3(limb.m_healthMax);
 
-            Utils.SafeInvoke(OnEnemyLimbHealthReceived, __instance);
+            Utils.SafeInvoke(OnEnemyLimbHealthReceived, limb);
             return ArchivePatch.SKIP_OG;
         }
 
