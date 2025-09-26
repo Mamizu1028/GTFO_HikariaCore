@@ -4,6 +4,7 @@ using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.FeaturesAPI.Groups;
 using TheArchive.Interfaces;
+using static RootMotion.Demos.FBBIKSettings;
 
 namespace Hikaria.Core.Features.Fixes;
 
@@ -51,24 +52,19 @@ public class EnemyDamageSync : Feature
 
             if (limbID >= 0)
             {
-                var limb = __instance.DamageLimbs[limbID];
                 s_willDamageKill = __instance.WillDamageKill(damage);
-                FeatureLogger.Debug($"ProcessReceivedDamage, LimbID: {limbID}, LimbHealth: {limb.m_health}, Damage: {damage}, WillKill: {s_willDamageKill}");
             }
         }
 
-        private static void Postfix(Dam_EnemyDamageBase __instance, float damage, int limbID)
+        private static void Postfix(Dam_EnemyDamageBase __instance, float damage, int limbID, bool __result)
         {
-            if (!SNet.IsMaster) return;
+            if (!SNet.IsMaster || __result) return;
 
             if (limbID >= 0)
             {
                 var limb = __instance.DamageLimbs[limbID];
-                // Dam_EnemyDamageLimb.DoDamage 返回值与负数血量相关，此方法在游戏逻辑中被内联无法进行补丁
-                // 当 WillDamageKill 为 true 时，游戏逻辑并不会更新部位血量
-                if (s_willDamageKill)
-                    limb.m_health -= damage;
-                SendLimbHealth(limb);
+                if (!limb.IsDestroyed)
+                    SendLimbHealth(limb);
             }
 
             SendEnemyHealth(__instance);
@@ -89,8 +85,6 @@ public class EnemyDamageSync : Feature
         s_pDestroyLimbData.limbID = (byte)(-limb.m_limbID - 1);
         s_pDestroyLimbData.destructionEventData.atPos_Local.SetToLowResVector3(limb.m_health, limb.m_healthMax);
         limb.m_base.m_destroyLimbPacket.Send(s_pDestroyLimbData, SNet_ChannelType.GameReceiveCritical, s_Il2Cpp_players);
-
-        FeatureLogger.Debug($"SendLimbHealth, ID: {limb.m_limbID}, Name: {new string(limb.DebugName.Skip(nameof(Dam_EnemyDamageLimb).Length + 1).ToArray())}, Health: {limb.m_health}");
     }
 
     private static pSetHealthData s_data = new();
@@ -114,11 +108,19 @@ public class EnemyDamageSync : Feature
     {
         if (playerEvent == SessionMemberEvent.LeftSessionHub)
         {
-            var index = s_players.FindIndex(p => p.Lookup == player.Lookup);
-            if (index >= 0)
+            if (player.IsLocal)
             {
-                s_players.RemoveAt(index);
-                s_Il2Cpp_players.RemoveAt(index);
+                s_players.Clear();
+                s_Il2Cpp_players.Clear();
+            }
+            else
+            {
+                var index = s_players.FindIndex(p => p.Lookup == player.Lookup);
+                if (index >= 0)
+                {
+                    s_players.RemoveAt(index);
+                    s_Il2Cpp_players.RemoveAt(index);
+                }
             }
         }
     }

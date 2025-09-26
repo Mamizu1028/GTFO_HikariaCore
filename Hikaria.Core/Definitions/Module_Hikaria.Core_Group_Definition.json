@@ -30,7 +30,7 @@
     },
     "SubGroups": [
       {
-        "Id": "Hikaria.Core.Accessibility",
+        "Name": "Accessibility",
         "LocalizationData": {
           "DisplayName": {
             "English": "Accessibility",
@@ -61,7 +61,7 @@
         }
       },
       {
-        "Id": "Hikaria.Core.Core",
+        "Name": "Core",
         "LocalizationData": {
           "DisplayName": {
             "English": "Core",
@@ -92,7 +92,7 @@
         }
       },
       {
-        "Id": "Hikaria.Core.Fixes",
+        "Name": "Fixes",
         "LocalizationData": {
           "DisplayName": {
             "English": "Fixes",
@@ -123,7 +123,8 @@
         }
       },
       {
-        "Id": "Hikaria.Core.Developer",
+        "Name": "Developer",
+        "IsHidden": true,
         "LocalizationData": {
           "DisplayName": {
             "English": "Developer",
@@ -154,7 +155,7 @@
         }
       },
       {
-        "Id": "Hikaria.Core.Security",
+        "Name": "Security",
         "LocalizationData": {
           "DisplayName": {
             "English": "Security",
@@ -185,5 +186,6 @@
         }
       }
     ]
-  }
+  },
+  "TopLevelGroups": []
 }

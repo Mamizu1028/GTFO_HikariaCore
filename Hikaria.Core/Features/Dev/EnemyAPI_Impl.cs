@@ -1,7 +1,8 @@
-﻿using SNetwork;
+﻿using Enemies;
 using TheArchive.Core.Attributes.Feature;
 using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Groups;
 using TheArchive.Interfaces;
 using TheArchive.Utilities;
 
@@ -15,11 +16,15 @@ internal class EnemyAPI_Impl : Feature
 {
     public override string Name => "EnemyAPI Impl";
 
+    public override TheArchive.Core.FeaturesAPI.Groups.GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Developer", true);
+
     public new static IArchiveLogger FeatureLogger { get; set; }
 
     #region Events
-    internal static event Action<Dam_EnemyDamageBase> OnEnemyHealthReceived;
-    internal static event Action<Dam_EnemyDamageLimb> OnEnemyLimbHealthReceived;
+    public static event Action<Dam_EnemyDamageBase> OnEnemyHealthReceived;
+    public static event Action<Dam_EnemyDamageLimb> OnEnemyLimbHealthReceived;
+    public static event Action<Dam_EnemyDamageLimb> OnEnemyLimbDestroyed;
+    public static event Action<EnemyAgent> OnEnemyDead;
     #endregion
 
     [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveSetHealth))]
@@ -31,23 +36,36 @@ internal class EnemyAPI_Impl : Feature
         }
     }
 
-    [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveDestroyLimb), priority: 5000)]
+    [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveDestroyLimb))]
     private static class Dam_EnemyDamageBase__ReceiveDestroyLimb__Patch
     {
         private static bool Prefix(Dam_EnemyDamageBase __instance, ref Dam_EnemyDamageBase.pDestroyLimbData data)
         {
-            if (SNet.IsMaster || data.limbID >= 0)
+            if (data.limbID >= 0)
                 return true;
 
-            var limbID = -data.limbID - 1;
-            var limb = __instance.DamageLimbs[limbID];
+            var limb = __instance.DamageLimbs[-data.limbID - 1];
             limb.m_health = data.destructionEventData.atPos_Local.GetFromLowResVector3(limb.m_healthMax);
 
-            FeatureLogger.Debug($"ReceiveLimbHealth, limbID: {limb.m_limbID}, limbName: {limb.DebugName}, health: {limb.m_health}");
-
             Utils.SafeInvoke(OnEnemyLimbHealthReceived, __instance);
-
             return false;
+        }
+
+        private static void Postfix(Dam_EnemyDamageBase __instance, ref Dam_EnemyDamageBase.pDestroyLimbData data)
+        {
+            if (data.limbID < 0)
+                return;
+
+            Utils.SafeInvoke(OnEnemyLimbDestroyed, __instance);
+        }
+    }
+
+    [ArchivePatch(typeof(EnemyAgent), nameof(EnemyAgent.OnDead))]
+    private class EnemyAgent__OnDead__Patch
+    {
+        private static void Prefix(EnemyAgent __instance)
+        {
+            Utils.SafeInvoke(OnEnemyDead, __instance);
         }
     }
 }

@@ -4,6 +4,7 @@ using Player;
 using TheArchive.Core.Attributes.Feature;
 using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Groups;
 using UnityEngine;
 
 namespace Hikaria.Core.Features.Accessibility;

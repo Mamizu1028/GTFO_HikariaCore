@@ -2,6 +2,7 @@
 using TheArchive.Core.Attributes.Feature;
 using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
+using TheArchive.Core.FeaturesAPI.Groups;
 using TheArchive.Interfaces;
 using TheArchive.Utilities;
 
@@ -16,6 +17,8 @@ namespace Hikaria.Core.Features.Dev;
 internal class WeaponAPI_Impl : Feature
 {
     public override string Name => "WeaponAPI Impl";
+
+    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Developer", true);
 
     public new static IArchiveLogger FeatureLogger { get; set; }
 

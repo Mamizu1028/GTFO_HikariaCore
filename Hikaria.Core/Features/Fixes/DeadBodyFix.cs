@@ -24,10 +24,16 @@ public class DeadBodyFix : Feature
 
     public class DeadBodyFixSettings
     {
-        [FSSlider(0, 500, rounding: FSSlider.RoundTo.NoDecimal)]
+        [FSSlider(0, 500, FSSlider.SliderStyle.FloatNoDecimal, FSSlider.RoundTo.NoDecimal)]
         [FSDisplayName("预测过期时间")]
-        [FSDescription("本地推算敌人死亡状态保持时间。默认值: 200，单位: 毫秒ms")]
+        [FSDescription("本地预测敌人死亡状态保持时间")]
+        [FSTooltip("默认值: 200, 单位: 毫秒ms")]
         public float ExpirationTime { get => EnemyDamageableHelper.ExpirationTime; set => EnemyDamageableHelper.ExpirationTime = value; }
+
+        [FSIgnore]
+        [FSDisplayName("允许本地部位销毁")]
+        [FSDescription("允许本地预测进行部位销毁\n\n注意：部位销毁不可逆!!!")]
+        public bool EnableLimbDestruction { get => EnemyDamageableHelper.EnableLimbDestruction; set => EnemyDamageableHelper.EnableLimbDestruction = value; }
 
         [FSHide]
         [FSDisplayName("阻止特殊部位伤害溢出")]
@@ -41,44 +47,67 @@ public class DeadBodyFix : Feature
     {
         EnemyAPI.OnEnemyHealthReceived += OnEnemyHealthReceived;
         EnemyAPI.OnEnemyLimbHealthReceived += OnEnemyLimbHealthReceived;
+        EnemyAPI.OnEnemyLimbDestroyed += OnEnemyLimbDestroyed;
+
+        if (CurrentGameState == (int)eGameStateName.InLevel)
+        {
+            foreach (var enemy in UnityEngine.Object.FindObjectsOfType<EnemyAgent>())
+            {
+                if (!s_EnemyDamageableHelpers.TryGetValue(enemy.GlobalID, out var data))
+                {
+                    data = new EnemyDamageableHelper(enemy.Damage);
+                    s_EnemyDamageableHelpers.Add(enemy.GlobalID, data);
+                }
+            }
+        }
     }
 
     public override void OnDisable()
     {
         EnemyAPI.OnEnemyHealthReceived -= OnEnemyHealthReceived;
         EnemyAPI.OnEnemyLimbHealthReceived -= OnEnemyLimbHealthReceived;
+        EnemyAPI.OnEnemyLimbDestroyed -= OnEnemyLimbDestroyed;
+
+        s_EnemyDamageableHelpers.Clear();
     }
 
     private static bool _blockCustomLimbDamageOverflow = true;
     private static pFullDamageData s_fullDamageData = new();
     private static Dictionary<int, EnemyDamageableHelper> s_EnemyDamageableHelpers = new();
 
-    // WIP 应当改为自下而上驱动，上层为 DamageBase, 下层为 DamageLimb
     public class EnemyDamageableHelper
     {
         public static float ExpirationTime = 200;
+        public static bool EnableLimbDestruction = false;
 
-        private readonly List<EnemyDamageableLimbHelper> _limbHelpers = new();
+        private readonly EnemyDamageableLimbHelper[] _limbHelpers;
         private readonly Dam_EnemyDamageBase _damage;
-        private bool _alive = true;
+
         private float _health = 0f;
-        private bool _isAuthoritativlyDead = false;
+        private bool _alive = true;
+        private bool _isDead = false;
         private bool _isDirty = false;
-        private float _lastAuthoritativeHealth = 0f;
-        private float _lastNonAuthoritativeUpdateTime = 0f;
+        private float _lastReceivedHealth = 0f;
+        private float _lastLocalUpdateTime = 0f;
 
         public bool IsAlive
         {
             get => _alive;
             private set
             {
-                if (_alive == value)
-                    return;
-
                 _alive = value;
 
                 if (_alive)
+                {
                     _damage.DeathIndicatorShown = false;
+                }
+                else
+                {
+                    for (int i = 0; i < _limbHelpers.Length; i++)
+                    {
+                        _limbHelpers[i].UpdateExpiration(true);
+                    }
+                }
             }
         }
 
@@ -92,57 +121,67 @@ public class DeadBodyFix : Feature
             }
         }
 
+        public bool IsHidden
+        {
+            get => _limbHelpers.All(limb => limb.IsHidden);
+        }
+
+        public bool IsDirty => _isDirty;
+
         public EnemyDamageableLimbHelper this[int limbID] => _limbHelpers[limbID];
 
-        public bool IsAuthoritativlyDead => _isAuthoritativlyDead;
+        public bool IsDead => _isDead;
 
         public EnemyDamageableHelper(Dam_EnemyDamageBase damage)
         {
             _damage = damage;
-            foreach (var limb in _damage.DamageLimbs)
+            _limbHelpers = new EnemyDamageableLimbHelper[_damage.DamageLimbs.Count];
+            for (int i = 0; i < _damage.DamageLimbs.Count; i++)
             {
-                _limbHelpers.Add(new EnemyDamageableLimbHelper(_damage, limb));
+                _limbHelpers[i] = new EnemyDamageableLimbHelper(this, _damage.DamageLimbs[i]);
             }
-            _lastAuthoritativeHealth = damage.Health;
-            _lastNonAuthoritativeUpdateTime = 0f;
+            _lastReceivedHealth = damage.Health;
+            _lastLocalUpdateTime = 0f;
         }
 
-        public void UpdateHealth(float health, bool isAuthoritative)
+        public void UpdateHealth()
         {
-            Health = health;
-            if (isAuthoritative)
+            Health = _damage.Health;
+            _isDirty = true;
+            _lastLocalUpdateTime = Time.unscaledTime;
+        }
+
+        public void ReceivedHealth()
+        {
+            _lastReceivedHealth = _damage.Health;
+            if (_lastReceivedHealth <= 0)
             {
-                _lastAuthoritativeHealth = health;
+                ReceivedDead();
+            }
+        }
+
+        public void ReceivedDead()
+        {
+            _isDead = true;
+            _isDirty = false;
+
+            for (int i = 0; i < _limbHelpers.Length; i++)
+            {
+                _limbHelpers[i].ReceivedDead();
+            }
+        }
+
+        public void UpdateExpriation(bool force = false)
+        {
+            if (_isDead || (!force && !_isDirty))
                 return;
-            }
-            _lastNonAuthoritativeUpdateTime = Time.time;
-        }
 
-        public void UpdateLimbHealth(int limbID, float health, bool isAuthoritative)
-        {
-            _limbHelpers[limbID].UpdateLimbHealth(health, isAuthoritative);
-        }
-
-        public void ForceUpdateAliveStatus(bool alive, bool isAuthoritative)
-        {
-            if (isAuthoritative)
+            if ((Time.unscaledTime - _lastLocalUpdateTime) * 1000 > ExpirationTime)
             {
-                _isAuthoritativlyDead = !alive;
-                _isDirty = false;
-            }
-            IsAlive = alive;
-        }
-
-        public void UpdateExpriation()
-        {
-            if (!_isDirty || _isAuthoritativlyDead || IsAlive) return;
-
-            if ((Time.time - _lastNonAuthoritativeUpdateTime) * 1000 > ExpirationTime)
-            {
-                Health = _lastAuthoritativeHealth;
+                Health = _lastReceivedHealth;
                 foreach (var limbHelper in _limbHelpers)
                 {
-                    limbHelper.UpdateExpiration();
+                    limbHelper.UpdateExpiration(true);
                 }
                 _isDirty = false;
             }
@@ -150,37 +189,34 @@ public class DeadBodyFix : Feature
 
         public class EnemyDamageableLimbHelper
         {
-            private Dam_EnemyDamageBase _base;
-            private Dam_EnemyDamageLimb _limb;
+            private readonly EnemyDamageableHelper _baseHelper;
+            private readonly Dam_EnemyDamageLimb _limb;
+            private readonly eLimbDestructionType _limbDestructionType;
+
             private float _limbHealth = 0f;
-            private float _lastAuthoritativeLimbHealth = 0f;
-            private float _lastNonAuthoritativeUpdateTime = 0f;
+            private float _lastReceivedLimbHealth = 0f;
+            private float _lastLocalUpdateTime = 0f;
             private bool _isDestroyed = false;
-            private bool _isReallyDestroyed = false;
             private bool _isDirty = false;
 
-            public EnemyDamageableLimbHelper(Dam_EnemyDamageBase damageBase, Dam_EnemyDamageLimb limb)
+            public EnemyDamageableLimbHelper(EnemyDamageableHelper baseHelper, Dam_EnemyDamageLimb limb)
             {
-                _base = damageBase;
+                _baseHelper = baseHelper;
                 _limb = limb;
-                _limbHealth = limb.m_health;
-                _lastAuthoritativeLimbHealth = limb.m_health;
-                _lastNonAuthoritativeUpdateTime = 0f;
+                _limbDestructionType = limb.DestructionType;
+                _lastReceivedLimbHealth = limb.m_health;
+                _lastLocalUpdateTime = 0f;
             }
 
-            public bool IsReallyDestroyed => _isReallyDestroyed;
-
-            public bool IsDestroyed
+            public bool IsHidden
             {
-                get => _isDestroyed;
+                get
+                {
+                    return _limb.gameObject.layer == LayerManager.LAYER_ENEMY_DEAD;
+                }
                 private set
                 {
-                    if (_isDestroyed == value)
-                        return;
-
-                    _isDestroyed = value || _isReallyDestroyed;
-
-                    _limb.gameObject.layer = _isDestroyed ? LayerManager.LAYER_ENEMY_DEAD : LayerManager.LAYER_ENEMY_DAMAGABLE;
+                    _limb.gameObject.layer = value ? LayerManager.LAYER_ENEMY_DEAD : LayerManager.LAYER_ENEMY_DAMAGABLE;
                 }
             }
 
@@ -190,42 +226,46 @@ public class DeadBodyFix : Feature
                 private set
                 {
                     _limbHealth = value;
+                    if (_limbDestructionType != eLimbDestructionType.Custom)
+                        return;
 
-                    IsDestroyed = _limbHealth < 0f;
+                    IsHidden = _limbHealth < 0 || _limb.IsDestroyed;
                 }
             }
 
-            public void UpdateLimbDestroyStatus(bool isDestroyed, bool isAuthoritative)
+            public void ReceivedDead()
             {
-                IsDestroyed = isDestroyed;
-                if (isAuthoritative)
-                {
-                    _isReallyDestroyed = isDestroyed;
-                    _isDirty = false;
-                    return;
-                }
+                IsHidden = true;
+                _isDirty = false;
+            }
+
+            public void ReceiveDestroyed()
+            {
+                IsHidden = true;
+                _isDirty = false;
+                _isDestroyed = true;
+            }
+
+            public void ReceivedHealth()
+            {
+                _lastReceivedLimbHealth = _limb.m_health;
+            }
+
+            public void UpdateLimbHealth()
+            {
+                LimbHealth = _limb.m_health;
                 _isDirty = true;
+                _lastLocalUpdateTime = Time.unscaledTime;
             }
 
-            public void UpdateLimbHealth(float health, bool isAuthoritative)
+            public void UpdateExpiration(bool force = false)
             {
-                LimbHealth = health;
-                if (isAuthoritative)
-                {
-                    _lastAuthoritativeLimbHealth = health;
-                    _isDirty = false;
+                if (_isDestroyed || _baseHelper.IsDead || (!force && !_isDirty))
                     return;
-                }
-                _lastNonAuthoritativeUpdateTime = Time.time;
-            }
 
-            public void UpdateExpiration()
-            {
-                if (!_isDirty || _isReallyDestroyed || !IsDestroyed) return;
-
-                if ((Time.time - _lastNonAuthoritativeUpdateTime) * 1000 > ExpirationTime)
+                if ((Time.unscaledTime - _lastLocalUpdateTime) * 1000 > ExpirationTime)
                 {
-                    LimbHealth = _lastAuthoritativeLimbHealth;
+                    LimbHealth = _lastReceivedLimbHealth;
                     _isDirty = false;
                 }
             }
@@ -259,8 +299,7 @@ public class DeadBodyFix : Feature
                 data = new EnemyDamageableHelper(__instance.Damage);
                 s_EnemyDamageableHelpers.Add(__instance.GlobalID, data);
             }
-
-            data.UpdateHealth(__instance.Damage.Health, true);
+            data.ReceivedHealth();
         }
     }
 
@@ -269,7 +308,11 @@ public class DeadBodyFix : Feature
     {
         private static void Prefix(EnemyAgent __instance)
         {
-            s_EnemyDamageableHelpers.Remove(__instance.GlobalID);
+            if (s_EnemyDamageableHelpers.TryGetValue(__instance.GlobalID, out var data))
+            {
+                data.ReceivedDead();
+                s_EnemyDamageableHelpers.Remove(__instance.GlobalID);
+            }
         }
     }
     #endregion
@@ -283,7 +326,7 @@ public class DeadBodyFix : Feature
             return new Type[] { typeof(float), typeof(Agent), typeof(Vector3), typeof(Vector3), typeof(Vector3), typeof(bool), typeof(int), typeof(float), typeof(float), typeof(uint) };
         }
 
-        // 客户端计算推测敌人血量并写入 Health, 最后更新敌人血量 (非权威), 枪械武器造成的伤害不使用 RoundDamage
+        // 客户端推测敌人血量并写入 Health, 最后更新敌人血量 (非权威), 枪械武器造成的伤害不使用 RoundDamage
         private static void Postfix(Dam_EnemyDamageBase __instance, float dam, int limbID)
         {
             if (SNet.IsMaster)
@@ -292,14 +335,14 @@ public class DeadBodyFix : Feature
             var enemy = __instance.Owner;
             s_fullDamageData.damage.Set(dam, __instance.HealthMax);
             var realDamage = AgentModifierManager.ApplyModifier(enemy, AgentModifier.ProjectileResistance, s_fullDamageData.damage.Get(__instance.HealthMax));
-            __instance.RegisterDamage(realDamage);
-            s_EnemyDamageableHelpers[enemy.GlobalID].UpdateHealth(enemy.Damage.Health, false);
             if (limbID >= 0)
             {
                 var limb = __instance.DamageLimbs[limbID];
                 limb.DoDamage(realDamage);
-                s_EnemyDamageableHelpers[enemy.GlobalID].UpdateLimbHealth(limbID, limb.m_health, false);
+                s_EnemyDamageableHelpers[enemy.GlobalID][limbID].UpdateLimbHealth();
             }
+            __instance.RegisterDamage(realDamage);
+            s_EnemyDamageableHelpers[enemy.GlobalID].UpdateHealth();
         }
     }
 
@@ -320,19 +363,20 @@ public class DeadBodyFix : Feature
             var enemy = __instance.Owner;
             s_fullDamageData.damage.Set(dam, __instance.DamageMax);
             var realDamage = AgentModifierManager.ApplyModifier(enemy, AgentModifier.MeleeResistance, Dam_EnemyDamageBase.RoundDamage(s_fullDamageData.damage.Get(__instance.DamageMax)));
-            __instance.RegisterDamage(realDamage);
-            s_EnemyDamageableHelpers[enemy.GlobalID].UpdateHealth(enemy.Damage.Health, false);
             if (limbID >= 0)
             {
                 var limb = __instance.DamageLimbs[limbID];
                 limb.DoDamage(realDamage);
-                s_EnemyDamageableHelpers[enemy.GlobalID].UpdateLimbHealth(limbID, limb.m_health, false);
+                s_EnemyDamageableHelpers[enemy.GlobalID][limbID].UpdateLimbHealth();
             }
+            __instance.RegisterDamage(realDamage);
+            s_EnemyDamageableHelpers[enemy.GlobalID].UpdateHealth();
         }
     }
     #endregion
 
     #region 权威更新
+    // 此方法在服务端没有任何 DamageSync 时有用
     [ArchivePatch(typeof(ES_HitreactBase), nameof(ES_HitreactBase.CurrentReactionType), patchMethodType: ArchivePatch.PatchMethodType.Setter)]
     private class ES_HitreactBase__set_CurrentReactionType__Patch
     {
@@ -346,13 +390,26 @@ public class DeadBodyFix : Feature
                 return;
 
             if (value == ES_HitreactType.ToDeath)
-            {
-                s_EnemyDamageableHelpers[__instance.m_enemyAgent.GlobalID].ForceUpdateAliveStatus(false, true);
-            }
-            else
-            {
-                s_EnemyDamageableHelpers[__instance.m_enemyAgent.GlobalID].ForceUpdateAliveStatus(true, true);
-            }
+                s_EnemyDamageableHelpers[__instance.m_enemyAgent.GlobalID].ReceivedDead();
+        }
+    }
+
+    [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.SendDestroyLimb))]
+    private class Dam_EnemyDamageBase__SendDestroyLimb__Patch
+    {
+        private static bool Prefix(Dam_EnemyDamageBase __instance, int limbID)
+        {
+            if (!SNet.IsMaster)
+                return true;
+
+            if (!_blockCustomLimbDamageOverflow || limbID < 0)
+                return true;
+
+            var limb = __instance.DamageLimbs[limbID];
+            if (!limb.IsDestroyed || limb.DestructionType != eLimbDestructionType.Custom)
+                return true;
+
+            return false;
         }
     }
 
@@ -377,36 +434,33 @@ public class DeadBodyFix : Feature
         }
 
         // 主机更新敌人整体血量
-        private static void Postfix(Dam_EnemyDamageBase __instance)
+        private static void Postfix(Dam_EnemyDamageBase __instance, int limbID)
         {
             if (!SNet.IsMaster)
                 return;
 
-            s_EnemyDamageableHelpers[__instance.Owner.GlobalID].UpdateHealth(__instance.Health, true);
-        }
-    }
-
-    [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveDestroyLimb))]
-    private class Dam_EnemyDamageBase__ReceiveDestroyLimb__Patch
-    {
-        // 主机更新敌人部位状态
-        private static void Postfix(Dam_EnemyDamageBase __instance, Dam_EnemyDamageBase.pDestroyLimbData data)
-        {
-            if (!SNet.IsMaster)
-                return;
-
-            s_EnemyDamageableHelpers[__instance.Owner.GlobalID][data.limbID].UpdateLimbDestroyStatus(true, true);
+            s_EnemyDamageableHelpers[__instance.Owner.GlobalID][limbID].ReceivedHealth();
+            s_EnemyDamageableHelpers[__instance.Owner.GlobalID].ReceivedHealth();
         }
     }
 
     private static void OnEnemyHealthReceived(Dam_EnemyDamageBase damage)
     {
-        s_EnemyDamageableHelpers[damage.Owner.GlobalID].UpdateHealth(damage.Health, true);
+        if (SNet.IsMaster)
+            return;
+        s_EnemyDamageableHelpers[damage.Owner.GlobalID].ReceivedHealth();
     }
 
     private static void OnEnemyLimbHealthReceived(Dam_EnemyDamageLimb limb)
     {
-        s_EnemyDamageableHelpers[limb.m_base.Owner.GlobalID].UpdateLimbHealth(limb.m_limbID, limb.m_health, true);
+        if (SNet.IsMaster)
+            return;
+        s_EnemyDamageableHelpers[limb.m_base.Owner.GlobalID][limb.m_limbID].ReceivedHealth();
+    }
+
+    private static void OnEnemyLimbDestroyed(Dam_EnemyDamageLimb limb)
+    {
+        s_EnemyDamageableHelpers[limb.m_base.Owner.GlobalID][limb.m_limbID].ReceiveDestroyed();
     }
     #endregion
 
@@ -425,7 +479,9 @@ public class DeadBodyFix : Feature
                 if (__instance.Sync.m_enemyStateData.agentMode == AgentMode.Off)
                     return;
 
-                s_EnemyDamageableHelpers[__instance.GlobalID].UpdateExpriation();
+                var data = s_EnemyDamageableHelpers[__instance.GlobalID];
+                if (data.IsDirty)
+                    data.UpdateExpriation();
             }
         }
     }

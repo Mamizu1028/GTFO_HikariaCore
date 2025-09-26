@@ -25,7 +25,7 @@ namespace Hikaria.Core.Features.Fixes
 
         public new static IArchiveLogger FeatureLogger { get; set; }
 
-        public static readonly int PatchPriority = 0;
+        public static readonly int PatchPriority = -100000;
 
         [ArchivePatch(typeof(Weapon), nameof(Weapon.CastWeaponRay))]
         private static class Weapon__CastWeaponRay__Patch

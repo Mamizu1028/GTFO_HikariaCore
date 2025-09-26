@@ -13,11 +13,9 @@ public static class WeaponAPI
     public delegate void PostShotgunFire(Shotgun shotgun, bool resetRecoilSimilarity);
     #endregion
 
-    #region Events
     public static event PreBulletWeaponFire OnPreBulletWeaponFire { add => WeaponAPI_Impl.OnPreBulletWeaponFire += value; remove => WeaponAPI_Impl.OnPreBulletWeaponFire -= value; }
     public static event PostBulletWeaponFire OnPostBulletWeaponFire { add => WeaponAPI_Impl.OnPostBulletWeaponFire += value; remove => WeaponAPI_Impl.OnPostBulletWeaponFire -= value; }
 
     public static event PreShotgunFire OnPreShotgunFire { add => WeaponAPI_Impl.OnPreShotgunFire += value; remove => WeaponAPI_Impl.OnPreShotgunFire -= value; }
     public static event PostShotgunFire OnPostShotgunFire { add => WeaponAPI_Impl.OnPostShotgunFire += value; remove => WeaponAPI_Impl.OnPostShotgunFire -= value; }
-    #endregion
 }

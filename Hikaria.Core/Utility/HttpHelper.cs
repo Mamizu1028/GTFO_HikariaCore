@@ -12,12 +12,10 @@ public static class HttpHelper
         Timeout = TimeSpan.FromSeconds(10),
     };
 
-    private static IArchiveLogger _logger;
-    private static IArchiveLogger Logger => _logger ??= LoaderWrapper.CreateLoggerInstance(nameof(HttpHelper));
+    private static IArchiveLogger _logger = LoaderWrapper.CreateArSubLoggerInstance(nameof(HttpHelper));
 
     public static async Task<T> GetAsync<T>(string url) where T : new()
     {
-        if (!CoreGlobal.ServerOnline) return new();
         try
         {
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -25,17 +23,15 @@ public static class HttpHelper
             string responseData = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<T>(responseData, CoreGlobal.JsonSerializerSettings);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Logger.Error($"Error occurred while sending GET request. [{url}]");
-            //Logger.Exception(ex);
+            _logger.Error($"Error occurred while sending GET request. [{url}]");
             return new();
         }
     }
 
     public static async Task<T> PostAsync<T>(string url, object content) where T : new()
     {
-        if (!CoreGlobal.ServerOnline) return new();
         try
         {
             string jsonContent = JsonConvert.SerializeObject(content, CoreGlobal.JsonSerializerSettings);
@@ -45,17 +41,15 @@ public static class HttpHelper
             string responseData = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<T>(responseData, CoreGlobal.JsonSerializerSettings);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Logger.Error($"Error occurred while sending POST request. [{url}]");
-            //Logger.Exception(ex);
+            _logger.Error($"Error occurred while sending POST request. [{url}]");
             return new();
         }
     }
 
     public static async Task<T> PutAsync<T>(string url, object content) where T : new()
     {
-        if (!CoreGlobal.ServerOnline) return new();
         try
         {
             string jsonContent = JsonConvert.SerializeObject(content, CoreGlobal.JsonSerializerSettings);
@@ -65,17 +59,15 @@ public static class HttpHelper
             string responseData = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<T>(responseData, CoreGlobal.JsonSerializerSettings);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Logger.Error($"Error occurred while sending PUT request. [{url}]");
-            //Logger.Exception(ex);
+            _logger.Error($"Error occurred while sending PUT request. [{url}]");
             return new();
         }
     }
 
     public static async Task<T> PatchAsync<T>(string url, object content) where T : new()
     {
-        if (!CoreGlobal.ServerOnline) return new();
         try
         {
             string jsonContent = JsonConvert.SerializeObject(content, CoreGlobal.JsonSerializerSettings);
@@ -85,10 +77,9 @@ public static class HttpHelper
             string responseData = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<T>(responseData, CoreGlobal.JsonSerializerSettings);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Logger.Error($"Error occurred while sending PATCH request. [{url}]");
-            //Logger.Exception(ex);
+            _logger.Error($"Error occurred while sending PATCH request. [{url}]");
             return new();
         }
     }

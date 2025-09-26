@@ -17,7 +17,7 @@ namespace Hikaria.Core.Features.Dev
 
         public override bool RequiresRestart => true;
 
-        public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Develop", true);
+        public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Developer", true);
 
         [FeatureConfig]
         public static CoreSettingsSettings Settings { get; set; }

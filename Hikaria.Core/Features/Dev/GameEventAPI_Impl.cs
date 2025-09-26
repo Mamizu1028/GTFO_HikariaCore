@@ -20,7 +20,7 @@ internal class GameEventAPI_Impl : Feature
     public override string Description => "负责游戏事件的钩子。\n" +
         "属于核心功能，插件的正常运作离不开该功能。";
 
-    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Develop", true);
+    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Developer", true);
 
     public static new IArchiveLogger FeatureLogger { get; set; }
 

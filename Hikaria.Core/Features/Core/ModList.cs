@@ -45,12 +45,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
         {
             get
             {
-                var result = new List<ModInfoEntry>();
-                foreach (var modInfo in InstalledMods.Values)
-                {
-                    result.Add(new(modInfo));
-                }
-                return result;
+                return new(InstalledMods.Values.Select(modInfo => new ModInfoEntry(modInfo)));
             }
             set
             {
@@ -100,12 +95,7 @@ internal class ModList : Feature, IOnSessionMemberChanged
             {
                 if (PlayerModsLookup.TryGetValue(Lookup, out var entry))
                 {
-                    var result = new List<ModInfoEntry>();
-                    foreach (var modInfo in entry.Values)
-                    {
-                        result.Add(new(modInfo));
-                    }
-                    return result;
+                    return new(entry.Values.Select(modInfo => new ModInfoEntry(modInfo)));
                 }
                 return new();
             }

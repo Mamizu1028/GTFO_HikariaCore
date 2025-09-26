@@ -21,7 +21,7 @@ internal class CoreBootstrap : Feature
 
     public override string Description => "负责一些主要部件的初始化和钩子";
 
-    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Develop", true);
+    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Developer", true);
 
     public override void Init()
     {

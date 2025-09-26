@@ -21,7 +21,9 @@ public static class CoreAPI
         return PlayerModsLookup.TryGetValue(player.Lookup, out var lookup) && lookup.TryGetValue(guid, out var info2) && range.Contains(info2.Version);
     }
 
+    #region Delegates
     public delegate void PlayerModsSynced(SNet_Player player, IEnumerable<pModInfo> mods);
+    #endregion
 
     public static event PlayerModsSynced OnPlayerModsSynced { add => ModList.OnPlayerModsSynced += value; remove => ModList.OnPlayerModsSynced -= value; }
 }

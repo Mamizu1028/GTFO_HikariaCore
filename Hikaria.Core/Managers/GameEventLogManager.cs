@@ -19,7 +19,7 @@ public class GameEventLogManager : MonoBehaviour, IPauseable
     private void FixedUpdate()
     {
         timer += Time.fixedDeltaTime;
-        if (timer < 0.333)
+        if (timer < (1 / 3f))
             return;
         timer = 0f;
         if (queue.TryDequeue(out var log))
