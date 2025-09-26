@@ -4,7 +4,6 @@ using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.FeaturesAPI.Groups;
 using TheArchive.Interfaces;
-using static RootMotion.Demos.FBBIKSettings;
 
 namespace Hikaria.Core.Features.Fixes;
 
