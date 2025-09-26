@@ -324,12 +324,9 @@ public class DeadBodyFix : Feature
             var enemy = __instance.Owner;
             s_fullDamageData.damage.Set(dam, __instance.HealthMax);
             var realDamage = AgentModifierManager.ApplyModifier(enemy, AgentModifier.ProjectileResistance, s_fullDamageData.damage.Get(__instance.HealthMax));
-            if (limbID >= 0)
-            {
-                var limb = __instance.DamageLimbs[limbID];
-                limb.DoDamage(realDamage);
-                s_EnemyDamageableHelpers[enemy.GlobalID][limbID].UpdateLimbHealth();
-            }
+            var limb = __instance.DamageLimbs[limbID];
+            limb.DoDamage(realDamage);
+            s_EnemyDamageableHelpers[enemy.GlobalID][limbID].UpdateLimbHealth();
             __instance.RegisterDamage(realDamage);
             s_EnemyDamageableHelpers[enemy.GlobalID].UpdateHealth();
         }
@@ -352,12 +349,9 @@ public class DeadBodyFix : Feature
             var enemy = __instance.Owner;
             s_fullDamageData.damage.Set(dam, __instance.DamageMax);
             var realDamage = AgentModifierManager.ApplyModifier(enemy, AgentModifier.MeleeResistance, Dam_EnemyDamageBase.RoundDamage(s_fullDamageData.damage.Get(__instance.DamageMax)));
-            if (limbID >= 0)
-            {
-                var limb = __instance.DamageLimbs[limbID];
-                limb.DoDamage(realDamage);
-                s_EnemyDamageableHelpers[enemy.GlobalID][limbID].UpdateLimbHealth();
-            }
+            var limb = __instance.DamageLimbs[limbID];
+            limb.DoDamage(realDamage);
+            s_EnemyDamageableHelpers[enemy.GlobalID][limbID].UpdateLimbHealth();
             __instance.RegisterDamage(realDamage);
             s_EnemyDamageableHelpers[enemy.GlobalID].UpdateHealth();
         }
@@ -392,7 +386,7 @@ public class DeadBodyFix : Feature
             if (!SNet.IsMaster)
                 return true;
 
-            if (!_blockCustomLimbDamageOverflow || limbID < 0)
+            if (!_blockCustomLimbDamageOverflow)
                 return true;
 
             var limb = __instance.DamageLimbs[limbID];

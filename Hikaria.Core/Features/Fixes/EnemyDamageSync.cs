@@ -49,22 +49,16 @@ public class EnemyDamageSync : Feature
         {
             if (!SNet.IsMaster) return;
 
-            if (limbID >= 0)
-            {
-                s_willDamageKill = __instance.WillDamageKill(damage);
-            }
+            s_willDamageKill = __instance.WillDamageKill(damage);
         }
 
         private static void Postfix(Dam_EnemyDamageBase __instance, float damage, int limbID, bool __result)
         {
             if (!SNet.IsMaster || __result) return;
 
-            if (limbID >= 0)
-            {
-                var limb = __instance.DamageLimbs[limbID];
-                if (!limb.IsDestroyed)
-                    SendLimbHealth(limb);
-            }
+            var limb = __instance.DamageLimbs[limbID];
+            if (!limb.IsDestroyed)
+                SendLimbHealth(limb);
 
             SendEnemyHealth(__instance);
         }
