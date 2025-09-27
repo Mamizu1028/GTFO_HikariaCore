@@ -437,9 +437,10 @@ public class DeadBodyFix : Feature
             if (SNet.IsMaster)
                 return;
 
-            var data = s_EnemyDamageableHelpers[__instance.GlobalID];
-            if (data.IsDirty)
+            if (s_EnemyDamageableHelpers.TryGetValue(__instance.GlobalID, out var data) && data.IsDirty)
+            {
                 data.UpdateExpriation();
+            }
         }
     }
 
@@ -460,9 +461,7 @@ public class DeadBodyFix : Feature
     private static void OnEnemyLimbDestroyed(Dam_EnemyDamageLimb limb)
     {
         if (SNet.IsMaster)
-        {
             _lastDestroyedLimbObjectID = limb.gameObject.GetInstanceID();
-        }
         s_EnemyDamageableHelpers[limb.m_base.Owner.GlobalID][limb.m_limbID].ReceiveDestroyed();
     }
 
