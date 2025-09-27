@@ -1,14 +1,13 @@
-﻿using Hikaria.Core.Interfaces;
-using TheArchive.Utilities;
+﻿using TheArchive.Utilities;
 
 namespace Hikaria.Core.SNetworkExt;
 
-public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T : struct
+public abstract class SNetExt_SyncedAction<T> where T : struct
 {
     ~SNetExt_SyncedAction()
     {
-        GameEventAPI.UnregisterListener(this);
-        CoreAPI.OnPlayerModsSynced += OnPlayerModsSynced;
+        GameEventAPI.OnSessionMemberChanged -= OnSessionMemberChanged;
+        CoreAPI.OnPlayerModsSynced -= OnPlayerModsSynced;
     }
 
     protected void Setup(string eventName, Action<ulong, T> incomingAction, Action<T> incomingActionValidation = null, Func<SNetwork.SNet_Player, bool> listenerFilter = null, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
@@ -17,8 +16,8 @@ public abstract class SNetExt_SyncedAction<T> : IOnSessionMemberChanged where T 
         m_incomingAction = incomingAction;
         m_listenerFilter = listenerFilter;
         m_hasListenerFilter = listenerFilter != null;
-        GameEventAPI.RegisterListener(this);
-        CoreAPI.OnPlayerModsSynced -= OnPlayerModsSynced;
+        GameEventAPI.OnSessionMemberChanged += OnSessionMemberChanged;
+        CoreAPI.OnPlayerModsSynced += OnPlayerModsSynced;
     }
 
     public void SyncToPlayer(SNetwork.SNet_Player player, T data)
