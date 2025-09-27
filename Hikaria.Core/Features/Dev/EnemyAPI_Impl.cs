@@ -6,7 +6,6 @@ using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.FeaturesAPI.Groups;
 using TheArchive.Interfaces;
 using TheArchive.Utilities;
-using static Il2CppSystem.Globalization.CultureInfo;
 
 namespace Hikaria.Core.Features.Dev;
 
