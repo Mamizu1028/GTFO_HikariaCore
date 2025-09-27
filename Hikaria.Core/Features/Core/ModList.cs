@@ -23,7 +23,6 @@ internal class ModList : Feature
 
     public class ModListSetting
     {
-        [FSUseDynamicSubmenu]
         [FSDisplayName("我的插件")]
         public List<ModInfoEntry> InstalledMods { get; set; } = new();
 
