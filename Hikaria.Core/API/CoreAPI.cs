@@ -1,6 +1,5 @@
-﻿using Hikaria.Core.Features.Core;
+﻿using Hikaria.Core.Features.Dev;
 using SNetwork;
-using static Hikaria.Core.Features.Core.ModList;
 
 namespace Hikaria.Core;
 
@@ -16,14 +15,14 @@ public static class CoreAPI
         if (player == null || player.IsBot) return false;
         if (player.IsLocal)
         {
-            return InstalledMods.TryGetValue(guid, out var info1) && range.Contains(info1.Version);
+            return CoreAPI_Impl.InstalledMods.TryGetValue(guid, out var info1) && range.Contains(info1.Version);
         }
-        return PlayerModsLookup.TryGetValue(player.Lookup, out var lookup) && lookup.TryGetValue(guid, out var info2) && range.Contains(info2.Version);
+        return CoreAPI_Impl.OthersMods.TryGetValue(player.Lookup, out var lookup) && lookup.TryGetValue(guid, out var info2) && range.Contains(info2.Version);
     }
 
     #region Delegates
     public delegate void PlayerModsSynced(SNet_Player player, IEnumerable<pModInfo> mods);
     #endregion
 
-    public static event PlayerModsSynced OnPlayerModsSynced { add => ModList.OnPlayerModsSynced += value; remove => ModList.OnPlayerModsSynced -= value; }
+    public static event PlayerModsSynced OnPlayerModsSynced { add => CoreAPI_Impl.OnPlayerModsSynced += value; remove => CoreAPI_Impl.OnPlayerModsSynced -= value; }
 }
