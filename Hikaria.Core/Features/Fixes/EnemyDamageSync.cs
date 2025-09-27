@@ -24,7 +24,7 @@ public class EnemyDamageSync : Feature
 
     private static readonly VersionRange versionRange = "1.x.x";
 
-    public static readonly int PatchPriority = 5000;
+    public static readonly int PatchPriority = -1000;
 
     public override void OnEnable()
     {
@@ -41,25 +41,14 @@ public class EnemyDamageSync : Feature
     [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ProcessReceivedDamage))]
     private static class Dam_EnemyDamageBase__ProcessReceivedDamage__Patch
     {
-        private static bool s_willDamageKill;
-
         private static int Priority() => PatchPriority;
 
-        private static void Prefix(Dam_EnemyDamageBase __instance, float damage, int limbID)
-        {
-            if (!SNet.IsMaster) return;
-
-            s_willDamageKill = __instance.WillDamageKill(damage);
-        }
-
-        private static void Postfix(Dam_EnemyDamageBase __instance, float damage, int limbID, bool __result)
+        private static void Postfix(Dam_EnemyDamageBase __instance, int limbID, bool __result)
         {
             if (!SNet.IsMaster || __result) return;
 
             var limb = __instance.DamageLimbs[limbID];
-            if (!limb.IsDestroyed)
-                SendLimbHealth(limb);
-
+            SendLimbHealth(limb);
             SendEnemyHealth(__instance);
         }
     }
@@ -76,8 +65,20 @@ public class EnemyDamageSync : Feature
             return;
 
         s_pDestroyLimbData.limbID = (byte)(byte.MaxValue - limb.m_limbID);
-        s_pDestroyLimbData.destructionEventData.atPos_Local.SetToLowResVector3(limb.m_health, limb.m_healthMax);
+        SetToLowResVector3(ref s_pDestroyLimbData.destructionEventData.atPos_Local, limb.m_health, limb.m_healthMax);
         limb.m_base.m_destroyLimbPacket.Send(s_pDestroyLimbData, SNet_ChannelType.GameReceiveCritical, s_Il2Cpp_players);
+    }
+
+    private static SFloat24 s_SFloat24 = new();
+    private static void SetToLowResVector3(ref LowResVector3 vector, float v, float maxValue)
+    {
+        s_SFloat24.Set(v, maxValue);
+        vector.vector = new LowResVector3_Normalized
+        {
+            x = new UFloat8 { internalValue = s_SFloat24.internalValue1 },
+            y = new UFloat8 { internalValue = s_SFloat24.internalValue2 },
+            z = new UFloat8 { internalValue = s_SFloat24.internalValue3 }
+        };
     }
 
     private static pSetHealthData s_data = new();

@@ -777,25 +777,22 @@ public struct SFloat24
     {
         get
         {
-            // 将三个字节组合成一个24位整数
             int combinedValue = (internalValue1 << 16) | (internalValue2 << 8) | internalValue3;
-
-            // 将24位无符号整数映射到-1到1范围
-            // 0 映射到 -1，16777215(2^24-1) 映射到 1
-            return (float)combinedValue * convOut - 1.0f;
+            // 使用对称的映射: -8388608到8388607 映射到 -1到1
+            // 中心值8388608映射到0
+            return (combinedValue - 8388608f) / 8388607f;
         }
         set
         {
-            // 将-1到1范围的浮点数限制在有效范围内
             float clampedValue = Mathf.Clamp(value, -1.0f, 1.0f);
+            // 将-1到1映射到0到16777215,中心值为8388608
+            int combinedValue = Mathf.RoundToInt(clampedValue * 8388607f + 8388608f);
+            // 确保在有效范围内
+            combinedValue = Mathf.Clamp(combinedValue, 0, 16777215);
 
-            // 将-1到1范围的浮点数转换为0到2^24-1范围的整数
-            int combinedValue = (int)((clampedValue + 1.0f) * halfConvIn);
-
-            // 分解为3个字节
-            internalValue1 = (byte)((combinedValue >> 16) & 0xFF); // 高8位
-            internalValue2 = (byte)((combinedValue >> 8) & 0xFF);  // 中8位
-            internalValue3 = (byte)(combinedValue & 0xFF);         // 低8位
+            internalValue1 = (byte)((combinedValue >> 16) & 0xFF);
+            internalValue2 = (byte)((combinedValue >> 8) & 0xFF);
+            internalValue3 = (byte)(combinedValue & 0xFF);
         }
     }
 
@@ -833,17 +830,5 @@ public struct SFloat24
     /// 内部存储值 - 低8位
     /// </summary>
     public byte internalValue3;
-
-    /// <summary>
-    /// 输出转换系数：2/(2^24-1)
-    /// 因为我们需要将0到2^24-1映射到-1到1的范围，所以系数是2/(2^24-1)
-    /// </summary>
-    private const float convOut = 2.0f / 16777215.0f;
-
-    /// <summary>
-    /// 输入转换系数的一半：(2^24-1)/2
-    /// 用于将-1到1的范围映射到0到2^24-1
-    /// </summary>
-    private const float halfConvIn = 16777215.0f / 2.0f;
 }
 #endregion

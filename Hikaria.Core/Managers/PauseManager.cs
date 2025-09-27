@@ -117,7 +117,7 @@ internal class PauseManager : MonoBehaviour
         }
     }
 
-    public static float PauseUpdateInterval => Time.fixedDeltaTime;
+    public static float PauseUpdateInterval => Time.fixedUnscaledDeltaTime;
 
     private Coroutine m_pauseUpdateCoroutine;
 

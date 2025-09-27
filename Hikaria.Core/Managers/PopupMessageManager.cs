@@ -49,16 +49,16 @@ public static class PopupMessageManager
         _popupQueue.Enqueue(popupMessage);
     }
 
-    private static bool _runningAllPopups = false;
+    private static bool _runningShowAllPopups = false;
 
     public static bool AllowToShowPopup => (MainMenuGuiLayer.Current.PageRundownNew.m_isActive || MainMenuGuiLayer.Current.PageLoadout.m_isActive) && GameStateManager.CurrentStateName <= eGameStateName.Lobby;
 
     private static IEnumerator ShowAllPopups()
     {
-        if (_runningAllPopups)
+        if (_runningShowAllPopups)
             yield break;
 
-        _runningAllPopups = true;
+        _runningShowAllPopups = true;
 
         var yielder = new WaitForSeconds(0.1f);
 

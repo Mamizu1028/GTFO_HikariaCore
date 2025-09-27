@@ -65,21 +65,20 @@ public static class SNetExt
     public static A LoadCustomData<A>(this SNetwork.SNet_Player player) where A : struct
     {
         Type typeFromHandle = typeof(A);
-        DataWrapper dataWrapper;
         DataWrapper<A> dataWrapper2;
         if (!DataWrappersLookup.TryGetValue(player.Lookup, out var dic))
         {
             DataWrappersLookup[player.Lookup] = new();
             dic = DataWrappersLookup[player.Lookup];
         }
-        if (!dic.TryGetValue(typeFromHandle, out dataWrapper))
+        if (!dic.TryGetValue(typeFromHandle, out var dataWrapper))
         {
             dataWrapper2 = new DataWrapper<A>();
             dic.Add(typeFromHandle, dataWrapper2);
         }
         else
         {
-            dataWrapper2 = (DataWrapper<A>)dataWrapper;
+            dataWrapper2 = dataWrapper as DataWrapper<A>;
         }
         return dataWrapper2.Load();
     }
@@ -87,21 +86,20 @@ public static class SNetExt
     public static void StoreCustomData<A>(this SNetwork.SNet_Player player, A data) where A : struct
     {
         Type typeFromHandle = typeof(A);
-        DataWrapper dataWrapper;
         DataWrapper<A> dataWrapper2;
         if (!DataWrappersLookup.TryGetValue(player.Lookup, out var dic))
         {
             DataWrappersLookup[player.Lookup] = new();
             dic = DataWrappersLookup[player.Lookup];
         }
-        if (!dic.TryGetValue(typeFromHandle, out dataWrapper))
+        if (!dic.TryGetValue(typeFromHandle, out var dataWrapper))
         {
             dataWrapper2 = new DataWrapper<A>();
             dic.Add(typeFromHandle, dataWrapper2);
         }
         else
         {
-            dataWrapper2 = (DataWrapper<A>)dataWrapper;
+            dataWrapper2 = dataWrapper as DataWrapper<A>;
         }
         dataWrapper2.Store(player, data);
     }
