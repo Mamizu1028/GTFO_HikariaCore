@@ -1,5 +1,4 @@
-﻿using Hikaria.Core.Interfaces;
-using SNetwork;
+﻿using SNetwork;
 using TheArchive.Core.Attributes.Feature;
 using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
@@ -8,22 +7,23 @@ using TheArchive.Core.FeaturesAPI.Groups;
 namespace Hikaria.Core.Features.Fixes;
 
 [EnableFeatureByDefault]
-internal class LobbyGhostPlayerFix : Feature, IOnSessionMemberChanged
+internal class LobbyGhostPlayerFix : Feature
 {
     public override string Name => "卡房修复";
 
-    public override string Description => "在玩家离开大厅时自动检查是否有位置被卡，另外可通过锁定位置的方法手动修复特定位置被卡的问题。";
+    public override string Description => "在玩家离开大厅时自动检查是否有位置被卡\n" +
+        "可通过锁定位置的方法手动修复特定位置被卡的问题";
 
     public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Fixes");
 
     public override void OnEnable()
     {
-        GameEventAPI.RegisterListener(this);
+        SNetEventAPI.OnSessionMemberChanged += OnSessionMemberChanged;
     }
 
     public override void OnDisable()
     {
-        GameEventAPI.UnregisterListener(this);
+        SNetEventAPI.OnSessionMemberChanged -= OnSessionMemberChanged;
     }
 
     public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)

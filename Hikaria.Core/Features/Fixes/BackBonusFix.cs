@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Hikaria.Core.Features.Fixes
 {
     [EnableFeatureByDefault]
-    public class BackBonusFix : Feature
+    internal class BackBonusFix : Feature
     {
         public override string Name => "背伤加成修复";
 

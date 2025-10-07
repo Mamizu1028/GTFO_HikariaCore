@@ -20,7 +20,7 @@ internal class WeaponAPI_Impl : Feature
 
     public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Developer", true);
 
-    public new static IArchiveLogger FeatureLogger { get; set; }
+    public static new IArchiveLogger FeatureLogger { get; set; }
 
     #region Events
     public static event PreBulletWeaponFire OnPreBulletWeaponFire;
@@ -29,7 +29,6 @@ internal class WeaponAPI_Impl : Feature
     public static event PreShotgunFire OnPreShotgunFire;
     public static event PostShotgunFire OnPostShotgunFire;
     #endregion
-
 
     [ArchivePatch(typeof(BulletWeapon), nameof(BulletWeapon.Fire))]
     private class BulletWeapon__Fire__Patch

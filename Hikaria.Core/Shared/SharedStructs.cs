@@ -1,4 +1,6 @@
-﻿using Hikaria.Core.Managers;
+﻿using Agents;
+using Enemies;
+using Hikaria.Core.Managers;
 using SNetwork;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -51,7 +53,9 @@ public struct pModList : SNetworkExt.IReplicatedPlayerData
     public pModList(SNet_Player player, List<pModInfo> modList)
     {
         Array.Fill(Mods, new());
-        PlayerData.SetPlayer(player);
+        var playerData = new SNetStructs.pPlayer();
+        playerData.SetPlayer(player);
+        PlayerData = playerData;
         ModCount = Math.Clamp(modList.Count, 0, MOD_SYNC_COUNT);
         for (int i = 0; i < ModCount; i++)
         {
@@ -62,6 +66,7 @@ public struct pModList : SNetworkExt.IReplicatedPlayerData
     public pModList()
     {
         Array.Fill(Mods, new());
+        PlayerData = new();
     }
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = MOD_SYNC_COUNT)]
@@ -71,7 +76,7 @@ public struct pModList : SNetworkExt.IReplicatedPlayerData
 
     public const int MOD_SYNC_COUNT = 256; // 到底是什么神人会装上百个mod???
 
-    public SNetStructs.pPlayer PlayerData { get; set; } = new();
+    public SNetStructs.pPlayer PlayerData { get; set; }
 }
 
 public struct pModInfo
@@ -88,6 +93,84 @@ public struct pModInfo
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
     public string GUID = string.Empty;
     public Version Version = default;
+}
+#endregion
+
+#region Enemy
+public struct pFullEnemyReceivedDamageData
+{
+    public pEnemyAgent enemy = new();
+    public float damage = 0f;
+    public pAgent damageSource = new();
+    public Vector3 position = Vector3.zero;
+    public Vector3 direction = Vector3.zero;
+    public ES_HitreactType hitreact = ES_HitreactType.Unspecified;
+    public bool tryForceHitreact = false;
+    public int limbID = -1;
+    public float staggerDamageMulti = 1f;
+    public DamageNoiseLevel damageNoiseLevel = DamageNoiseLevel.Normal;
+    public uint gearCategoryId = 0u;
+    public bool isKill = false;
+    public uint gearChecksum = 0u;
+    public DamageTraceFlags damageTraceFlags = DamageTraceFlags.None;
+
+    public pFullEnemyReceivedDamageData(EnemyAgent enemy, bool isKill, float damage, Agent damageSource, Vector3 position, Vector3 direction, ES_HitreactType hitreact, bool tryForceHitreact = false, int limbID = -1, float staggerDamageMulti = 1f, DamageNoiseLevel damageNoiseLevel = DamageNoiseLevel.Normal, uint gearCategoryId = 0u, uint gearChecksum = 0u, DamageTraceFlags damageTraceFlags = DamageTraceFlags.None)
+    {
+        this.enemy = new();
+        this.enemy.Set(enemy);
+        this.isKill = isKill;
+        this.damage = damage;
+        this.damageSource = new();
+        this.damageSource.Set(damageSource);
+        this.position = position;
+        this.direction = direction;
+        this.hitreact = hitreact;
+        this.tryForceHitreact = tryForceHitreact;
+        this.limbID = limbID;
+        this.staggerDamageMulti = staggerDamageMulti;
+        this.damageNoiseLevel = damageNoiseLevel;
+        this.gearCategoryId = gearCategoryId;
+        this.gearChecksum = gearChecksum;
+        this.damageTraceFlags = damageTraceFlags;
+    }
+}
+#endregion
+
+#region SNetExt
+public struct pReplicatorList : SNetworkExt.IReplicatedPlayerData
+{
+    public pReplicatorList(SNet_Player player, List<pReplicatorInfo> modList)
+    {
+        Array.Fill(Replicators, new());
+        var playerData = new SNetStructs.pPlayer();
+        playerData.SetPlayer(player);
+        PlayerData = playerData;
+        ReplicatorCount = Math.Clamp(modList.Count, 0, REPLICATOR_SYNC_COUNT);
+        for (int i = 0; i < ReplicatorCount; i++)
+        {
+            Replicators[i] = modList[i];
+        }
+    }
+
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = REPLICATOR_SYNC_COUNT)]
+    public pReplicatorInfo[] Replicators = new pReplicatorInfo[REPLICATOR_SYNC_COUNT];
+
+    public SNetStructs.pPlayer PlayerData { get; set; }
+
+    public const int REPLICATOR_SYNC_COUNT = 128;
+
+    public int ReplicatorCount = 0;
+}
+
+public struct pReplicatorInfo
+{
+    public pReplicatorInfo(string hashId)
+    {
+        HashID = hashId;
+    }
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+    public string HashID;
 }
 #endregion
 
@@ -690,145 +773,4 @@ public struct VersionRange
     }
 }
 
-#endregion
-
-#region Network LowRes
-/// <summary>
-/// UFloat24 结构体，使用3个字节存储浮点数，提供更高精度的0-1范围浮点数表示
-/// </summary>
-public struct UFloat24
-{
-    /// <summary>
-    /// 浮点数值，范围为0到1
-    /// </summary>
-    public float Value
-    {
-        get
-        {
-            // 将三个字节组合成一个24位整数，然后除以最大值(2^24-1)得到0-1范围的浮点数
-            int combinedValue = (internalValue1 << 16) | (internalValue2 << 8) | internalValue3;
-            return combinedValue * convOut;
-        }
-        set
-        {
-            // 将0-1范围的浮点数转换为24位整数，然后分解为3个字节
-            int combinedValue = (int)(Mathf.Clamp01(value) * convIn);
-            internalValue1 = (byte)((combinedValue >> 16) & 0xFF); // 高8位
-            internalValue2 = (byte)((combinedValue >> 8) & 0xFF);  // 中8位
-            internalValue3 = (byte)(combinedValue & 0xFF);         // 低8位
-        }
-    }
-
-    /// <summary>
-    /// 设置值，将实际值除以最大值，转换为0-1范围
-    /// </summary>
-    /// <param name="v">实际值</param>
-    /// <param name="maxValue">最大值</param>
-    public void Set(float v, float maxValue)
-    {
-        this.Value = v / maxValue;
-    }
-
-    /// <summary>
-    /// 获取实际值，将0-1范围的值乘以最大值
-    /// </summary>
-    /// <param name="maxValue">最大值</param>
-    /// <returns>实际值</returns>
-    public float Get(float maxValue)
-    {
-        return this.Value * maxValue;
-    }
-
-    /// <summary>
-    /// 内部存储值 - 高8位
-    /// </summary>
-    public byte internalValue1;
-
-    /// <summary>
-    /// 内部存储值 - 中8位
-    /// </summary>
-    public byte internalValue2;
-
-    /// <summary>
-    /// 内部存储值 - 低8位
-    /// </summary>
-    public byte internalValue3;
-
-    /// <summary>
-    /// 输出转换系数：1/(2^24-1)
-    /// </summary>
-    private const float convOut = 1.0f / 16777215.0f; // 1/(2^24-1)
-
-    /// <summary>
-    /// 输入转换系数：2^24-1
-    /// </summary>
-    private const float convIn = 16777215.0f; // 2^24-1
-}
-
-/// <summary>
-/// SFloat24 结构体，使用3个字节存储有符号浮点数，提供更高精度的-1到1范围浮点数表示
-/// </summary>
-public struct SFloat24
-{
-    /// <summary>
-    /// 浮点数值，范围为-1到1
-    /// </summary>
-    public float Value
-    {
-        get
-        {
-            int combinedValue = (internalValue1 << 16) | (internalValue2 << 8) | internalValue3;
-            // 使用对称的映射: -8388608到8388607 映射到 -1到1
-            // 中心值8388608映射到0
-            return (combinedValue - 8388608f) / 8388607f;
-        }
-        set
-        {
-            float clampedValue = Mathf.Clamp(value, -1.0f, 1.0f);
-            // 将-1到1映射到0到16777215,中心值为8388608
-            int combinedValue = Mathf.RoundToInt(clampedValue * 8388607f + 8388608f);
-            // 确保在有效范围内
-            combinedValue = Mathf.Clamp(combinedValue, 0, 16777215);
-
-            internalValue1 = (byte)((combinedValue >> 16) & 0xFF);
-            internalValue2 = (byte)((combinedValue >> 8) & 0xFF);
-            internalValue3 = (byte)(combinedValue & 0xFF);
-        }
-    }
-
-    /// <summary>
-    /// 设置值，将实际值除以最大值，转换为-1到1范围
-    /// </summary>
-    /// <param name="v">实际值</param>
-    /// <param name="maxValue">最大值（绝对值）</param>
-    public void Set(float v, float maxValue)
-    {
-        this.Value = Mathf.Clamp(v / maxValue, -1.0f, 1.0f);
-    }
-
-    /// <summary>
-    /// 获取实际值，将-1到1范围的值乘以最大值
-    /// </summary>
-    /// <param name="maxValue">最大值（绝对值）</param>
-    /// <returns>实际值</returns>
-    public float Get(float maxValue)
-    {
-        return this.Value * maxValue;
-    }
-
-    /// <summary>
-    /// 内部存储值 - 高8位
-    /// </summary>
-    public byte internalValue1;
-
-    /// <summary>
-    /// 内部存储值 - 中8位
-    /// </summary>
-    public byte internalValue2;
-
-    /// <summary>
-    /// 内部存储值 - 低8位
-    /// </summary>
-    public byte internalValue3;
-}
 #endregion

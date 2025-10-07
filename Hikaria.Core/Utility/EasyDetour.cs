@@ -146,6 +146,6 @@ public struct DetourDescriptor
 
     public override string ToString()
     {
-        return $"{Type.FullName}.{MethodName}{(IsGeneric ? "<>" : string.Empty)}({string.Join(", ", ArgTypes.Select(arg => arg.FullName))})";
+        return $"{Type.FullName}.{MethodName}{(IsGeneric ? $"<{string.Join(", ", Type.GenericTypeArguments.Select(arg => arg.FullName))}>" : string.Empty)}({string.Join(", ", ArgTypes.Select(arg => arg.FullName))})";
     }
 }

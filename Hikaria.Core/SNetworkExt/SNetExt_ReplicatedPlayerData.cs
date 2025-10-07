@@ -8,18 +8,20 @@ public class SNetExt_ReplicatedPlayerData<A> where A : struct
     {
         if (s_singleton == null)
         {
-            s_singleton = new();
-            s_singleton.m_syncPacket = SNetExt_Packet<A>.Create(eventName, OnReceiveData, null, false, SNetwork.SNet_ChannelType.SessionOrderCritical);
+            s_singleton = new()
+            {
+                m_syncPacket = SNetExt_Packet<A>.Create(eventName, OnReceiveData, null, SNetwork.SNet_ChannelType.SessionOrderCritical)
+            };
         }
         s_singleton.m_onChangeCallback = callback;
     }
 
-    private static void OnReceiveData(ulong sender, A wrappedData)
+    private static void OnReceiveData(SNetwork.SNet_Player sender, A wrappedData)
     {
-        if ((wrappedData as IReplicatedPlayerData).PlayerData.TryGetPlayer(out var snet_Player) && !snet_Player.IsLocal)
+        if ((wrappedData as IReplicatedPlayerData).PlayerData.TryGetPlayer(out var player) && !player.IsLocal)
         {
-            snet_Player.StoreCustomData(wrappedData);
-            Utils.SafeInvoke(s_singleton.m_onChangeCallback, snet_Player, wrappedData);
+            player.StoreCustomData(wrappedData);
+            Utils.SafeInvoke(s_singleton.m_onChangeCallback, player, wrappedData);
         }
     }
 
@@ -51,9 +53,7 @@ public class SNetExt_ReplicatedPlayerData<A> where A : struct
         if (group != SNetwork.eComparisonGroup.PlayersInSession)
         {
             if (group != SNetwork.eComparisonGroup.PlayersSynchedWithGame)
-            {
                 return false;
-            }
             list = SNetwork.SNet.Slots.PlayersSynchedWithGame;
         }
         else
@@ -63,14 +63,12 @@ public class SNetExt_ReplicatedPlayerData<A> where A : struct
         int count = list.Count;
         for (int i = 0; i < count; i++)
         {
-            SNetwork.SNet_Player snet_Player = list[i];
+            var snet_Player = list[i];
             if (includeBots || !snet_Player.IsBot)
             {
                 A a = snet_Player.LoadCustomData<A>();
                 if (!comparisonAction(a, snet_Player, comparisonValue))
-                {
                     return false;
-                }
             }
         }
         return true;

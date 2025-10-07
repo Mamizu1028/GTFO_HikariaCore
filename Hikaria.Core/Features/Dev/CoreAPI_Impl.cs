@@ -25,6 +25,7 @@ internal class CoreAPI_Impl : Feature
     {
         SNetExt.SetupCustomData<pModList>(typeof(pModList).FullName, ReceiveModListData);
         ArchiveModuleChainloader.Instance.Finished += OnChainloaderFinished;
+        SNetEventAPI.OnSessionMemberChanged += OnSessionMemberChanged;
     }
 
     [ArchivePatch(typeof(SNet_Player), nameof(SNet_Player.SendAllCustomData))]

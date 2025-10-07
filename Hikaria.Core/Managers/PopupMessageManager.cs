@@ -12,7 +12,7 @@ public static class PopupMessageManager
 {
     static PopupMessageManager()
     {
-        s_PopupMessagePacket = SNetExt_Packet<pPopupMessage>.Create(typeof(pPopupMessage).FullName, OnReceivePopupMessage, null, true, SNet_ChannelType.SessionOrderCritical);
+        s_PopupMessagePacket = SNetExt_Packet<pPopupMessage>.Create(typeof(pPopupMessage).FullName, OnReceivePopupMessage, null, SNet_ChannelType.SessionOrderCritical);
     }
 
     internal static void Setup()
@@ -25,13 +25,13 @@ public static class PopupMessageManager
 
     private static SNetExt_Packet<pPopupMessage> s_PopupMessagePacket;
 
-    private static void OnReceivePopupMessage(ulong sender, pPopupMessage data)
+    private static void OnReceivePopupMessage(SNet_Player sender, pPopupMessage data)
     {
-        Logger.Notice($"Receive pPopupMessage from {sender}");
+        Logger.Notice($"Receive pPopupMessage from '{sender.NickName}' [{sender.Lookup}]");
         ShowPopup(data.UnpackPopupMessage());
     }
 
-    public static void SendPopupMessage(pPopupMessage data, params SNet_Player[] players)
+    public static void SendPopupMessage(pPopupMessage data, List<SNet_Player> players)
     {
         s_PopupMessagePacket.Send(data, players);
     }

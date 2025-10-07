@@ -4,28 +4,26 @@ namespace Hikaria.Core.SNetworkExt;
 
 public abstract class SNetExt_SyncedAction<T> where T : struct
 {
+    protected SNetExt_SyncedAction() { }
+
     ~SNetExt_SyncedAction()
     {
-        GameEventAPI.OnSessionMemberChanged -= OnSessionMemberChanged;
+        SNetEventAPI.OnSessionMemberChanged -= OnSessionMemberChanged;
         CoreAPI.OnPlayerModsSynced -= OnPlayerModsSynced;
     }
 
-    protected void Setup(string eventName, Action<ulong, T> incomingAction, Action<T> incomingActionValidation = null, Func<SNetwork.SNet_Player, bool> listenerFilter = null, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
+    protected void Setup(string eventName, Action<SNetwork.SNet_Player, T> incomingAction, Action<T> incomingActionValidation = null, Func<SNetwork.SNet_Player, bool> listenerFilter = null, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
     {
-        m_packet = SNetExt_Packet<T>.Create(eventName, incomingAction, incomingActionValidation, false, channelType);
-        m_incomingAction = incomingAction;
+        m_packet = SNetExt_Packet<T>.Create(eventName, incomingAction, incomingActionValidation, channelType);
         m_listenerFilter = listenerFilter;
         m_hasListenerFilter = listenerFilter != null;
-        GameEventAPI.OnSessionMemberChanged += OnSessionMemberChanged;
+        SNetEventAPI.OnSessionMemberChanged += OnSessionMemberChanged;
         CoreAPI.OnPlayerModsSynced += OnPlayerModsSynced;
     }
 
     public void SyncToPlayer(SNetwork.SNet_Player player, T data)
     {
-        if (!player.IsLocal)
-        {
-            m_packet.Send(data, player);
-        }
+        m_packet.Send(data, player);
     }
 
     public void SyncToPlayer(SNetwork.SNet_Player player, params T[] datas)
@@ -44,7 +42,7 @@ public abstract class SNetExt_SyncedAction<T> where T : struct
         }
     }
 
-    public void OnPlayerModsSynced(SNetwork.SNet_Player player, IEnumerable<pModInfo> mods)
+    private void OnPlayerModsSynced(SNetwork.SNet_Player player, IEnumerable<pModInfo> mods)
     {
         if (!m_hasListenerFilter || !m_listenerFilter(player))
             return;
@@ -54,7 +52,7 @@ public abstract class SNetExt_SyncedAction<T> where T : struct
         }
     }
 
-    public void OnSessionMemberChanged(SNetwork.SNet_Player player, SessionMemberEvent playerEvent)
+    private void OnSessionMemberChanged(SNetwork.SNet_Player player, SessionMemberEvent playerEvent)
     {
         if (playerEvent == SessionMemberEvent.JoinSessionHub)
         {
@@ -114,7 +112,7 @@ public abstract class SNetExt_SyncedAction<T> where T : struct
     public bool IsListener(SNetwork.SNet_Player player)
     {
         if (player == null) return false;
-        return m_listeners.Contains(player) || IsListener(player.Lookup);
+        return IsListener(player.Lookup);
     }
 
     public bool IsListener(ulong lookup)
@@ -127,7 +125,6 @@ public abstract class SNetExt_SyncedAction<T> where T : struct
     public event Action<SNetwork.SNet_Player> OnPlayerRemovedFromListeners;
 
     protected SNetExt_Packet<T> m_packet;
-    protected Action<ulong, T> m_incomingAction;
     protected Func<SNetwork.SNet_Player, bool> m_listenerFilter;
     protected bool m_hasListenerFilter;
     protected List<SNetwork.SNet_Player> m_listeners = new();

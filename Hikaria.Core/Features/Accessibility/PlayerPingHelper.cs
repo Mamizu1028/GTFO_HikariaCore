@@ -10,7 +10,7 @@ using UnityEngine;
 namespace Hikaria.Core.Features.Accessibility;
 
 [EnableFeatureByDefault]
-public class PlayerPingHelper : Feature
+internal class PlayerPingHelper : Feature
 {
     public override string Name => "标点助手";
 

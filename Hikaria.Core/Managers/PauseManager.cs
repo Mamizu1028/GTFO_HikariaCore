@@ -91,7 +91,7 @@ internal class PauseManager : MonoBehaviour
         m_pausableUpdaters.Add(pu);
     }
 
-    public static void UnregisterPauseable(IPauseable pu)
+    public static void DeregisterPauseable(IPauseable pu)
     {
         m_pausableUpdaters.Remove(pu);
     }

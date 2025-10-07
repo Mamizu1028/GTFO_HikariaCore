@@ -14,7 +14,7 @@ public static class SharedUtils
         return player != null;
     }
 
-    public static bool TryGetPlayerBySlotIndex(int slot, out SNet_Player player)
+    public static bool TryGetPlayerByPlayerSlot(int slot, out SNet_Player player)
     {
         player = null;
         int index = slot - 1;

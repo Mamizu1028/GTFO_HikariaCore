@@ -24,29 +24,24 @@ internal class CoreBootstrap : Feature
         LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<Components.Interact_Timed>(false);
         LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<Components.Interact_ManualTimedWithCallback>(false);
 
-        LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<ChatManager>();
         LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<GameEventLogManager>();
         LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<Managers.PauseManager>();
     }
 
     public override void OnGameDataInitialized()
     {
-        if (CompsObj == null)
+        if (_compsObj == null)
         {
-            CompsObj = new GameObject(CompsObjName);
-            UnityEngine.Object.DontDestroyOnLoad(CompsObj);
+            _compsObj = new GameObject(CompsObjName);
+            UnityEngine.Object.DontDestroyOnLoad(_compsObj);
         }
-        if (CompsObj.GetComponent<Managers.PauseManager>() == null)
+        if (_compsObj.GetComponent<Managers.PauseManager>() == null)
         {
-            CompsObj.AddComponent<Managers.PauseManager>();
+            _compsObj.AddComponent<Managers.PauseManager>();
         }
-        if (CompsObj.GetComponent<ChatManager>() == null)
+        if (_compsObj.GetComponent<GameEventLogManager>() == null)
         {
-            CompsObj.AddComponent<ChatManager>();
-        }
-        if (CompsObj.GetComponent<GameEventLogManager>() == null)
-        {
-            CompsObj.AddComponent<GameEventLogManager>();
+            _compsObj.AddComponent<GameEventLogManager>();
         }
         PopupMessageManager.Setup();
 
@@ -55,5 +50,5 @@ internal class CoreBootstrap : Feature
 
     private const string CompsObjName = "Hikaria.Core.Comps.obj";
 
-    private static GameObject CompsObj;
+    private static GameObject _compsObj;
 }

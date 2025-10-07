@@ -1,4 +1,4 @@
-﻿using Hikaria.Core.Interfaces;
+﻿using GameData;
 using SNetwork;
 using TheArchive.Core.Attributes.Feature;
 using TheArchive.Core.Attributes.Feature.Patches;
@@ -17,24 +17,23 @@ internal class GameEventAPI_Impl : Feature
 {
     public override string Name => "游戏事件监听";
 
-    public override string Description => "负责游戏事件的钩子。\n" +
-        "属于核心功能，插件的正常运作离不开该功能。";
-
     public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Developer", true);
 
     public static new IArchiveLogger FeatureLogger { get; set; }
 
-    [ArchivePatch(typeof(SNet_GlobalManager), nameof(SNet_GlobalManager.Setup))]
-    private class SNet_GlobalManager__Setup__Patch
+    #region Events
+    public static new event Action OnGameDataInitialized;
+    public static new event Action<eGameStateName, eGameStateName> OnGameStateChanged;
+    public static event Action<SNet_Player, string> OnReceiveChatMessage;
+    public static event Action OnAfterLevelCleanup;
+    #endregion
+
+    [ArchivePatch(typeof(GameDataInit), nameof(GameDataInit.Initialize))]
+    private class GameDataInit__Initialize__Patch
     {
         private static void Postfix()
         {
-            SNet_Events.OnMasterCommand += new Action<pMasterCommand>(OnMasterCommandM);
-            SNet_Events.OnPlayerEvent += new Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason>(OnPlayerEventM);
-            SNet_Events.OnRecallComplete += new Action<eBufferType>(OnRecallCompleteM);
-            SNet_Events.OnMasterChanged += new Action(OnMasterChangedM);
-            SNet_Events.OnPrepareForRecall += new Action<eBufferType>(OnPrepareForRecallM);
-            SNet_Events.OnResetSessionEvent += new Action(OnResetSessionM);
+            Utils.SafeInvoke(OnGameDataInitialized);
         }
     }
 
@@ -43,34 +42,7 @@ internal class GameEventAPI_Impl : Feature
     {
         private static void Postfix()
         {
-            CleanupAfterExpeditionM();
-        }
-    }
-
-    [ArchivePatch(typeof(SNet_Capture), nameof(SNet_Capture.OnBufferCommand))]
-    private class SNet_Capture__OnBufferCommand__Patch
-    {
-        private static void Postfix(pBufferCommand command)
-        {
-            OnBufferCommandM(command);
-        }
-    }
-
-    [ArchivePatch(typeof(SNet_SyncManager), nameof(SNet_SyncManager.OnRecallDone))]
-    private class SNet_SyncManager__OnRecallDone__Patch
-    {
-        private static void Postfix(eBufferType bufferType)
-        {
-            OnRecallDoneM(bufferType);
-        }
-    }
-
-    [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.AddPlayerToSession))]
-    private class SNet_SessionHub__AddPlayerToSession__Patch
-    {
-        private static void Postfix(SNet_Player player)
-        {
-            OnSessionMemberChangedM(player, SessionMemberEvent.JoinSessionHub);
+            Utils.SafeInvoke(OnAfterLevelCleanup);
         }
     }
 
@@ -86,17 +58,6 @@ internal class GameEventAPI_Impl : Feature
 
         private static void Postfix(eGameStateName nextState)
         {
-            foreach (var listener in GameStateChangeListeners)
-            {
-                try
-                {
-                    listener.OnGameStateChanged(preState, nextState);
-                }
-                catch (Exception ex)
-                {
-                    FeatureLogger.Exception(ex);
-                }
-            }
             Utils.SafeInvoke(OnGameStateChanged, preState, nextState);
         }
     }
@@ -108,285 +69,8 @@ internal class GameEventAPI_Impl : Feature
         {
             if (data.fromPlayer.TryGetPlayer(out var fromPlayer))
             {
-                foreach (var listener in ChatMessageListeners)
-                {
-                    try
-                    {
-                        listener.OnReceiveChatMessage(fromPlayer, data.message.data);
-                    }
-                    catch (Exception ex)
-                    {
-                        FeatureLogger.Exception(ex);
-                    }
-                }
                 Utils.SafeInvoke(OnReceiveChatMessage, fromPlayer, data.message.data);
             }
         }
     }
-
-    private static void CleanupAfterExpeditionM()
-    {
-        foreach (var listener in AfterLevelCleanupListeners)
-        {
-            try
-            {
-                listener.OnAfterLevelCleanup();
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-        Utils.SafeInvoke(OnAfterLevelCleanup);
-    }
-
-    private static void OnMasterChangedM()
-    {
-        foreach (var listener in MasterChangedListeners)
-        {
-            try
-            {
-                listener.OnMasterChanged();
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-        Utils.SafeInvoke(OnMasterChanged);
-    }
-
-    private static void OnPrepareForRecallM(eBufferType bufferType)
-    {
-        foreach (var listener in PrepareForRecallListeners)
-        {
-            try
-            {
-                listener.OnPrepareForRecall(bufferType);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-        Utils.SafeInvoke(OnPrepareForRecall, bufferType);
-    }
-
-    private static void OnBufferCommandM(pBufferCommand command)
-    {
-        foreach (var listener in BufferCommandListeners)
-        {
-            try
-            {
-                listener.OnBufferCommand(command);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-        Utils.SafeInvoke(OnBufferCommand, command);
-    }
-
-    private static void OnRecallDoneM(eBufferType bufferType)
-    {
-        foreach (var listener in RecallDoneListeners)
-        {
-            try
-            {
-                listener.OnRecallDone(bufferType);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-        Utils.SafeInvoke(OnRecallDone, bufferType);
-    }
-
-    private static void OnRecallCompleteM(eBufferType bufferType)
-    {
-        foreach (var listener in RecallCompleteListeners)
-        {
-            try
-            {
-                listener.OnRecallComplete(bufferType);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-        Utils.SafeInvoke(OnRecallComplete, bufferType);
-    }
-
-    private static void OnPlayerEventM(SNet_Player player, SNet_PlayerEvent playerEvent, SNet_PlayerEventReason reason)
-    {
-        foreach (var Listener in PlayerEventListeners)
-        {
-            try
-            {
-                Listener.OnPlayerEvent(player, playerEvent, reason);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-
-        Utils.SafeInvoke(OnPlayerEvent, player, playerEvent, reason);
-
-        switch (playerEvent)
-        {
-            case SNet_PlayerEvent.PlayerLeftSessionHub:
-                OnSessionMemberChangedM(player, SessionMemberEvent.LeftSessionHub);
-                break;
-        }
-    }
-
-    private static void OnMasterCommandM(pMasterCommand command)
-    {
-        foreach (var Listener in MasterCommandListeners)
-        {
-            try
-            {
-                Listener.OnMasterCommand(command.type, command.refA);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-        Utils.SafeInvoke(OnMasterCommand, command.type, command.refA);
-    }
-
-
-    private static void OnSessionMemberChangedM(SNet_Player player, SessionMemberEvent playerEvent)
-    {
-        FeatureLogger.Notice($"{player.NickName} [{player.Lookup}] {playerEvent}");
-        foreach (var Listener in SessionMemberChangedListeners)
-        {
-            try
-            {
-                Listener.OnSessionMemberChanged(player, playerEvent);
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-
-        Utils.SafeInvoke(OnSessionMemberChanged, player, playerEvent);
-    }
-
-    private static void OnResetSessionM()
-    {
-        foreach (var Listener in ResetSessionListeners)
-        {
-            try
-            {
-                Listener.OnResetSession();
-            }
-            catch (Exception ex)
-            {
-                FeatureLogger.Exception(ex);
-            }
-        }
-
-        Utils.SafeInvoke(OnResetSession);
-    }
-
-
-    public static void RegisterListener<T>(T instance)
-    {
-        Type type = instance.GetType();
-        if (type.IsInterface || type.IsAbstract)
-            return;
-        if (typeof(IOnGameStateChanged).IsAssignableFrom(type))
-            GameStateChangeListeners.Add((IOnGameStateChanged)instance);
-        if (typeof(IOnPlayerEvent).IsAssignableFrom(type))
-            PlayerEventListeners.Add((IOnPlayerEvent)instance);
-        if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
-            ChatMessageListeners.Add((IOnReceiveChatMessage)instance);
-        if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
-            SessionMemberChangedListeners.Add((IOnSessionMemberChanged)instance);
-        if (typeof(IOnRecallComplete).IsAssignableFrom(type))
-            RecallCompleteListeners.Add((IOnRecallComplete)instance);
-        if (typeof(IOnPrepareForRecall).IsAssignableFrom(type))
-            PrepareForRecallListeners.Add((IOnPrepareForRecall)instance);
-        if (typeof(IOnRecallDone).IsAssignableFrom(type))
-            RecallDoneListeners.Add((IOnRecallDone)instance);
-        if (typeof(IOnMasterChanged).IsAssignableFrom(type))
-            MasterChangedListeners.Add((IOnMasterChanged)instance);
-        if (typeof(IOnMasterCommand).IsAssignableFrom(type))
-            MasterCommandListeners.Add((IOnMasterCommand)instance);
-        if (typeof(IOnAfterLevelCleanup).IsAssignableFrom(type))
-            AfterLevelCleanupListeners.Add((IOnAfterLevelCleanup)instance);
-        if (typeof(IOnResetSession).IsAssignableFrom(type))
-            ResetSessionListeners.Add((IOnResetSession)instance);
-        if (typeof(IOnBufferCommand).IsAssignableFrom(type))
-            BufferCommandListeners.Add((IOnBufferCommand)instance);
-        if (typeof(IPauseable).IsAssignableFrom(type))
-            Managers.PauseManager.RegisterPauseable((IPauseable)instance);
-    }
-
-    public static void UnregisterListener<T>(T instance)
-    {
-        Type type = instance.GetType();
-        if (type.IsInterface || type.IsAbstract)
-            return;
-        if (typeof(IOnGameStateChanged).IsAssignableFrom(type))
-            GameStateChangeListeners.Remove((IOnGameStateChanged)instance);
-        if (typeof(IOnPlayerEvent).IsAssignableFrom(type))
-            PlayerEventListeners.Remove((IOnPlayerEvent)instance);
-        if (typeof(IOnReceiveChatMessage).IsAssignableFrom(type))
-            ChatMessageListeners.Remove((IOnReceiveChatMessage)instance);
-        if (typeof(IOnSessionMemberChanged).IsAssignableFrom(type))
-            SessionMemberChangedListeners.Remove((IOnSessionMemberChanged)instance);
-        if (typeof(IOnRecallComplete).IsAssignableFrom(type))
-            RecallCompleteListeners.Remove((IOnRecallComplete)instance);
-        if (typeof(IOnPrepareForRecall).IsAssignableFrom(type))
-            PrepareForRecallListeners.Remove((IOnPrepareForRecall)instance);
-        if (typeof(IOnRecallDone).IsAssignableFrom(type))
-            RecallDoneListeners.Remove((IOnRecallDone)instance);
-        if (typeof(IOnMasterChanged).IsAssignableFrom(type))
-            MasterChangedListeners.Remove((IOnMasterChanged)instance);
-        if (typeof(IOnMasterCommand).IsAssignableFrom(type))
-            MasterCommandListeners.Remove((IOnMasterCommand)instance);
-        if (typeof(IOnAfterLevelCleanup).IsAssignableFrom(type))
-            AfterLevelCleanupListeners.Remove((IOnAfterLevelCleanup)instance);
-        if (typeof(IOnResetSession).IsAssignableFrom(type))
-            ResetSessionListeners.Remove((IOnResetSession)instance);
-        if (typeof(IOnBufferCommand).IsAssignableFrom(type))
-            BufferCommandListeners.Remove((IOnBufferCommand)instance);
-        if (typeof(IPauseable).IsAssignableFrom(type))
-            Managers.PauseManager.UnregisterPauseable((IPauseable)instance);
-    }
-
-    private static HashSet<IOnGameStateChanged> GameStateChangeListeners = new();
-    private static HashSet<IOnReceiveChatMessage> ChatMessageListeners = new();
-    private static HashSet<IOnPlayerEvent> PlayerEventListeners = new();
-    private static HashSet<IOnRecallComplete> RecallCompleteListeners = new();
-    private static HashSet<IOnSessionMemberChanged> SessionMemberChangedListeners = new();
-    private static HashSet<IOnMasterChanged> MasterChangedListeners = new();
-    private static HashSet<IOnMasterCommand> MasterCommandListeners = new();
-    private static HashSet<IOnPrepareForRecall> PrepareForRecallListeners = new();
-    private static HashSet<IOnRecallDone> RecallDoneListeners = new();
-    private static HashSet<IOnBufferCommand> BufferCommandListeners = new();
-    private static HashSet<IOnAfterLevelCleanup> AfterLevelCleanupListeners = new();
-    private static HashSet<IOnResetSession> ResetSessionListeners = new();
-
-    public static event Action OnGameDataInited;
-    public static event Action<pBufferCommand> OnBufferCommand;
-    public static event Action<eBufferType> OnRecallComplete;
-    public static event Action<eBufferType> OnPrepareForRecall;
-    public static event Action<eBufferType> OnRecallDone;
-    public static new event Action<eGameStateName, eGameStateName> OnGameStateChanged;
-    public static event Action<SNet_Player, string> OnReceiveChatMessage;
-    public static event Action<SNet_Player, SNet_PlayerEvent, SNet_PlayerEventReason> OnPlayerEvent;
-    public static event Action<SNet_Player, SessionMemberEvent> OnSessionMemberChanged;
-    public static event Action OnMasterChanged;
-    public static event Action<eMasterCommandType, int> OnMasterCommand;
-    public static event Action OnAfterLevelCleanup;
-    public static event Action OnResetSession;
 }

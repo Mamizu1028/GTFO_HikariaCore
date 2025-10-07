@@ -5,6 +5,11 @@ namespace Hikaria.Core;
 
 public static class CoreAPI
 {
+    public static bool IsInstalledMod(string guid, VersionRange range = default)
+    {
+        return CoreAPI_Impl.InstalledMods.TryGetValue(guid, out var info) && range.Contains(info.Version);
+    }
+
     public static bool IsPlayerInstalledCore(SNet_Player player, VersionRange range = default)
     {
         return IsPlayerInstalledMod(player, CoreGlobal.GUID, range);
@@ -24,5 +29,7 @@ public static class CoreAPI
     public delegate void PlayerModsSynced(SNet_Player player, IEnumerable<pModInfo> mods);
     #endregion
 
+    #region Events
     public static event PlayerModsSynced OnPlayerModsSynced { add => CoreAPI_Impl.OnPlayerModsSynced += value; remove => CoreAPI_Impl.OnPlayerModsSynced -= value; }
+    #endregion
 }

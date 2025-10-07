@@ -184,6 +184,37 @@
             "Korean": null
           }
         }
+      },
+      {
+        "Name": "Misc",
+        "LocalizationData": {
+          "DisplayName": {
+            "English": "Misc",
+            "Chinese": "杂项",
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          },
+          "Description": {
+            "English": null,
+            "Chinese": null,
+            "French": null,
+            "Italian": null,
+            "German": null,
+            "Spanish": null,
+            "Russian": null,
+            "Portuguese_Brazil": null,
+            "Polish": null,
+            "Japanese": null,
+            "Korean": null
+          }
+        }
       }
     ]
   },

@@ -1,6 +1,5 @@
 ﻿using Clonesoft.Json;
 using Hikaria.Core.Entities;
-using Hikaria.Core.Interfaces;
 using Hikaria.Core.Managers;
 using Hikaria.Core.Utility;
 using SNetwork;
@@ -24,7 +23,7 @@ namespace Hikaria.Core.Features.Accessibility;
 [EnableFeatureByDefault]
 [DisallowInGameToggle]
 [DoNotSaveToConfig]
-internal class LiveLobbyList : Feature, IOnMasterChanged, IOnPlayerEvent
+internal class LiveLobbyList : Feature
 {
     public override string Name => "在线大厅列表";
 
@@ -180,9 +179,16 @@ internal class LiveLobbyList : Feature, IOnMasterChanged, IOnPlayerEvent
         public string StatusInfo { get; set; }
     }
 
-    public override void Init()
+    public override void OnEnable()
     {
-        GameEventAPI.RegisterListener(this);
+        SNetEventAPI.OnMasterChanged += OnMasterChanged;
+        SNetEventAPI.OnPlayerEvent += OnPlayerEvent;
+    }
+
+    public override void OnDisable()
+    {
+        SNetEventAPI.OnMasterChanged -= OnMasterChanged;
+        SNetEventAPI.OnPlayerEvent -= OnPlayerEvent;
     }
 
     public void OnMasterChanged()

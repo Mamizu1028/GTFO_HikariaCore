@@ -2,21 +2,17 @@
 
 namespace Hikaria.Core.SNetworkExt;
 
-public abstract class SNetExt_Packet
+public class SNetExt_Packet<T> where T : struct
 {
-    internal string EventName { get; set; }
+    public string EventName { get; private set; }
 
-    internal bool AllowSendToLocal { get; set; }
+    public SNetwork.SNet_ChannelType ChannelType { get; private set; }
 
-    internal SNetwork.SNet_ChannelType ChannelType { get; set; }
-}
-
-public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
-{
     private Action<T> ValidateAction { get; set; }
-    private Action<ulong, T> ReceiveAction { get; set; }
 
-    public static SNetExt_Packet<T> Create(string eventName, Action<ulong, T> receiveAction, Action<T> validateAction = null, bool allowSendToLocal = false, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
+    private Action<SNetwork.SNet_Player, T> ReceiveAction { get; set; }
+
+    public static SNetExt_Packet<T> Create(string eventName, Action<SNetwork.SNet_Player, T> receiveAction, Action<T> validateAction = null, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
     {
         var packet = new SNetExt_Packet<T>
         {
@@ -24,8 +20,7 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
             ChannelType = channelType,
             ReceiveAction = receiveAction,
             ValidateAction = validateAction,
-            m_hasValidateAction = validateAction != null,
-            AllowSendToLocal = allowSendToLocal
+            m_hasValidateAction = validateAction != null
         };
         NetworkAPI.RegisterEvent<T>(eventName, packet.OnReceiveData);
         return packet;
@@ -43,46 +38,47 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
             Send(data, SNetwork.SNet.Master);
         }
     }
-
-    public void Send(T data, SNetwork.SNet_Player player = null)
+    
+    public void Send(T data)
     {
-        if (player == null)
-        {
-            NetworkAPI.InvokeEvent(EventName, data, ChannelType);
-        }
-        else
-        {
-            NetworkAPI.InvokeEvent(EventName, data, player, ChannelType);
-            if (AllowSendToLocal && player.IsLocal)
-            {
-                OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);
-            }
-        }
+        NetworkAPI.InvokeEvent(EventName, data, ChannelType);
     }
 
-    public void Send(T data, params SNetwork.SNet_Player[] players)
+    public void Send(T data, SNetwork.SNet_Player player)
     {
-        if (players == null || !players.Any()) return;
-
-        NetworkAPI.InvokeEvent(EventName, data, players.ToList(), ChannelType);
-        if (AllowSendToLocal && players.Any(p => p.IsLocal))
+        if (player.IsLocal)
         {
-            OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);
+            OnReceiveData(player, data);
+            return;
         }
+        NetworkAPI.InvokeEvent(EventName, data, player, ChannelType);
     }
 
     public void Send(T data, List<SNetwork.SNet_Player> players)
     {
-        if (players == null || !players.Any()) return;
+        if (players.Count == 0) return;
 
-        NetworkAPI.InvokeEvent(EventName, data, players, ChannelType);
-        if (AllowSendToLocal && players.Any(p => p.IsLocal))
+        var index = players.FindIndex(p => p.IsLocal);
+        if (index != -1)
         {
-            OnReceiveData(SNetwork.SNet.LocalPlayer.Lookup, data);
+            OnReceiveData(SNetwork.SNet.LocalPlayer, data);
+            NetworkAPI.InvokeEvent(EventName, data, players.Where(p => !p.IsLocal).ToList(), ChannelType);
+        }
+        else
+        {
+            NetworkAPI.InvokeEvent(EventName, data, players, ChannelType);
         }
     }
 
-    public void OnReceiveData(ulong sender, T data)
+    private void OnReceiveData(ulong senderId, T data)
+    {
+        if (!SNetwork.SNet.TryGetPlayer(senderId, out var sender))
+            return;
+
+        OnReceiveData(sender, data);
+    }
+
+    private void OnReceiveData(SNetwork.SNet_Player sender, T data)
     {
         m_data = data;
         if (m_hasValidateAction && SNetwork.SNet.IsMaster)
@@ -96,4 +92,8 @@ public class SNetExt_Packet<T> : SNetExt_Packet where T : struct
     private T m_data = new();
 
     private bool m_hasValidateAction;
+
+    protected SNetExt_Packet()
+    {
+    }
 }

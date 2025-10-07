@@ -80,12 +80,12 @@ internal class ModList : Feature
 
     public override void OnEnable()
     {
-        GameEventAPI.OnSessionMemberChanged += OnSessionMemberChanged;
+        SNetEventAPI.OnSessionMemberChanged += OnSessionMemberChanged;
     }
 
     public override void OnDisable()
     {
-        GameEventAPI.OnSessionMemberChanged -= OnSessionMemberChanged;
+        SNetEventAPI.OnSessionMemberChanged -= OnSessionMemberChanged;
     }
 
     [ArchivePatch(typeof(SNet_Core_STEAM), nameof(SNet_Core_STEAM.CreateLocalPlayer))]

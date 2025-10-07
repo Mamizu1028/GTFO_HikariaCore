@@ -1,7 +1,6 @@
 ﻿using Clonesoft.Json;
 using Hikaria.Core.Entities;
 using Hikaria.Core.Features.Accessibility;
-using Hikaria.Core.Interfaces;
 using Hikaria.Core.Managers;
 using Hikaria.Core.SNetworkExt;
 using SNetwork;
@@ -25,7 +24,7 @@ namespace Hikaria.Core.Features.Security;
 [DisallowInGameToggle]
 [EnableFeatureByDefault]
 [DoNotSaveToConfig]
-internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
+internal class LobbySettingsOverride : Feature
 {
     public override string Name => "大厅设置覆盖";
 
@@ -142,6 +141,16 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
         LobbySettingsManager.Setup();
     }
 
+    public override void OnEnable()
+    {
+        SNetEventAPI.OnSessionMemberChanged += OnSessionMemberChanged;
+    }
+
+    public override void OnDisable()
+    {
+        SNetEventAPI.OnSessionMemberChanged -= OnSessionMemberChanged;
+    }
+
     public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
     {
         if (playerEvent == SessionMemberEvent.LeftSessionHub)
@@ -182,8 +191,8 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
 
         public static void Setup()
         {
-            s_slaveSessionRequestPacket = SNetExt_Packet<pSlaveRequest>.Create(typeof(pSlaveRequest).FullName, OnReceiveSlaveRequest, null, false, SNet_ChannelType.SessionOrderCritical);
-            s_lobbySettingsAnswerPacket = SNetExt_Packet<pLobbyMasterAnswer>.Create(typeof(pLobbyMasterAnswer).FullName, OnReceiveLobbySettingsAnswer, null, false, SNet_ChannelType.SessionOrderCritical);
+            s_slaveSessionRequestPacket = SNetExt_Packet<pSlaveRequest>.Create(typeof(pSlaveRequest).FullName, OnReceiveSlaveRequest, null, SNet_ChannelType.SessionOrderCritical);
+            s_lobbySettingsAnswerPacket = SNetExt_Packet<pLobbyMasterAnswer>.Create(typeof(pLobbyMasterAnswer).FullName, OnReceiveLobbySettingsAnswer, null, SNet_ChannelType.SessionOrderCritical);
         }
 
         public static void ApplyLobbySettings(ref SNet_LobbySettings settings)
@@ -207,16 +216,16 @@ internal class LobbySettingsOverride : Feature, IOnSessionMemberChanged
             SteamLobby.Identifier.Name = CurrentSettings.LobbyName;
         }
 
-        private static void OnReceiveSlaveRequest(ulong sender, pSlaveRequest data)
+        private static void OnReceiveSlaveRequest(SNet_Player sender, pSlaveRequest data)
         {
             if (!SNet.IsMaster) return;
 
-            s_receivedSlaveRequestsLookup[sender] = data;
+            s_receivedSlaveRequestsLookup[sender.Lookup] = data;
         }
 
-        private static void OnReceiveLobbySettingsAnswer(ulong sender, pLobbyMasterAnswer data)
+        private static void OnReceiveLobbySettingsAnswer(SNet_Player sender, pLobbyMasterAnswer data)
         {
-            if (!SNet.Replication.IsLastSenderMaster()) return;
+            if (!sender.IsMaster) return;
 
             if (data.Answer != MasterAnswer.LeaveLobby)
             {
