@@ -13,8 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hikaria.Core.EntityFramewor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hikaria.Core.Contracts", "Hikaria.Core.Contracts\Hikaria.Core.Contracts.csproj", "{99C1A6F3-D21A-4064-BC4B-7D64034E7C88}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hikaria.Core.Blazor", "Hikaria.Core.Blazor\Hikaria.Core.Blazor.csproj", "{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
@@ -70,14 +68,6 @@ Global
 		{99C1A6F3-D21A-4064-BC4B-7D64034E7C88}.Release|Any CPU.Build.0 = Release|Any CPU
 		{99C1A6F3-D21A-4064-BC4B-7D64034E7C88}.Release|x64.ActiveCfg = Release|x64
 		{99C1A6F3-D21A-4064-BC4B-7D64034E7C88}.Release|x64.Build.0 = Release|x64
-		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Debug|x64.ActiveCfg = Debug|x64
-		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Debug|x64.Build.0 = Debug|x64
-		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Release|x64.ActiveCfg = Release|x64
-		{3B6B5F96-FCD8-4D1F-905A-939FDA62460B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

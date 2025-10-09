@@ -1,5 +1,4 @@
 ﻿using Hikaria.Core.SNetworkExt;
-using InControl;
 using TheArchive.Core.Attributes.Feature;
 using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
