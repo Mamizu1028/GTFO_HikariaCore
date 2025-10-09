@@ -14,11 +14,15 @@ public interface IReplicator
 
     SNetExt_ReplicatorType Type { get; }
 
-    byte[] KeyBytes { get; set; }
+    byte[] KeyHashBytes { get; }
 
     string Key { get; set; }
 
-    string KeyHash { get; }
+    string KeyHash { get; set; }
+
+    bool IsAnonymous { get; }
+
+    bool HasValidKeyHash { get; }
 
     void Despawn();
 

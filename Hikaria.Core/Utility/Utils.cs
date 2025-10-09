@@ -2,7 +2,7 @@
 
 namespace Hikaria.Core.Utility;
 
-public static class SharedUtils
+public static class Utils
 {
     public static bool TryGetPlayerByCharacterSlot(int slot, out SNet_Player player)
     {

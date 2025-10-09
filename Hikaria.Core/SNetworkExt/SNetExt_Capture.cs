@@ -34,7 +34,7 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     {
         m_bufferCommandPacket = SNetExt.SubManagerReplicator.CreatePacket<pBufferCommand>(typeof(pBufferCommand).FullName, OnReceiveBufferCommand);
         m_bufferCompletionPacket = SNetExt.SubManagerReplicator.CreatePacket<pBufferCompletion>(typeof(pBufferCompletion).FullName, OnReceiveBufferCompletion);
-        m_bufferBytesPacket = SNetExt.SubManagerReplicator.CreatePacketBytes($"{nameof(SNetExt_Capture)}.BufferBytes", OnReceiveBufferBytes);
+        m_bufferBytesPacket = SNetExt.SubManagerReplicator.CreatePacketBufferBytes($"{typeof(SNetExt_Capture).FullName}.BufferBytes", OnReceiveBufferBytes);
         int length = Enum.GetValues(typeof(SNetExt_BufferType)).Length;
         m_buffers = new SNetExt_CaptureBuffer[length];
         for (int i = 0; i < length; i++)
@@ -72,25 +72,21 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
 
     internal static void CleanUpAllButManagersCaptureCallbacks()
     {
-        int i = s_captureCallbackObjects.Count - 1;
-        while (i > -1)
+        int i = s_captureCallbackObjects.Count;
+        while (i-- > 0)
         {
             var captureCallbackObject = s_captureCallbackObjects[i];
             if (captureCallbackObject == null)
             {
-                goto IL_0031;
+                s_captureCallbackObjects.RemoveAt(i);
+                continue;
             }
             var replicator = captureCallbackObject.GetReplicator();
             if (replicator == null || replicator.Type != SNetExt_ReplicatorType.Manager)
             {
-                goto IL_0031;
+                s_captureCallbackObjects.RemoveAt(i);
+                continue;
             }
-        IL_003C:
-            i--;
-            continue;
-        IL_0031:
-            s_captureCallbackObjects.RemoveAt(i);
-            goto IL_003C;
         }
     }
 
@@ -254,7 +250,7 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
             m_minTimeToSendNextBuffer = Clock.Time + MIGRATION_CAPTURE_INTERVAL_MIN_DELAY;
             return;
         }
-        _logger.Error("UpdateMigrationSend : Sending " + oldestMigrationBuffer);
+        _logger.Error("UpdateMigrationSend, Sending " + oldestMigrationBuffer);
         m_passiveMigrationBufferSend = new SNetExt_BufferSender(5, 0.5f, m_buffers[(int)oldestMigrationBuffer], list, SNetwork.SNet_ChannelType.SessionMigration);
         m_migrationTimer = Clock.Time + MIGRATION_CAPTURE_INTERVAL;
     }
@@ -381,9 +377,9 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public void CaptureToBuffer(byte[] data, SNetwork.eCapturePass captureDataType)
+    internal void CaptureToBuffer(byte[] data, SNetExt_CapturePass captureDataType)
     {
-        if (captureDataType == SNetwork.eCapturePass.Skip)
+        if (captureDataType == SNetExt_CapturePass.Skip)
             return;
 
         byte[] array = new byte[data.Length];
@@ -428,7 +424,7 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     public void SendBuffer(SNetExt_BufferType bufferType, SNetwork.SNet_Player player = null, bool sendAsMigrationBuffer = false)
     {
         m_minTimeToSendNextBuffer = Clock.Time + MIGRATION_CAPTURE_INTERVAL_MIN_DELAY;
-        SNetExt_CaptureBuffer captureBuffer = m_buffers[(int)bufferType];
+        var captureBuffer = m_buffers[(int)bufferType];
         if (sendAsMigrationBuffer)
         {
             bufferType = GetOldestMigrationBuffer();
@@ -505,7 +501,7 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     [HideFromIl2Cpp]
     public ulong GetRecallCount(SNetExt_BufferType type)
     {
-        SNetExt_CaptureBuffer captureBuffer = m_buffers[(int)type];
+        var captureBuffer = m_buffers[(int)type];
         if (!captureBuffer.isValid)
         {
             return 0UL;
@@ -516,7 +512,7 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     [HideFromIl2Cpp]
     private void RecallBuffer(SNetExt_BufferType bufferType)
     {
-        SNetExt_CaptureBuffer captureBuffer = m_buffers[(int)bufferType];
+        var captureBuffer = m_buffers[(int)bufferType];
         IsRecalling = true;
         PrimedBufferType = bufferType;
         if (!captureBuffer.isValid)

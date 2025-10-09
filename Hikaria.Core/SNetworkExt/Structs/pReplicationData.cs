@@ -2,6 +2,7 @@
 
 namespace Hikaria.Core.SNetworkExt;
 
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public struct pReplicationData
 {
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]

@@ -8,9 +8,9 @@ namespace Hikaria.Core.SNetworkExt;
 
 public abstract class SNetExt_ReplicatedPacket
 {
-    public IReplicator Replicator { get; set; }
+    public IReplicator Replicator { get; private set; }
 
-    public ushort Index { get; private set; }
+    public byte Index { get; private set; }
 
     public string Key
     {
@@ -18,16 +18,33 @@ public abstract class SNetExt_ReplicatedPacket
         set
         {
             m_key = value;
+            if (string.IsNullOrWhiteSpace(m_key))
+            {
+                m_keyHash = string.Empty;
+                m_keyHashBytes = new byte[16];
+                return;
+            }
             KeyHash = PacketKeyToHash(m_key);
-            KeyBytes = PacketKeyToBytes(m_key);
         }
     }
 
-    public byte[] KeyBytes { get; private set; }
+    public string KeyHash
+    {
+        get => m_keyHash;
+        set
+        {
+            m_keyHash = value;
+            KeyHashBytes = PacketKeyHashToBytes(m_keyHash);
+        }
+    }
 
-    public string KeyHash { get; private set; }
+    public byte[] KeyHashBytes { get => m_keyHashBytes; private set => m_keyHashBytes = value; }
 
-    public virtual void Setup(IReplicator replicator, ushort index)
+    public bool IsAnonymous => string.IsNullOrWhiteSpace(Key);
+
+    public bool HasValidKeyHash => !string.IsNullOrWhiteSpace(KeyHash) && KeyHash.Length == 32;
+
+    public virtual void Setup(IReplicator replicator, byte index)
     {
         if (string.IsNullOrWhiteSpace(Key))
             Key = GetType().FullName;
@@ -44,37 +61,36 @@ public abstract class SNetExt_ReplicatedPacket
     {
         using (MD5 md5 = MD5.Create())
         {
-            Buffer.BlockCopy(Replicator.KeyBytes, 0, bytes, 0, 16);
-            Buffer.BlockCopy(KeyBytes, 0, bytes, 16, 16);
+            Buffer.BlockCopy(Replicator.KeyHashBytes, 0, bytes, 0, 16);
+            Buffer.BlockCopy(KeyHashBytes, 0, bytes, 16, 16);
         }
 
-        bytes[32] = (byte)(Index & 0xFF);
-        bytes[33] = (byte)((Index >> 8) & 0xFF);
+        bytes[32] = Index;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected static void InjectIDPacketIndex(SNetExt_ReplicatedPacket packet, byte[] bytes, byte[] replicatorKeyBytes, byte[] packetKeyBytes)
+    public static void InjectIDPacketIndex(SNetExt_ReplicatedPacket packet, byte[] bytes, byte[] replicatorKeyHashBytes, byte[] packetKeyHashBytes)
     {
         using (MD5 md5 = MD5.Create())
         {
-            Buffer.BlockCopy(replicatorKeyBytes, 0, bytes, 0, 16);
-            Buffer.BlockCopy(packetKeyBytes, 0, bytes, 16, 16);
+            Buffer.BlockCopy(replicatorKeyHashBytes, 0, bytes, 0, 16);
+            Buffer.BlockCopy(packetKeyHashBytes, 0, bytes, 16, 16);
         }
 
-        bytes[32] = (byte)(packet.Index & 0xFF);
-        bytes[33] = (byte)((packet.Index >> 8) & 0xFF);
+        bytes[32] = packet.Index;
     }
 
     protected SNetExt_ReplicatedPacket()
     {
     }
 
-    public static byte[] PacketKeyToBytes(string key)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static byte[] PacketKeyHashToBytes(string keyHash)
     {
-        using MD5 md5 = MD5.Create();
-        return md5.ComputeHash(Encoding.UTF8.GetBytes(key));
+        return Convert.FromHexString(keyHash);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string PacketKeyToHash(string key)
     {
         using MD5 md5 = MD5.Create();
@@ -82,13 +98,16 @@ public abstract class SNetExt_ReplicatedPacket
     }
 
     private string m_key;
+    private string m_keyHash;
+    private byte[] m_keyHashBytes;
 }
 
 public class SNetExt_ReplicatedPacket<T> : SNetExt_ReplicatedPacket where T : struct
 {
-    public override void Setup(IReplicator replicator, ushort index)
+    public override void Setup(IReplicator replicator, byte index)
     {
-        Key = typeof(T).FullName;
+        if (string.IsNullOrWhiteSpace(Key))
+            Key = typeof(T).FullName;
         base.Setup(replicator, index);
         SetInternalSize();
     }
@@ -132,7 +151,7 @@ public class SNetExt_ReplicatedPacket<T> : SNetExt_ReplicatedPacket where T : st
     public void Send(T data, SNetwork.SNet_ChannelType type)
     {
         Marshal.StructureToPtr(data, s_marshaller.m_intPtr, true);
-        Marshal.Copy(s_marshaller.m_intPtr, m_internalBytes, 34, s_marshaller.Size);
+        Marshal.Copy(s_marshaller.m_intPtr, m_internalBytes, 33, s_marshaller.Size);
         NetworkAPI.InvokeFreeSizedEvent(SNetExt_Replication.NETWORK_EVENT_NAME, m_internalBytes, type);
     }
 
@@ -140,7 +159,7 @@ public class SNetExt_ReplicatedPacket<T> : SNetExt_ReplicatedPacket where T : st
     public void Send(T data, SNetwork.SNet_ChannelType type, SNetwork.SNet_Player player)
     {
         Marshal.StructureToPtr(data, s_marshaller.m_intPtr, true);
-        Marshal.Copy(s_marshaller.m_intPtr, m_internalBytes, 34, s_marshaller.Size);
+        Marshal.Copy(s_marshaller.m_intPtr, m_internalBytes, 33, s_marshaller.Size);
         NetworkAPI.InvokeFreeSizedEvent(SNetExt_Replication.NETWORK_EVENT_NAME, m_internalBytes, player, type);
     }
 
@@ -148,11 +167,11 @@ public class SNetExt_ReplicatedPacket<T> : SNetExt_ReplicatedPacket where T : st
     public void Send(T data, SNetwork.SNet_ChannelType type, List<SNetwork.SNet_Player> players)
     {
         Marshal.StructureToPtr(data, s_marshaller.m_intPtr, true);
-        Marshal.Copy(s_marshaller.m_intPtr, m_internalBytes, 34, s_marshaller.Size);
+        Marshal.Copy(s_marshaller.m_intPtr, m_internalBytes, 33, s_marshaller.Size);
         NetworkAPI.InvokeFreeSizedEvent(SNetExt_Replication.NETWORK_EVENT_NAME, m_internalBytes, players, type);
     }
 
-    public void CaptureToBuffer(T data, SNetwork.eCapturePass captureDataType)
+    internal void CaptureToBuffer(T data, SNetExt_CapturePass captureDataType)
     {
         s_marshaller.MarshalToBytes(data, m_internalBytes);
         SNetExt.Capture.CaptureToBuffer(m_internalBytes, captureDataType);
@@ -179,12 +198,8 @@ public class SNetExt_ReplicatedPacket<T> : SNetExt_ReplicatedPacket where T : st
     }
 
     private T m_data = new();
-
     private byte[] m_internalBytes;
-
     private bool m_hasValidateAction;
-
     private static bool s_hasMarshaller;
-
     private static SNetExt_Marshaller<T> s_marshaller;
 }

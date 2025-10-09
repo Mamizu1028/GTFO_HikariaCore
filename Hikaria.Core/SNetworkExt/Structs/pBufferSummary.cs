@@ -1,9 +1,11 @@
-﻿using TheArchive.Interfaces;
+﻿using System.Runtime.InteropServices;
+using TheArchive.Interfaces;
 using TheArchive.Loader;
 using UnityEngine;
 
 namespace Hikaria.Core.SNetworkExt;
 
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public struct pBuffersSummary
 {
     public pBuffersSummary(SNetExt_CaptureBuffer buffer)

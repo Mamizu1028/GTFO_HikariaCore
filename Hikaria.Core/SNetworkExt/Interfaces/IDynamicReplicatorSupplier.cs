@@ -6,5 +6,5 @@ public interface IDynamicReplicatorSupplier<T> : IReplicatorSupplier where T : s
 
     void OnSpawn(T spawnData);
 
-    bool TryCollectCaptureData(ref T spawnData, out SNetwork.eCapturePass captureType);
+    bool TryCollectCaptureData(ref T spawnData, out SNetExt_CapturePass captureType);
 }

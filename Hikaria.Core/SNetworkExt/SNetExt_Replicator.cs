@@ -1,6 +1,9 @@
-﻿namespace Hikaria.Core.SNetworkExt;
+﻿using TheArchive.Interfaces;
+using TheArchive.Loader;
 
-public class SNetExt_Replicator : IReplicator
+namespace Hikaria.Core.SNetworkExt;
+
+public abstract class SNetExt_Replicator : IReplicator
 {
     public IReplicatorSupplier ReplicatorSupplier
     {
@@ -21,14 +24,31 @@ public class SNetExt_Replicator : IReplicator
         set
         {
             m_key = value;
+            if (string.IsNullOrWhiteSpace(m_key))
+            {
+                m_keyHash = string.Empty;
+                m_keyHashBytes = new byte[16];
+                return;
+            }
             KeyHash = SNetExt_Replication.ReplicatorKeyToHash(m_key);
-            KeyBytes = SNetExt_Replication.ReplicatorKeyToBytes(m_key);
         }
     }
 
-    public string KeyHash { get; private set; }
+    public bool IsAnonymous => string.IsNullOrWhiteSpace(Key);
 
-    public byte[] KeyBytes { get; set; }
+    public bool HasValidKeyHash => !string.IsNullOrWhiteSpace(KeyHash) && KeyHash.Length == 32;
+
+    public string KeyHash
+    {
+        get => m_keyHash;
+        set
+        {
+            m_keyHash = value;
+            KeyHashBytes = SNetExt_Replication.ReplicatorKeyHashToBytes(m_keyHash);
+        }
+    }
+
+    public byte[] KeyHashBytes { get => m_keyHashBytes; private set => m_keyHashBytes = value; }
 
     public virtual SNetExt_ReplicatorType Type => SNetExt_ReplicatorType.Unspecified;
 
@@ -38,9 +58,9 @@ public class SNetExt_Replicator : IReplicator
 
     public virtual bool LocallyOwned => OwnedByMaster ? SNetwork.SNet.IsMaster : (OwningPlayer != null && OwningPlayer.IsLocal);
 
-    public void ReceiveBytes(string key, int packetIndex, byte[] bytes)
+    public void ReceiveBytes(string keyHash, int packetIndex, byte[] bytes)
     {
-        if (!m_packetsByKey.TryGetValue(key, out var packets) || packetIndex >= packets.Count)
+        if (!m_packetsByKeyHash.TryGetValue(keyHash, out var packets) || packetIndex >= packets.Count)
             return;
 
         packets[packetIndex].ReceiveBytes(bytes);
@@ -48,12 +68,17 @@ public class SNetExt_Replicator : IReplicator
 
     public void AddPacket(SNetExt_ReplicatedPacket packet)
     {
-        if (!m_packetsByKey.TryGetValue(packet.KeyHash, out var packets))
+        if (!packet.HasValidKeyHash)
+        {
+            _logger.Error($"AddPacket, Invalid KeyHash.");
+            return;
+        }
+        if (!m_packetsByKeyHash.TryGetValue(packet.KeyHash, out var packets))
         {
             packets = new();
-            m_packetsByKey.Add(packet.KeyHash, packets);
+            m_packetsByKeyHash.Add(packet.KeyHash, packets);
         }
-        packet.Setup(this, (ushort)packets.Count);
+        packet.Setup(this, (byte)packets.Count);
         packets.Add(packet);
         m_packetKeyHashToKey[packet.KeyHash] = packet.Key;
         m_packetKeyToKeyHash[packet.Key] = packet.KeyHash;
@@ -66,9 +91,16 @@ public class SNetExt_Replicator : IReplicator
         return packet;
     }
 
-    public SNetExt_ReplicatedPacketBufferBytes CreatePacketBytes(string key, Action<byte[], SNetExt_ReplicatedPacketBufferBytes.BufferData> receiveAction)
+    public SNetExt_ReplicatedPacketBufferBytes CreatePacketBufferBytes(string key, Action<byte[], SNetExt_ReplicatedPacketBufferBytes.BufferData> receiveAction)
     {
         var packet = SNetExt_ReplicatedPacketBufferBytes.Create(key, receiveAction);
+        AddPacket(packet);
+        return packet;
+    }
+
+    public SNetExt_ReplicatedPacketBytes CreatePacketBytes(string key, Action<byte[]> receiveAction)
+    {
+        var packet = SNetExt_ReplicatedPacketBytes.Create(key, receiveAction);
         AddPacket(packet);
         return packet;
     }
@@ -80,15 +112,19 @@ public class SNetExt_Replicator : IReplicator
 
     public Type GetPacketType(string key, int packetIndex)
     {
-        if (m_packetsByKey.TryGetValue(key, out var packets) && packetIndex >= 0 && packetIndex < packets.Count)
+        if (m_packetsByKeyHash.TryGetValue(key, out var packets) && packetIndex >= 0 && packetIndex < packets.Count)
             return packets[packetIndex].GetType();
         return null;
     }
 
     private string m_key;
+    private string m_keyHash;
+    private byte[] m_keyHashBytes;
     private IReplicatorSupplier m_supplier;
     private SNetwork.SNet_Player m_owningPlayer;
-    protected Dictionary<string, List<SNetExt_ReplicatedPacket>> m_packetsByKey = new();
+    protected Dictionary<string, List<SNetExt_ReplicatedPacket>> m_packetsByKeyHash = new();
     protected Dictionary<string, string> m_packetKeyToKeyHash = new();
     protected Dictionary<string, string> m_packetKeyHashToKey = new();
+
+    private static readonly IArchiveLogger _logger = LoaderWrapper.CreateArSubLoggerInstance(nameof(SNetExt_Replicator));
 }

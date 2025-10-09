@@ -6,8 +6,6 @@ public interface IReplicatorSupplier
 {
     string Key { get; }
 
-    string name { get; set; }
-
     IReplicator Replicator { get; set; }
 
     GameObject gameObject { get; }

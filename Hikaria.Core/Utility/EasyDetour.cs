@@ -117,7 +117,7 @@ public struct DetourDescriptor
     public Type ReturnType;
     public bool IsGeneric;
 
-    public unsafe nint GetMethodPointer()
+    public readonly unsafe nint GetMethodPointer()
     {
         ValidateDescriptor();
 
@@ -129,7 +129,7 @@ public struct DetourDescriptor
         return methodPtr != null ? (nint)(*methodPtr) : 0;
     }
 
-    private void ValidateDescriptor()
+    private readonly void ValidateDescriptor()
     {
         if (Type == null) throw new ArgumentNullException(nameof(Type), "目标类型不可为空");
         if (ReturnType == null) throw new ArgumentNullException(nameof(ReturnType), "返回类型不可为空");
@@ -144,7 +144,7 @@ public struct DetourDescriptor
         return isPointer ? type.MakePointerType().FullName : type.FullName;
     }
 
-    public override string ToString()
+    public override readonly string ToString()
     {
         return $"{Type.FullName}.{MethodName}{(IsGeneric ? $"<{string.Join(", ", Type.GenericTypeArguments.Select(arg => arg.FullName))}>" : string.Empty)}({string.Join(", ", ArgTypes.Select(arg => arg.FullName))})";
     }

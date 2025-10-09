@@ -4,21 +4,14 @@ namespace Hikaria.Core.SNetworkExt;
 
 public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCallbackObject, IReplicatorSupplier where S : struct
 {
-    public string Key => typeof(S).FullName;
+    ~SNetExt_StateReplicator()
+    {
+        SNetExt_Capture.UnRegisterForDropInCallback(this);
+    }
+
+    public string Key => $"SNetExt_StateReplicator<{typeof(S).FullName}>";
 
     public GameObject gameObject => m_provider.gameObject;
-
-    public string name
-    {
-        get
-        {
-            return m_provider.gameObject.name;
-        }
-        set
-        {
-            m_provider.gameObject.name = value;
-        }
-    }
 
     public IReplicator Replicator { get; set; }
 
@@ -36,12 +29,10 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
                 stateReplicator.Replicator = SNetExt_Replication.AddManagerReplicator(stateReplicator);
                 break;
             case SNetExt_ReplicatorLifeTime.DestroyedOnLevelReset:
-                {
-                    stateReplicator.Replicator = SNetExt_Replication.AddSelfManagedReplicator(stateReplicator);
-                    break;
-                }
+                stateReplicator.Replicator = SNetExt_Replication.AddSelfManagedReplicator(stateReplicator);
+                break;
             default:
-                Logs.LogError("ERROR : SNetExt_StateReplicator does not support " + replictorLifeTime);
+                SNetExt.Logger.Error($"SNetExt_StateReplicator does not support {replictorLifeTime}");
                 break;
         }
         stateReplicator.m_channelType = channelType;
@@ -61,10 +52,7 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
 
     public S State
     {
-        get
-        {
-            return m_currentState;
-        }
+        get => m_currentState;
         set
         {
             if (SNetwork.SNet.IsMaster)
@@ -109,17 +97,14 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
 
     public void OnStateCapture()
     {
-        m_statePacket_Dropin.CaptureToBuffer(m_currentState, SNetwork.eCapturePass.FirstPass);
+        m_statePacket_Dropin.CaptureToBuffer(m_currentState, SNetExt_CapturePass.FirstPass);
     }
 
     internal ISNetExt_StateReplicatorProvider<S> m_provider;
 
     private SNetwork.SNet_ChannelType m_channelType;
-
     private SNetExt_ReplicatedPacket<S> m_statePacket;
-
     private SNetExt_ReplicatedPacket<S> m_statePacket_Dropin;
-
     private S m_currentState;
 
     private struct pWrappedState
@@ -132,21 +117,14 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
 
 public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureCallbackObject, IReplicatorSupplier where S : struct where I : struct
 {
-    public GameObject gameObject => m_provider.gameObject;
-
-    public string name
+    ~SNetExt_StateReplicator()
     {
-        get
-        {
-            return m_provider.gameObject.name;
-        }
-        set
-        {
-            m_provider.gameObject.name = value;
-        }
+        SNetExt_Capture.UnRegisterForDropInCallback(this);
     }
 
-    public string Key => typeof(S).FullName;
+    public GameObject gameObject => m_provider.gameObject;
+
+    public string Key => $"SNetExt_StateReplicator<{typeof(S).FullName}, {typeof(I).FullName}>";
 
     public IReplicator Replicator { get; set; }
 
@@ -167,13 +145,13 @@ public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureC
                 stateReplicator.Replicator = SNetExt_Replication.AddSelfManagedReplicator(stateReplicator);
                 break;
             default:
-                Logs.LogError("ERROR : SNetExt_StateReplicator does not support " + replictorLifeTime);
+                SNetExt.Logger.Error($"SNetExt_StateReplicator does not support {replictorLifeTime}");
                 break;
         }
         stateReplicator.m_channelType = channelType;
-        stateReplicator.m_statePacket = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive, null);
-        stateReplicator.m_statePacket_Recall = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive_Recall, null);
-        stateReplicator.m_interactionPacket = stateReplicator.Replicator.CreatePacket<I>(typeof(I).FullName, stateReplicator.AttemptInteract, null);
+        stateReplicator.m_statePacket = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive);
+        stateReplicator.m_statePacket_Recall = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive_Recall);
+        stateReplicator.m_interactionPacket = stateReplicator.Replicator.CreatePacket<I>(typeof(I).FullName, stateReplicator.AttemptInteract);
         stateReplicator.m_currentState = startingState;
         SNetExt_Capture.RegisterCaptureCallback(stateReplicator);
         return stateReplicator;
@@ -210,10 +188,7 @@ public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureC
 
     public S State
     {
-        get
-        {
-            return m_currentState;
-        }
+        get => m_currentState;
         private set
         {
             OnStateChange(false, value);
@@ -266,16 +241,12 @@ public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureC
     internal ISNetExt_StateReplicatorProvider<S, I> m_provider;
 
     private SNetwork.SNet_ChannelType m_channelType;
-
     private SNetExt_ReplicatedPacket<S> m_statePacket;
-
     private SNetExt_ReplicatedPacket<S> m_statePacket_Recall;
-
     private SNetExt_ReplicatedPacket<I> m_interactionPacket;
-
     private S m_currentState;
 
-    public SNetwork.eCapturePass CapturePass = SNetwork.eCapturePass.FirstPass;
+    public SNetExt_CapturePass CapturePass = SNetExt_CapturePass.FirstPass;
 
     private struct pWrappedState
     {

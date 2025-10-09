@@ -5,5 +5,6 @@ public enum SNetExt_ReplicatorType
     Unspecified,
     Manager,
     SelfManaged,
-    Dynamic
+    Dynamic,
+    VanillaWrapper
 }

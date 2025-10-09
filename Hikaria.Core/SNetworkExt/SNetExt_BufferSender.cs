@@ -123,9 +123,9 @@ public class SNetExt_BufferSender
 
     private State m_state;
 
-    private float m_sendInterval;
+    private readonly float m_sendInterval;
 
-    private int m_packetsPerFrame;
+    private readonly int m_packetsPerFrame;
 
     private int m_passIndex;
 
@@ -133,11 +133,11 @@ public class SNetExt_BufferSender
 
     private SNetExt_CaptureBuffer m_buffer;
 
-    private List<SNetwork.SNet_Player> m_sendToPlayers = new();
+    private readonly List<SNetwork.SNet_Player> m_sendToPlayers = new();
 
-    private SNetExt_BufferType m_bufferType;
+    private readonly SNetExt_BufferType m_bufferType;
 
-    private SNetwork.SNet_ChannelType m_channelType;
+    private readonly SNetwork.SNet_ChannelType m_channelType;
 
     private float m_sendTimer;
 

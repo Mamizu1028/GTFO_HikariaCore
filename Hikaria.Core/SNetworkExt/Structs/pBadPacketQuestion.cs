@@ -2,6 +2,7 @@
 
 namespace Hikaria.Core.SNetworkExt;
 
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public struct pBadPacketQuestion
 {
     public readonly string GetLookup()
@@ -15,5 +16,5 @@ public struct pBadPacketQuestion
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
     public string packetKeyHash;
 
-    public ushort packetIndex;
+    public byte packetIndex;
 }

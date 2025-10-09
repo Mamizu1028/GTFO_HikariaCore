@@ -17,10 +17,15 @@ public abstract class SNetExt_Marshaller
 
 public class SNetExt_Marshaller<T> : SNetExt_Marshaller where T : struct
 {
+    ~SNetExt_Marshaller()
+    {
+        Marshal.FreeHGlobal(m_intPtr);
+    }
+
     public override void Setup(int size)
     {
         Size = size;
-        SizeWithIDs = Size + 34;
+        SizeWithIDs = Size + 33;
         m_intPtr = Marshal.AllocHGlobal(SizeWithIDs);
         m_marshallingType = typeof(T);
     }
@@ -28,12 +33,12 @@ public class SNetExt_Marshaller<T> : SNetExt_Marshaller where T : struct
     public virtual void MarshalToBytes(T data, byte[] bytes)
     {
         Marshal.StructureToPtr(data, m_intPtr, true);
-        Marshal.Copy(m_intPtr, bytes, 34, Size);
+        Marshal.Copy(m_intPtr, bytes, 33, Size);
     }
 
     public void MarshalToData(byte[] bytes, ref T data)
     {
-        Marshal.Copy(bytes, 34, m_intPtr, Size);
+        Marshal.Copy(bytes, 33, m_intPtr, Size);
         data = (T)Marshal.PtrToStructure(m_intPtr, m_marshallingType);
     }
 

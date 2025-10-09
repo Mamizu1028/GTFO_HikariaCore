@@ -48,6 +48,7 @@ public struct pPopupMessage
 #endregion
 
 #region ModList ModInfo
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public struct pModList : SNetworkExt.IReplicatedPlayerData
 {
     public pModList(SNet_Player player, List<pModInfo> modList)
@@ -79,6 +80,7 @@ public struct pModList : SNetworkExt.IReplicatedPlayerData
     public SNetStructs.pPlayer PlayerData { get; set; }
 }
 
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public struct pModInfo
 {
     public pModInfo(string name, string guid, Version version)
@@ -133,44 +135,6 @@ public struct pFullEnemyReceivedDamageData
         this.gearChecksum = gearChecksum;
         this.damageTraceFlags = damageTraceFlags;
     }
-}
-#endregion
-
-#region SNetExt
-public struct pReplicatorList : SNetworkExt.IReplicatedPlayerData
-{
-    public pReplicatorList(SNet_Player player, List<pReplicatorInfo> modList)
-    {
-        Array.Fill(Replicators, new());
-        var playerData = new SNetStructs.pPlayer();
-        playerData.SetPlayer(player);
-        PlayerData = playerData;
-        ReplicatorCount = Math.Clamp(modList.Count, 0, REPLICATOR_SYNC_COUNT);
-        for (int i = 0; i < ReplicatorCount; i++)
-        {
-            Replicators[i] = modList[i];
-        }
-    }
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = REPLICATOR_SYNC_COUNT)]
-    public pReplicatorInfo[] Replicators = new pReplicatorInfo[REPLICATOR_SYNC_COUNT];
-
-    public SNetStructs.pPlayer PlayerData { get; set; }
-
-    public const int REPLICATOR_SYNC_COUNT = 128;
-
-    public int ReplicatorCount = 0;
-}
-
-public struct pReplicatorInfo
-{
-    public pReplicatorInfo(string hashId)
-    {
-        HashID = hashId;
-    }
-
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-    public string HashID;
 }
 #endregion
 

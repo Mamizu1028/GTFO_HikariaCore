@@ -13,8 +13,6 @@ public abstract class SNetExt_ReplicationManager : IReplicatorSupplier
 
     public GameObject gameObject { get; set; }
 
-    public string name { get; set; }
-
     public virtual string Key => GetType().FullName;
 
     public abstract void OnStateCapture();
@@ -71,8 +69,11 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
     {
         var keyHash = PrefabKeyToHash(key);
         if (m_prefabs.ContainsKey(keyHash))
-            throw new ArgumentException($"Prefab Key Conflict, Key: '{key}', KeyHash: '{keyHash}'");
-        m_prefabLookup.Add(prefab, keyHash);
+        {
+            _logger.Error($"AddPrefab, Hash Conflict. Key: '{key}', KeyHash: '{keyHash}'");
+            return;
+        }
+        m_prefabLookup.Add(prefab.Pointer, keyHash);
         m_prefabs.Add(keyHash, new(prefab, prefabSyncVersion));
         m_prefabKeyToKeyHash.Add(key, keyHash);
         m_prefabKeyHashToKey.Add(keyHash, key);
@@ -86,30 +87,36 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
         m_prefabKeyHashToKey.Clear();
     }
 
-    public bool TryGetPrefabKey(GameObject prefab, out string key)
+    public bool TryGetPrefabKey(GameObject prefab, out string key, out string keyHash)
     {
-        return m_prefabLookup.TryGetValue(prefab, out key);
+        if (!m_prefabLookup.TryGetValue(prefab.Pointer, out keyHash) || !m_prefabKeyHashToKey.TryGetValue(keyHash, out key))
+        {
+            key = string.Empty;
+            keyHash = string.Empty;
+            return false;
+        }
+        return true;
     }
 
     public bool HasPrefab(GameObject prefab)
     {
-        return m_prefabLookup.ContainsKey(prefab);
+        return m_prefabLookup.ContainsKey(prefab.Pointer);
     }
 
     public void Spawn(GameObject prefab, T spawnData)
     {
-        if (!TryGetPrefabKey(prefab, out var key))
+        if (!TryGetPrefabKey(prefab, out _, out var keyHash))
         {
-            _logger.Error("prefabKey for " + prefab.name + " add prefab before attempting spawn");
+            _logger.Error($"Spawn, prefabKey for '{prefab.name}' add prefab before attempting spawn");
             return;
         }
-        Spawn(key, spawnData);
+        Spawn(keyHash, spawnData);
     }
 
-    public void Spawn(string prefabKey, T spawnData)
+    public void Spawn(string prefabKeyHash, T spawnData)
     {
         var replicationData = spawnData.ReplicationData;
-        replicationData.PrefabKeyHash = prefabKey;
+        replicationData.PrefabKeyHash = prefabKeyHash;
         spawnData.ReplicationData = replicationData;
         Spawn(spawnData);
     }
@@ -173,17 +180,17 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
             }
             else
             {
-                var dynamicReplicatorSupplier2 = LinkSupplier(r, gameObject);
+                var dynamicReplicatorSupplier = LinkSupplier(r, gameObject);
                 SNetExt_Replication.AssignReplicatorKey(r, replicationData.ReplicatorKeyHash, spawnData.ReplicationData.isRecall);
                 r.SetSpawnData(spawnData);
                 RegisterDynamicReplicator(r);
-                dynamicReplicatorSupplier2.OnSpawn(spawnData);
+                dynamicReplicatorSupplier.OnSpawn(spawnData);
             }
             OnSpawn(spawnData, r);
             m_internalSpawnCallbackReturnReplicator = r;
             return;
         }
-        _logger.Error("InternalSpawnCallback : Prefab not found " + replicationData.PrefabKeyHash);
+        _logger.Error("InternalSpawnCallback, Prefab not found " + replicationData.PrefabKeyHash);
         m_internalSpawnCallbackReturnReplicator = default;
     }
 
@@ -290,13 +297,13 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
         return true;
     }
 
-    internal void RegisterDynamicReplicator(R replicator)
+    private void RegisterDynamicReplicator(R replicator)
     {
         replicator.SetManager(this);
         m_replicators.Add(replicator);
     }
 
-    internal void UnregisterDynamicReplicator(R replicator)
+    private void UnregisterDynamicReplicator(R replicator)
     {
         replicator.SetManager(null);
         m_replicators.Remove(replicator);
@@ -367,7 +374,7 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
     protected Dictionary<string, (GameObject normalVersion, GameObject syncVersion)> m_prefabs = new();
     protected Dictionary<string, string> m_prefabKeyToKeyHash = new();
     protected Dictionary<string, string> m_prefabKeyHashToKey = new();
-    protected Dictionary<GameObject, string> m_prefabLookup = new();
+    protected Dictionary<IntPtr, string> m_prefabLookup = new();
     protected bool m_hasSpawnDespawnCallback;
     protected Action<IReplicator, bool> m_spawnDespawnCallback;
     protected Vector3 m_tempPosition;

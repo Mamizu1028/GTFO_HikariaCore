@@ -12,7 +12,7 @@ public class SNetExt_CaptureBuffer
         }
     }
 
-    public List<byte[]> GetPass(SNetwork.eCapturePass pass)
+    public List<byte[]> GetPass(SNetExt_CapturePass pass)
     {
         if ((int)pass >= PassCount)
         {

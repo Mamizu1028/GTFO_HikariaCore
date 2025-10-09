@@ -1,5 +1,8 @@
-﻿namespace Hikaria.Core.SNetworkExt;
+﻿using System.Runtime.InteropServices;
 
+namespace Hikaria.Core.SNetworkExt;
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public struct pStateReplicatorProvider
 {
     public readonly bool TryGet<S>(out ISNetExt_StateReplicatorProvider<S> provider) where S : struct

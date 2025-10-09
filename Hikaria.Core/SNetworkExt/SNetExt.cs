@@ -1,10 +1,13 @@
-﻿using TheArchive.Loader;
+﻿using TheArchive.Interfaces;
+using TheArchive.Loader;
 using UnityEngine;
 
 namespace Hikaria.Core.SNetworkExt;
 
 public static class SNetExt
 {
+    internal static readonly IArchiveLogger Logger = LoaderWrapper.CreateArSubLoggerInstance("SNetExt");
+
     private static readonly Dictionary<ulong, Dictionary<Type, DataWrapper>> s_dataWrappersLookup = new();
     private static readonly List<ISNetExt_Manager> s_subManagers = new();
 
@@ -29,6 +32,7 @@ public static class SNetExt
         Replication = CreateSubManager<SNetExt_Replication>(true, "Replication");
         PrefabReplication = CreateSubManager<SNetExt_PrefabReplicationManager>(false, "PrefabReplication");
         SubManagerReplicator = SNetExt_Replication.AddManagerReplicator("SNetExt_SubManager") as SNetExt_Replicator;
+
         SetupReplication();
     }
 
@@ -182,9 +186,7 @@ public static class SNetExt
             {
                 var replicator = stateReplicator.Replicator;
                 if (stateReplicator is ICaptureCallbackObject captureCallbackObject)
-                {
                     SNetExt_Capture.UnRegisterForDropInCallback(captureCallbackObject);
-                }
                 SNetExt_Replication.DeallocateReplicator(replicator);
             }
         }

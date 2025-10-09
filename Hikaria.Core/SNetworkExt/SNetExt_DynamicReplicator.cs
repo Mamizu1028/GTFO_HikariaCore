@@ -22,7 +22,7 @@ public class SNetExt_DynamicReplicator<T> : SNetExt_Replicator where T : struct,
         return m_spawnData;
     }
 
-    public bool TryInternalCollectCapture(out T spawnData, out SNetwork.eCapturePass captureType)
+    public bool TryInternalCollectCapture(out T spawnData, out SNetExt_CapturePass captureType)
     {
         if (ReplicatorSupplier is IDynamicReplicatorSupplier<T> supplier && supplier.TryCollectCaptureData(ref m_spawnData, out captureType))
         {
@@ -32,7 +32,7 @@ public class SNetExt_DynamicReplicator<T> : SNetExt_Replicator where T : struct,
             spawnData = m_spawnData;
             return true;
         }
-        captureType = SNetwork.eCapturePass.Skip;
+        captureType = SNetExt_CapturePass.Skip;
         spawnData = new T();
         return false;
     }
