@@ -1,6 +1,7 @@
 ﻿using Agents;
 using Enemies;
 using Hikaria.Core.Managers;
+using Hikaria.Core.SNetworkExt;
 using SNetwork;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -49,7 +50,7 @@ public struct pPopupMessage
 
 #region ModList ModInfo
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
-public struct pModList : SNetworkExt.IReplicatedPlayerData
+public struct pModList : ISNetExt_ReplicatedPlayerData
 {
     public pModList(SNet_Player player, List<pModInfo> modList)
     {

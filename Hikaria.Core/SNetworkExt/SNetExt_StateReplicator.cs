@@ -2,7 +2,7 @@
 
 namespace Hikaria.Core.SNetworkExt;
 
-public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCallbackObject, IReplicatorSupplier where S : struct
+public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCallbackObject, ISNetExt_ReplicatorSupplier where S : struct
 {
     ~SNetExt_StateReplicator()
     {
@@ -13,9 +13,9 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
 
     public GameObject gameObject => m_provider.gameObject;
 
-    public IReplicator Replicator { get; set; }
+    public ISNetExt_Replicator Replicator { get; set; }
 
-    public IReplicator GetReplicator() => Replicator;
+    public ISNetExt_Replicator GetReplicator() => Replicator;
 
     public static SNetExt_StateReplicator<S> Create(ISNetExt_StateReplicatorProvider<S> provider, SNetExt_ReplicatorLifeTime replictorLifeTime, S startingState = default, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
     {
@@ -115,7 +115,7 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
     }
 }
 
-public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureCallbackObject, IReplicatorSupplier where S : struct where I : struct
+public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureCallbackObject, ISNetExt_ReplicatorSupplier where S : struct where I : struct
 {
     ~SNetExt_StateReplicator()
     {
@@ -126,9 +126,9 @@ public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureC
 
     public string Key => $"SNetExt_StateReplicator<{typeof(S).FullName}, {typeof(I).FullName}>";
 
-    public IReplicator Replicator { get; set; }
+    public ISNetExt_Replicator Replicator { get; set; }
 
-    public IReplicator GetReplicator() => Replicator;
+    public ISNetExt_Replicator GetReplicator() => Replicator;
 
     public static SNetExt_StateReplicator<S, I> Create(ISNetExt_StateReplicatorProvider<S, I> provider, SNetExt_ReplicatorLifeTime replictorLifeTime, S startingState = default, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
     {

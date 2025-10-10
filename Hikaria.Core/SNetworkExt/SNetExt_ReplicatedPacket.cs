@@ -8,7 +8,7 @@ namespace Hikaria.Core.SNetworkExt;
 
 public abstract class SNetExt_ReplicatedPacket
 {
-    public IReplicator Replicator { get; private set; }
+    public ISNetExt_Replicator Replicator { get; private set; }
 
     public byte Index { get; private set; }
 
@@ -44,7 +44,7 @@ public abstract class SNetExt_ReplicatedPacket
 
     public bool HasValidKeyHash => !string.IsNullOrWhiteSpace(KeyHash) && KeyHash.Length == 32;
 
-    public virtual void Setup(IReplicator replicator, byte index)
+    public virtual void Setup(ISNetExt_Replicator replicator, byte index)
     {
         if (string.IsNullOrWhiteSpace(Key))
             Key = GetType().FullName;
@@ -104,7 +104,7 @@ public abstract class SNetExt_ReplicatedPacket
 
 public class SNetExt_ReplicatedPacket<T> : SNetExt_ReplicatedPacket where T : struct
 {
-    public override void Setup(IReplicator replicator, byte index)
+    public override void Setup(ISNetExt_Replicator replicator, byte index)
     {
         if (string.IsNullOrWhiteSpace(Key))
             Key = typeof(T).FullName;

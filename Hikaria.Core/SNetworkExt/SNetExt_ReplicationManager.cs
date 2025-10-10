@@ -7,9 +7,9 @@ using UnityEngine;
 
 namespace Hikaria.Core.SNetworkExt;
 
-public abstract class SNetExt_ReplicationManager : IReplicatorSupplier
+public abstract class SNetExt_ReplicationManager : ISNetExt_ReplicatorSupplier
 {
-    public IReplicator Replicator { get; set; }
+    public ISNetExt_Replicator Replicator { get; set; }
 
     public GameObject gameObject { get; set; }
 
@@ -26,7 +26,7 @@ public abstract class SNetExt_ReplicationManager : IReplicatorSupplier
     }
 }
 
-public abstract class SNetExt_ReplicationManager<T> : SNetExt_ReplicationManager where T : struct, IDynamicReplication
+public abstract class SNetExt_ReplicationManager<T> : SNetExt_ReplicationManager where T : struct, ISNetExt_DynamicReplication
 {
     public override string Key => $"SNetExt_ReplicationManager<{typeof(T).FullName}>";
 
@@ -39,13 +39,13 @@ public abstract class SNetExt_ReplicationManager<T> : SNetExt_ReplicationManager
     }
 }
 
-public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> where T : struct, IDynamicReplication where R : SNetExt_DynamicReplicator<T>, new()
+public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> where T : struct, ISNetExt_DynamicReplication where R : SNetExt_DynamicReplicator<T>, new()
 {
     protected IArchiveLogger _logger;
 
     public override string Key => $"SNetExt_ReplicationManager<{typeof(T).FullName}, {typeof(R).FullName}>";
 
-    public Action<IReplicator, bool> SpawnDespawnCallback
+    public Action<ISNetExt_Replicator, bool> SpawnDespawnCallback
     {
         set
         {
@@ -194,9 +194,9 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
         m_internalSpawnCallbackReturnReplicator = default;
     }
 
-    private IDynamicReplicatorSupplier<T> LinkSupplier(R replicator, GameObject go)
+    private ISNetExt_DynamicReplicatorSupplier<T> LinkSupplier(R replicator, GameObject go)
     {
-        var supplier = go.GetComponent<IReplicatorSupplier>() as IDynamicReplicatorSupplier<T>;
+        var supplier = go.GetComponent<ISNetExt_ReplicatorSupplier>() as ISNetExt_DynamicReplicatorSupplier<T>;
         replicator.ReplicatorSupplier = supplier;
         supplier.Replicator = replicator;
         return supplier;
@@ -286,11 +286,11 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
         GameObject gameObject;
         if (!UseSyncPrefab(spawnData))
         {
-            gameObject = m_prefabs[replicationData.PrefabKeyHash].normalVersion;
+            gameObject = m_prefabs[replicationData.PrefabKeyHash].local;
         }
         else
         {
-            gameObject = m_prefabs[replicationData.PrefabKeyHash].syncVersion;
+            gameObject = m_prefabs[replicationData.PrefabKeyHash].sync;
         }
         go = UnityEngine.Object.Instantiate(gameObject, spawnData.Position, spawnData.Rotation);
         replicator = AddReplicator(spawnData, go);
@@ -326,7 +326,7 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
         }
         if (replicator.ReplicatorSupplier != null)
         {
-            var supplier = replicator.ReplicatorSupplier as IDynamicReplicatorSupplier<T>;
+            var supplier = replicator.ReplicatorSupplier as ISNetExt_DynamicReplicatorSupplier<T>;
             supplier?.OnDespawn();
             replicator.ReplicatorSupplier = null;
         }
@@ -348,10 +348,9 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte[] PrefabKeyToBytes(string key)
+    public static byte[] PrefabKeyHashToBytes(string keyHash)
     {
-        using MD5 md5 = MD5.Create();
-        return md5.ComputeHash(Encoding.UTF8.GetBytes(key));
+        return Convert.FromHexString(keyHash);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -371,12 +370,12 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
     protected SNetExt_ReplicatedPacket<T> m_spawnRequestPacket;
     protected SNetExt_ReplicatedPacket<pReplicationData> m_despawnRequestPacket;
     protected SNetExt_ReplicatedPacket<pReplicationData> m_despawnPacket;
-    protected Dictionary<string, (GameObject normalVersion, GameObject syncVersion)> m_prefabs = new();
+    protected Dictionary<string, (GameObject local, GameObject sync)> m_prefabs = new();
     protected Dictionary<string, string> m_prefabKeyToKeyHash = new();
     protected Dictionary<string, string> m_prefabKeyHashToKey = new();
     protected Dictionary<IntPtr, string> m_prefabLookup = new();
     protected bool m_hasSpawnDespawnCallback;
-    protected Action<IReplicator, bool> m_spawnDespawnCallback;
+    protected Action<ISNetExt_Replicator, bool> m_spawnDespawnCallback;
     protected Vector3 m_tempPosition;
     protected Quaternion m_tempQuaternion;
 }

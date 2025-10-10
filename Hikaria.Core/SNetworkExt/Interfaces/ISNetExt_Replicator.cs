@@ -1,12 +1,12 @@
 ﻿namespace Hikaria.Core.SNetworkExt;
 
-public interface IReplicator
+public interface ISNetExt_Replicator
 {
     bool LocallyOwned { get; }
 
     SNetExt_ReplicatedPacket<T> CreatePacket<T>(string packetKey, Action<T> receiveAction = null, Action<T> validateAction = null) where T : struct;
 
-    IReplicatorSupplier ReplicatorSupplier { get; set; }
+    ISNetExt_ReplicatorSupplier ReplicatorSupplier { get; set; }
 
     void ReceiveBytes(string key, int packetIndex, byte[] bytes);
 

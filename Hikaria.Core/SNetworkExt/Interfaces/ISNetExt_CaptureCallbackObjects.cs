@@ -4,5 +4,5 @@ public interface ICaptureCallbackObject
 {
     void OnStateCapture();
 
-    IReplicator GetReplicator();
+    ISNetExt_Replicator GetReplicator();
 }

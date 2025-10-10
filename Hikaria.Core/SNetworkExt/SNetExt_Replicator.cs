@@ -3,9 +3,9 @@ using TheArchive.Loader;
 
 namespace Hikaria.Core.SNetworkExt;
 
-public abstract class SNetExt_Replicator : IReplicator
+public abstract class SNetExt_Replicator : ISNetExt_Replicator
 {
-    public IReplicatorSupplier ReplicatorSupplier
+    public ISNetExt_ReplicatorSupplier ReplicatorSupplier
     {
         get => m_supplier;
         set
@@ -120,7 +120,7 @@ public abstract class SNetExt_Replicator : IReplicator
     private string m_key;
     private string m_keyHash;
     private byte[] m_keyHashBytes;
-    private IReplicatorSupplier m_supplier;
+    private ISNetExt_ReplicatorSupplier m_supplier;
     private SNetwork.SNet_Player m_owningPlayer;
     protected Dictionary<string, List<SNetExt_ReplicatedPacket>> m_packetsByKeyHash = new();
     protected Dictionary<string, string> m_packetKeyToKeyHash = new();

@@ -5,12 +5,12 @@ namespace Hikaria.Core.SNetworkExt;
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public struct pReplicator
 {
-    public readonly bool TryGetReplicator(out IReplicator rep)
+    public readonly bool TryGetReplicator(out ISNetExt_Replicator rep)
     {
         return SNetExt_Replication.TryGetReplicatorByKeyHash(KeyHash, out rep);
     }
 
-    public void SetReplicator(IReplicator rep)
+    public void SetReplicator(ISNetExt_Replicator rep)
     {
         if (rep != null)
         {

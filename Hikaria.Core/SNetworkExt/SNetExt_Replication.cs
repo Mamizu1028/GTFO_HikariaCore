@@ -155,7 +155,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
 
     [HideFromIl2Cpp]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetReplicatorByKeyHash(string keyHash, out IReplicator replicator)
+    public static bool TryGetReplicatorByKeyHash(string keyHash, out ISNetExt_Replicator replicator)
     {
         if (!s_replicators.TryGetValue(keyHash, out replicator))
             return false;
@@ -178,7 +178,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
 
     [HideFromIl2Cpp]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetReplicator(pReplicationData data, out IReplicator replicator)
+    public static bool TryGetReplicator(pReplicationData data, out ISNetExt_Replicator replicator)
     {
         if (!s_replicators.TryGetValue(data.ReplicatorKeyHash, out replicator))
             return false;
@@ -187,7 +187,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
 
     [HideFromIl2Cpp]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryGetReplicator(byte[] bytes, out IReplicator replicator, out string packetKeyHash, out byte packetIndex)
+    private static bool TryGetReplicator(byte[] bytes, out ISNetExt_Replicator replicator, out string packetKeyHash, out byte packetIndex)
     {
         if (!s_replicators.TryGetValue(Convert.ToHexString(bytes, 0, 16), out replicator))
         {
@@ -216,7 +216,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    private void AddToAssingedList(IReplicator replicator)
+    private void AddToAssingedList(ISNetExt_Replicator replicator)
     {
         if (!m_assignedReplicators.Contains(replicator))
         {
@@ -225,13 +225,13 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    private void RemoveFromAssignedList(IReplicator replicator)
+    private void RemoveFromAssignedList(ISNetExt_Replicator replicator)
     {
         m_assignedReplicators.Remove(replicator);
     }
 
     [HideFromIl2Cpp]
-    private void ClearReplicatorKey(string keyHash, IReplicator newReplicator)
+    private void ClearReplicatorKey(string keyHash, ISNetExt_Replicator newReplicator)
     {
         if (!s_replicators.TryGetValue(keyHash, out var replicator))
             return;
@@ -249,7 +249,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public static void AllocateReplicator(IReplicator replicator)
+    public static void AllocateReplicator(ISNetExt_Replicator replicator)
     {
         if (!replicator.HasValidKeyHash)
         {
@@ -268,7 +268,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public static void AssignReplicatorKey(IReplicator replicator, string keyHash, bool isRecall = false)
+    public static void AssignReplicatorKey(ISNetExt_Replicator replicator, string keyHash, bool isRecall = false)
     {
         SNetExt.Replication.ClearReplicatorKey(replicator.KeyHash, replicator);
         replicator.Key = string.Empty;
@@ -288,7 +288,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public static void DeallocateReplicator(IReplicator replicator)
+    public static void DeallocateReplicator(ISNetExt_Replicator replicator)
     {
         if (!s_replicators.TryGetValue(replicator.KeyHash, out var existReplicator))
             return;
@@ -306,7 +306,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public static IReplicator AddManagerReplicator(string key)
+    public static ISNetExt_Replicator AddManagerReplicator(string key)
     {
         var manager = new SNetExt_Replicator_Manager
         {
@@ -317,7 +317,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public static IReplicator AddManagerReplicator(IReplicatorSupplier supplier)
+    public static ISNetExt_Replicator AddManagerReplicator(ISNetExt_ReplicatorSupplier supplier)
     {
         var manager = new SNetExt_Replicator_Manager
         {
@@ -328,7 +328,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public static IReplicator AddSelfManagedReplicator(string key)
+    public static ISNetExt_Replicator AddSelfManagedReplicator(string key)
     {
         var replicator = new SNetExt_Replicator_SelfManaged
         {
@@ -339,7 +339,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public static IReplicator AddSelfManagedReplicator(IReplicatorSupplier supplier)
+    public static ISNetExt_Replicator AddSelfManagedReplicator(ISNetExt_ReplicatorSupplier supplier)
     {
         var replicator = new SNetExt_Replicator_SelfManaged
         {
@@ -350,23 +350,23 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public static IReplicator AddVanillaReplicatorWrapper(SNetwork.IReplicator vanilla)
+    public static ISNetExt_Replicator AddVanillaReplicatorWrapper(SNetwork.IReplicator vanilla)
     {
         var replicator = new SNetExt_Replicator_VanillaWrapper(vanilla);
         AllocateReplicator(replicator);
         return replicator;
     }
 
-    private static readonly Dictionary<string, IReplicator> s_replicators = new();
+    private static readonly Dictionary<string, ISNetExt_Replicator> s_replicators = new();
     private static readonly Dictionary<string, string> s_replicatorKeyToKeyHash = new();
     private static readonly Dictionary<string, string> s_replicatorKeyHashToKey = new();
 
     private SNetExt_ReplicatedPacket<pBadPacketAnswer> m_badPacketAnswer;
     private SNetExt_ReplicatedPacket<pBadPacketQuestion> m_badPacketQuestion;
 
-    private readonly List<IReplicator> m_assignedReplicators = new();
+    private readonly List<ISNetExt_Replicator> m_assignedReplicators = new();
     private readonly List<SNetExt_ReplicationManager> m_replicationManagers = new();
-    private IReplicator m_tempReplicator;
+    private ISNetExt_Replicator m_tempReplicator;
     private string m_tempPacketKeyHash;
     private byte m_tempPacketIndex;
 

@@ -5,7 +5,7 @@ namespace Hikaria.Core;
 
 public static class SNetExtAPI
 {
-    public static bool TryGetReplicatorWrapper(SNetwork.IReplicator vanilla, out IReplicator wrapper)
+    public static bool TryGetReplicatorWrapper(SNetwork.IReplicator vanilla, out ISNetExt_Replicator wrapper)
     {
         return SNetExtAPI_Impl.TryGetVanillaReplicatorWrapper(vanilla.Key, out wrapper);
     }

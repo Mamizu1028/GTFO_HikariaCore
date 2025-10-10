@@ -8,25 +8,25 @@ public class SNetExt_PrefabReplicationManager : MonoBehaviour, ISNetExt_Manager
     {
     }
 
-    public void SetupReplicationFor<B>(Action<IReplicator, bool> callback = null) where B : struct, IDynamicReplication
+    public void SetupReplicationFor<B>(Action<ISNetExt_Replicator, bool> callback = null) where B : struct, ISNetExt_DynamicReplication
     {
         GetRepManager<SNetExt_DynamicReplicator<B>, B>(out var replicationManager);
         replicationManager.SpawnDespawnCallback = callback;
     }
 
-    public void ClearPrefabs<B>() where B : struct, IDynamicReplication
+    public void ClearPrefabs<B>() where B : struct, ISNetExt_DynamicReplication
     {
         GetRepManager<SNetExt_DynamicReplicator<B>, B>(out var replicationManager);
         replicationManager.ClearPrefabs();
     }
 
-    public void AddPrefab<B>(string prefabKey, GameObject prefab) where B : struct, IDynamicReplication
+    public void AddPrefab<B>(string prefabKey, GameObject prefab) where B : struct, ISNetExt_DynamicReplication
     {
         GetRepManager<SNetExt_DynamicReplicator<B>, B>(out var replicationManager);
         replicationManager.AddPrefab(prefabKey, prefab, null);
     }
 
-    private void GetRepManager<A, B>(out SNetExt_ReplicationManager<B, A> repManager) where A : SNetExt_DynamicReplicator<B>, new() where B : struct, IDynamicReplication
+    private void GetRepManager<A, B>(out SNetExt_ReplicationManager<B, A> repManager) where A : SNetExt_DynamicReplicator<B>, new() where B : struct, ISNetExt_DynamicReplication
     {
         Type typeFromHandle = typeof(B);
         if (m_repManagers.TryGetValue(typeFromHandle, out var replicationManager))
@@ -39,13 +39,13 @@ public class SNetExt_PrefabReplicationManager : MonoBehaviour, ISNetExt_Manager
         m_repManagers.Add(typeFromHandle, replicationManager);
     }
 
-    public void Spawn<B>(GameObject prefab, B spawnData) where B : struct, IDynamicReplication
+    public void Spawn<B>(GameObject prefab, B spawnData) where B : struct, ISNetExt_DynamicReplication
     {
         GetRepManager<SNetExt_DynamicReplicator<B>, B>(out var replicationManager);
         replicationManager.Spawn(prefab, spawnData);
     }
 
-    public List<SNetExt_DynamicReplicator<B>> GetReplicatorList<B>() where B : struct, IDynamicReplication
+    public List<SNetExt_DynamicReplicator<B>> GetReplicatorList<B>() where B : struct, ISNetExt_DynamicReplication
     {
         GetRepManager<SNetExt_DynamicReplicator<B>, B>(out var replicationManager);
         return replicationManager.m_replicators;

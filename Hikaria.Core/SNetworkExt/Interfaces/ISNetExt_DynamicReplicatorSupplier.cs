@@ -1,6 +1,6 @@
 ﻿namespace Hikaria.Core.SNetworkExt;
 
-public interface IDynamicReplicatorSupplier<T> : IReplicatorSupplier where T : struct, IDynamicReplication
+public interface ISNetExt_DynamicReplicatorSupplier<T> : ISNetExt_ReplicatorSupplier where T : struct, ISNetExt_DynamicReplication
 {
     void OnDespawn();
 

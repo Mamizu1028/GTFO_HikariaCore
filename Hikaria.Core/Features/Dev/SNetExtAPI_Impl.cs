@@ -20,7 +20,7 @@ internal class SNetExtAPI_Impl : Feature
 
     public new static IArchiveLogger FeatureLogger { get; set; }
 
-    public static bool TryGetVanillaReplicatorWrapper(ushort key, out IReplicator wrapper)
+    public static bool TryGetVanillaReplicatorWrapper(ushort key, out ISNetExt_Replicator wrapper)
     {
         return SNetExt_Replication.TryGetReplicatorByKeyHash(SNetExt_Replication.ReplicatorKeyToHash($"VanillaWrapper_{key}"), out wrapper);
     }

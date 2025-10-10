@@ -1,6 +1,6 @@
 ﻿namespace Hikaria.Core.SNetworkExt;
 
-public class SNetExt_DynamicReplicator<T> : SNetExt_Replicator where T : struct, IDynamicReplication
+public class SNetExt_DynamicReplicator<T> : SNetExt_Replicator where T : struct, ISNetExt_DynamicReplication
 {
     public override SNetExt_ReplicatorType Type => SNetExt_ReplicatorType.Dynamic;
 
@@ -24,7 +24,7 @@ public class SNetExt_DynamicReplicator<T> : SNetExt_Replicator where T : struct,
 
     public bool TryInternalCollectCapture(out T spawnData, out SNetExt_CapturePass captureType)
     {
-        if (ReplicatorSupplier is IDynamicReplicatorSupplier<T> supplier && supplier.TryCollectCaptureData(ref m_spawnData, out captureType))
+        if (ReplicatorSupplier is ISNetExt_DynamicReplicatorSupplier<T> supplier && supplier.TryCollectCaptureData(ref m_spawnData, out captureType))
         {
             var replicationData = m_spawnData.ReplicationData;
             replicationData.isRecall = true;

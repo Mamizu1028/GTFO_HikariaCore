@@ -2,5 +2,5 @@
 
 public interface ISNetExt_StateReplicator
 {
-	IReplicator Replicator { get; set; }
+	ISNetExt_Replicator Replicator { get; set; }
 }

@@ -66,7 +66,7 @@ public static class SNetExt
         }
     }
 
-    public static void SetupCustomData<A>(string eventName, Action<SNetwork.SNet_Player, A> callback) where A : struct, IReplicatedPlayerData
+    public static void SetupCustomData<A>(string eventName, Action<SNetwork.SNet_Player, A> callback) where A : struct, ISNetExt_ReplicatedPlayerData
     {
         SNetExt_ReplicatedPlayerData<A>.Setup(eventName, callback);
     }

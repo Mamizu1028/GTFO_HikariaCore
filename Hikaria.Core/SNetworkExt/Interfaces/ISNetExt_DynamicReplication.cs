@@ -2,7 +2,7 @@
 
 namespace Hikaria.Core.SNetworkExt;
 
-public interface IDynamicReplication
+public interface ISNetExt_DynamicReplication
 {
     pReplicationData ReplicationData { get; set; }
 

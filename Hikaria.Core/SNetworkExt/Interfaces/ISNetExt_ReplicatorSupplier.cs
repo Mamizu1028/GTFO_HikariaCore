@@ -2,11 +2,11 @@
 
 namespace Hikaria.Core.SNetworkExt;
 
-public interface IReplicatorSupplier
+public interface ISNetExt_ReplicatorSupplier
 {
     string Key { get; }
 
-    IReplicator Replicator { get; set; }
+    ISNetExt_Replicator Replicator { get; set; }
 
     GameObject gameObject { get; }
 }

@@ -2,7 +2,7 @@
 
 namespace Hikaria.Core.SNetworkExt;
 
-public interface IReplicatedPlayerData
+public interface ISNetExt_ReplicatedPlayerData
 {
     public SNetStructs.pPlayer PlayerData { get; set; }
 }
