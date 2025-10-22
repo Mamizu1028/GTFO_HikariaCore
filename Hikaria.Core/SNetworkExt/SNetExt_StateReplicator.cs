@@ -1,14 +1,10 @@
-﻿using UnityEngine;
+﻿using TheArchive.Loader;
+using UnityEngine;
 
 namespace Hikaria.Core.SNetworkExt;
 
 public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCallbackObject, ISNetExt_ReplicatorSupplier where S : struct
 {
-    ~SNetExt_StateReplicator()
-    {
-        SNetExt_Capture.UnRegisterForDropInCallback(this);
-    }
-
     public string Key => $"SNetExt_StateReplicator<{typeof(S).FullName}>";
 
     public GameObject gameObject => m_provider.gameObject;
@@ -35,6 +31,24 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
                 SNetExt.Logger.Error($"SNetExt_StateReplicator does not support {replictorLifeTime}");
                 break;
         }
+        stateReplicator.m_channelType = channelType;
+        stateReplicator.m_statePacket = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive, null);
+        stateReplicator.m_statePacket_Dropin = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive_Dropin, null);
+        stateReplicator.m_currentState = startingState;
+        SNetExt_Capture.RegisterCaptureCallback(stateReplicator);
+        return stateReplicator;
+    }
+
+    public static SNetExt_StateReplicator<S> Create(GameObject holder, Action<SNetExt_StateReplicator<S>, S, S, bool> onStateChange, S startingState = default, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
+    {
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<SNetExt_StateReplicatorProviderWrapper<S>>();
+        var provider = holder.AddComponent<SNetExt_StateReplicatorProviderWrapper<S>>();
+        var stateReplicator = new SNetExt_StateReplicator<S>
+        {
+            m_provider = provider
+        };
+        provider.Setup(stateReplicator, onStateChange);
+        stateReplicator.Replicator = SNetExt_Replication.AddSelfManagedReplicator(stateReplicator);
         stateReplicator.m_channelType = channelType;
         stateReplicator.m_statePacket = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive, null);
         stateReplicator.m_statePacket_Dropin = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive_Dropin, null);
@@ -117,11 +131,6 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
 
 public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureCallbackObject, ISNetExt_ReplicatorSupplier where S : struct where I : struct
 {
-    ~SNetExt_StateReplicator()
-    {
-        SNetExt_Capture.UnRegisterForDropInCallback(this);
-    }
-
     public GameObject gameObject => m_provider.gameObject;
 
     public string Key => $"SNetExt_StateReplicator<{typeof(S).FullName}, {typeof(I).FullName}>";
@@ -150,6 +159,25 @@ public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureC
         }
         stateReplicator.m_channelType = channelType;
         stateReplicator.m_statePacket = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive);
+        stateReplicator.m_statePacket_Recall = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive_Recall);
+        stateReplicator.m_interactionPacket = stateReplicator.Replicator.CreatePacket<I>(typeof(I).FullName, stateReplicator.AttemptInteract);
+        stateReplicator.m_currentState = startingState;
+        SNetExt_Capture.RegisterCaptureCallback(stateReplicator);
+        return stateReplicator;
+    }
+
+    public static SNetExt_StateReplicator<S, I> Create(GameObject holder, Action<SNetExt_StateReplicator<S, I>, S, S, bool> onStateChange, Action<SNetExt_StateReplicator<S, I>, I> attemptInteract, S startingState = default, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
+    {
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<SNetExt_StateReplicatorProviderWrapper<S, I>>();
+        var provider = holder.AddComponent<SNetExt_StateReplicatorProviderWrapper<S, I>>();
+        var stateReplicator = new SNetExt_StateReplicator<S, I>
+        {
+            m_provider = provider
+        };
+        provider.Setup(stateReplicator, onStateChange, attemptInteract);
+        stateReplicator.Replicator = SNetExt_Replication.AddSelfManagedReplicator(stateReplicator);
+        stateReplicator.m_channelType = channelType;
+        stateReplicator.m_statePacket = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive, null);
         stateReplicator.m_statePacket_Recall = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive_Recall);
         stateReplicator.m_interactionPacket = stateReplicator.Replicator.CreatePacket<I>(typeof(I).FullName, stateReplicator.AttemptInteract);
         stateReplicator.m_currentState = startingState;

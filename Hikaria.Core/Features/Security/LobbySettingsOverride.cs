@@ -1,6 +1,5 @@
 ﻿using Clonesoft.Json;
 using Hikaria.Core.Entities;
-using Hikaria.Core.Features.Accessibility;
 using Hikaria.Core.Managers;
 using Hikaria.Core.SNetworkExt;
 using SNetwork;
@@ -90,12 +89,7 @@ internal class LobbySettingsOverride : Feature
 
     public override void OnFeatureSettingChanged(FeatureSetting setting)
     {
-        if (SNet.IsMaster && SNet.IsInLobby)
-        {
-            LiveLobbyList.UpdateLobbyPrivacySettings(SNet.Lobby.TryCast<SNet_Lobby_STEAM>());
-        }
     }
-
 
     [ArchivePatch(typeof(SNet_SessionHub), nameof(SNet_SessionHub.SlaveSendSessionQuestion))]
     private class SNet_SessionHub__SlaveSendSessionQuestion__Patch

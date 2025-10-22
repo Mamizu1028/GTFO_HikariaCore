@@ -44,6 +44,11 @@ public abstract class SNetExt_Replicator : ISNetExt_Replicator
         set
         {
             m_keyHash = value;
+            if (string.IsNullOrWhiteSpace(m_keyHash) || m_keyHash.Length != 32)
+            {
+                m_keyHashBytes = new byte[16];
+                return;
+            }
             KeyHashBytes = SNetExt_Replication.ReplicatorKeyHashToBytes(m_keyHash);
         }
     }
@@ -107,7 +112,7 @@ public abstract class SNetExt_Replicator : ISNetExt_Replicator
 
     public virtual void Despawn()
     {
-        throw new NotImplementedException("This does nothing on base class, override this otherwise it will leave grabage in Replication");
+        throw new NotImplementedException("This does nothing on base class, override this otherwise it will leave garbage in Replication");
     }
 
     public Type GetPacketType(string key, int packetIndex)

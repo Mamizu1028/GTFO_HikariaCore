@@ -5,8 +5,6 @@ using TheArchive.Core.FeaturesAPI;
 
 namespace Hikaria.Core.Features.Fixes;
 
-[DoNotSaveToConfig]
-[DisallowInGameToggle]
 [EnableFeatureByDefault]
 internal class KillIndicatorFix : Feature
 {

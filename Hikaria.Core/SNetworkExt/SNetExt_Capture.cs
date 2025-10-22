@@ -250,7 +250,6 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
             m_minTimeToSendNextBuffer = Clock.Time + MIGRATION_CAPTURE_INTERVAL_MIN_DELAY;
             return;
         }
-        _logger.Error("UpdateMigrationSend, Sending " + oldestMigrationBuffer);
         m_passiveMigrationBufferSend = new SNetExt_BufferSender(5, 0.5f, m_buffers[(int)oldestMigrationBuffer], list, SNetwork.SNet_ChannelType.SessionMigration);
         m_migrationTimer = Clock.Time + MIGRATION_CAPTURE_INTERVAL;
     }

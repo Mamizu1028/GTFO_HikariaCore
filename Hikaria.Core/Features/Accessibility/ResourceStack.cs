@@ -6,14 +6,14 @@ using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.FeaturesAPI.Groups;
 
-namespace Hikaria.Core.Features.Fixes;
+namespace Hikaria.Core.Features.Accessibility;
 
 [EnableFeatureByDefault]
-internal class ResourceStackFix : Feature
+internal class ResourceStack : Feature
 {
     public override string Name => "资源堆叠";
 
-    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Fixes");
+    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Accessibility");
 
     [ArchivePatch(typeof(LG_PickupItem_Sync), nameof(LG_PickupItem_Sync.AttemptInteract))]
     private class LG_PickupItem_Sync__AttemptInteract__Patch
@@ -51,7 +51,7 @@ internal class ResourceStackFix : Feature
         {
             consumableAmmoMax = 100f;
         }
-        var ammoType = (slot == InventorySlot.ResourcePack) ? AmmoType.ResourcePackRel : AmmoType.CurrentConsumable;
+        var ammoType = slot == InventorySlot.ResourcePack ? AmmoType.ResourcePackRel : AmmoType.CurrentConsumable;
         float ammoInPack = backpack.AmmoStorage.GetAmmoInPack(ammoType);
         if (ammoInPack >= consumableAmmoMax)
             return;

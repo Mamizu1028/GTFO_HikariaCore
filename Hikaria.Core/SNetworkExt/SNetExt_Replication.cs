@@ -24,7 +24,6 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     [HideFromIl2Cpp]
     public void SetupReplication()
     {
-        //m_replicatorSyncPacket = SNetExt.SubManagerReplicator.CreatePacketBytes($"{typeof(SNetExt_Replication).FullName}_ReplicatorSync", ReceiveReplicatorSync);
         m_badPacketQuestion = SNetExt.SubManagerReplicator.CreatePacket<pBadPacketQuestion>(typeof(pBadPacketQuestion).FullName, ReceiveBadPacketQuestion);
         m_badPacketAnswer = SNetExt.SubManagerReplicator.CreatePacket<pBadPacketAnswer>(typeof(pBadPacketAnswer).FullName, ReceiveBadPacketAnswer);
     }
@@ -37,12 +36,6 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     [HideFromIl2Cpp]
     private void ReceiveBadPacketAnswer(pBadPacketAnswer answer)
     {
-    }
-
-    [HideFromIl2Cpp]
-    private void ReceiveReplicatorSync(byte[] data)
-    {
-
     }
 
     [HideFromIl2Cpp]

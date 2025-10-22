@@ -4,7 +4,7 @@ public interface ISNetExt_Replicator
 {
     bool LocallyOwned { get; }
 
-    SNetExt_ReplicatedPacket<T> CreatePacket<T>(string packetKey, Action<T> receiveAction = null, Action<T> validateAction = null) where T : struct;
+    SNetExt_ReplicatedPacket<T> CreatePacket<T>(string packetKey, Action<T> receiveAction, Action<T> validateAction = null) where T : struct;
 
     ISNetExt_ReplicatorSupplier ReplicatorSupplier { get; set; }
 

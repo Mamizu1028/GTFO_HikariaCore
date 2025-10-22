@@ -1,5 +1,4 @@
-﻿using Hikaria.Core.Features.Security;
-using Hikaria.Core.Managers;
+﻿using Hikaria.Core.Managers;
 using TheArchive.Core.Attributes.Feature;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.FeaturesAPI.Groups;
@@ -44,11 +43,9 @@ internal class CoreBootstrap : Feature
             _compsObj.AddComponent<GameEventLogManager>();
         }
         PopupMessageManager.Setup();
-
-        FeatureManager.EnableAutomatedFeature(typeof(GlobalBan));
     }
 
-    private const string CompsObjName = "Hikaria.Core.Comps.obj";
+    private const string CompsObjName = "Hikaria.Core.Comps";
 
     private static GameObject _compsObj;
 }

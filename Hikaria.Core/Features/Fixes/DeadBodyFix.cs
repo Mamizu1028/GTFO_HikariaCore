@@ -8,6 +8,7 @@ using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Interfaces;
 using UnityEngine;
+using static Il2CppSystem.Globalization.CultureInfo;
 
 namespace Hikaria.Core.Features.Fixes;
 
@@ -112,12 +113,7 @@ public class DeadBodyFix : Feature
 
     private void OnEnemySpawned(EnemyAgent enemy)
     {
-        if (!s_enemyDamageableHelpers.TryGetValue(enemy.GlobalID, out var data))
-        {
-            data = new EnemyDamageableHelper(enemy.Damage);
-            s_enemyDamageableHelpers.Add(enemy.GlobalID, data);
-        }
-        data.ResetState();
+        s_enemyDamageableHelpers[enemy.GlobalID] = new EnemyDamageableHelper(enemy.Damage);
     }
 
     private void OnEnemyDespawn(EnemyAgent enemy)

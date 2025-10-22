@@ -1,88 +1,45 @@
 ﻿using Clonesoft.Json;
 using Clonesoft.Json.Converters;
 using Clonesoft.Json.Serialization;
-using Hikaria.Core.Managers;
-using Hikaria.Core.Utility;
 using SNetwork;
 using TheArchive.Core;
 using TheArchive.Core.Localization;
 
-namespace Hikaria.Core
+namespace Hikaria.Core;
+
+public static class CoreGlobal
 {
-    public static class CoreGlobal
+    public const string GUID = "Hikaria.Core";
+
+    public const string NAME = "HikariaCore";
+
+    public const string VERSION = "1.0.0";
+
+    public static int Revision => SNet.GameRevision;
+
+    public static string RevisionString => SNet.GameRevisionString;
+
+    internal static ILocalizationService Localization { get; private set; }
+
+    internal static JsonSerializerSettings JsonSerializerSettings { get; private set; }
+
+    public static void Setup(IArchiveModule module)
     {
-        public const string GUID = "Hikaria.Core";
+        Localization = module.LocalizationService;
 
-        public const string NAME = "HikariaCore";
+        Logs.Setup(module.Logger);
 
-        public const string VERSION = "1.0.0";
-
-        public const string OfficialServerUrl = "https://q1w2e3r4t5y6u7i8o9p0.top:50001/api/gtfo";
-        public static string ThirdPartyServerUrl = string.Empty;
-        public static bool UseThirdPartyServer = false;
-
-        public static string ServerUrl => UseThirdPartyServer ? ThirdPartyServerUrl : OfficialServerUrl;
-
-        public static int Revision => SNet.GameRevision;
-        public static string RevisionString => SNet.GameRevisionString;
-
-        public static bool ServerOnline { get; private set; } = true;
-
-        internal static ILocalizationService Localization { get; private set; }
-
-        internal static JsonSerializerSettings JsonSerializerSettings { get; private set; }
-
-        public static void Setup(IArchiveModule module)
+        JsonSerializerSettings = new JsonSerializerSettings()
         {
-            Localization = module.LocalizationService;
+            Formatting = Formatting.Indented,
+            ContractResolver = new DefaultContractResolver(),
+            DateFormatHandling = DateFormatHandling.MicrosoftDateFormat,
+            DateFormatString = "yyyy-MM-dd HH:mm:ss",
+            NullValueHandling = NullValueHandling.Include
 
-            Logs.Setup(module.Logger);
+        };
 
-            JsonSerializerSettings = new JsonSerializerSettings()
-            {
-                Formatting = Formatting.Indented,
-                ContractResolver = new DefaultContractResolver(),
-                DateFormatHandling = DateFormatHandling.MicrosoftDateFormat,
-                DateFormatString = "yyyy-MM-dd HH:mm:ss",
-                NullValueHandling = NullValueHandling.Include
-
-            };
-
-            JsonSerializerSettings.Converters.Add(new IsoDateTimeConverter() { DateTimeFormat = "yyyy-MM-dd HH:mm:ss" });
-            JsonSerializerSettings.Converters.Add(new StringEnumConverter());
-        }
-
-        public static void CheckIsServerOnline()
-        {
-            Task.Run(async () =>
-            {
-                try
-                {
-                    ServerOnline = true;
-                    ServerOnline = await HttpHelper.GetAsync<bool>($"{ServerUrl}/alive/checkalive");
-                }
-                catch
-                {
-                    ServerOnline = false;
-                }
-                finally
-                {
-                    if (!ServerOnline)
-                    {
-                        Logs.LogError($"Server: \"{ServerUrl}\" is offline!!!");
-                        PopupMessageManager.ShowPopup(new()
-                        {
-                            BlinkInContent = true,
-                            BlinkTimeInterval = 0.5f,
-                            Header = "Hikaria.Core",
-                            UpperText = "<color=#FF8C00><size=125%>警告 Warning</size></color>\n\n<size=150%><color=red>当前服务端不在线，某些功能无法正常工作！\nThe server is offline, some features won't work!</size></color>",
-                            LowerText = string.Empty,
-                            PopupType = PopupType.BoosterImplantMissed,
-                            OnCloseCallback = PopupMessageManager.EmptyAction
-                        });
-                    }
-                }
-            });
-        }
+        JsonSerializerSettings.Converters.Add(new IsoDateTimeConverter() { DateTimeFormat = "yyyy-MM-dd HH:mm:ss" });
+        JsonSerializerSettings.Converters.Add(new StringEnumConverter());
     }
 }

@@ -6,14 +6,14 @@ using TheArchive.Core.Attributes.Feature.Patches;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Core.FeaturesAPI.Groups;
 
-namespace Hikaria.Core.Features.Fixes;
+namespace Hikaria.Core.Features.Accessibility;
 
 [EnableFeatureByDefault]
 internal class ReceiveAmmoGiveFix : Feature
 {
     public override string Name => "弹药补给修复";
 
-    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Fixes");
+    public override GroupBase Group => ModuleGroup.GetOrCreateSubGroup("Accessibility");
 
     [ArchivePatch(typeof(PlayerBackpackManager), nameof(PlayerBackpackManager.ReceiveAmmoGive))]
     public class PlayerBackpackManager__ReceiveAmmoGive__Patch

@@ -8,6 +8,7 @@ using TheArchive.Core.FeaturesAPI.Groups;
 
 namespace Hikaria.Core.Features.Fixes;
 
+[HideInModSettings]
 [EnableFeatureByDefault]
 [DoNotSaveToConfig]
 [DisallowInGameToggle]
