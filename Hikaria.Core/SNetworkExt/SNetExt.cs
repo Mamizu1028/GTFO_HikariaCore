@@ -8,7 +8,7 @@ public static class SNetExt
 {
     internal static readonly IArchiveLogger Logger = LoaderWrapper.CreateArSubLoggerInstance("SNetExt");
 
-    private static readonly Dictionary<ulong, Dictionary<Type, DataWrapper>> s_dataWrappersLookup = new();
+    private static readonly Dictionary<(ulong PlayerLookup, Type DataType), DataWrapper> s_dataWrappersLookup = new(16);
     private static readonly List<ISNetExt_Manager> s_subManagers = new();
 
     public static SNetExt_Replication Replication { get; private set; }
@@ -25,6 +25,9 @@ public static class SNetExt
     {
         if (RootObject != null)
             return;
+
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<SNetExt_StateReplicatorProviderWrapper>();
+        LoaderWrapper.ClassInjector.RegisterTypeInIl2Cpp<SNetExt_ReplicatorSupplierWrapper>();
 
         RootObject = new GameObject("SNetExt");
         UnityEngine.Object.DontDestroyOnLoad(RootObject);
@@ -57,12 +60,12 @@ public static class SNetExt
 
     public static void SendAllCustomData(SNetwork.SNet_Player sourcePlayer, SNetwork.SNet_Player toPlayer = null)
     {
-        if (!s_dataWrappersLookup.TryGetValue(sourcePlayer.Lookup, out var kvp))
-            return;
-
-        foreach (var wrapper in kvp.Values)
+        foreach (var kvp in s_dataWrappersLookup)
         {
-            wrapper.Send(sourcePlayer, toPlayer);
+            if (kvp.Key.PlayerLookup == sourcePlayer.Lookup)
+            {
+                kvp.Value.Send(sourcePlayer, toPlayer);
+            }
         }
     }
 
@@ -112,44 +115,30 @@ public static class SNetExt
 
     public static A LoadCustomData<A>(this SNetwork.SNet_Player player) where A : struct
     {
-        Type typeFromHandle = typeof(A);
-        DataWrapper<A> dataWrapper2;
-        if (!s_dataWrappersLookup.TryGetValue(player.Lookup, out var dic))
+        var key = (player.Lookup, typeof(A));
+        if (!s_dataWrappersLookup.TryGetValue(key, out var dataWrapper))
         {
-            s_dataWrappersLookup[player.Lookup] = new();
-            dic = s_dataWrappersLookup[player.Lookup];
+            var dataWrapper2 = new DataWrapper<A>();
+            s_dataWrappersLookup.Add(key, dataWrapper2);
+            return dataWrapper2.Load();
         }
-        if (!dic.TryGetValue(typeFromHandle, out var dataWrapper))
-        {
-            dataWrapper2 = new DataWrapper<A>();
-            dic.Add(typeFromHandle, dataWrapper2);
-        }
-        else
-        {
-            dataWrapper2 = dataWrapper as DataWrapper<A>;
-        }
-        return dataWrapper2.Load();
+        return ((DataWrapper<A>)dataWrapper).Load();
     }
 
     public static void StoreCustomData<A>(this SNetwork.SNet_Player player, A data) where A : struct
     {
-        Type typeFromHandle = typeof(A);
-        DataWrapper<A> dataWrapper2;
-        if (!s_dataWrappersLookup.TryGetValue(player.Lookup, out var dic))
+        var key = (player.Lookup, typeof(A));
+        DataWrapper<A> typed;
+        if (!s_dataWrappersLookup.TryGetValue(key, out var dataWrapper))
         {
-            s_dataWrappersLookup[player.Lookup] = new();
-            dic = s_dataWrappersLookup[player.Lookup];
-        }
-        if (!dic.TryGetValue(typeFromHandle, out var dataWrapper))
-        {
-            dataWrapper2 = new DataWrapper<A>();
-            dic.Add(typeFromHandle, dataWrapper2);
+            typed = new DataWrapper<A>();
+            s_dataWrappersLookup.Add(key, typed);
         }
         else
         {
-            dataWrapper2 = dataWrapper as DataWrapper<A>;
+            typed = (DataWrapper<A>)dataWrapper;
         }
-        dataWrapper2.Store(player, data);
+        typed.Store(player, data);
     }
 
     private static void SetupReplication()
@@ -178,10 +167,10 @@ public static class SNetExt
 
     internal static void DestroySelfManagedReplicatedObject(GameObject go)
     {
-        var components = go.GetComponentsInChildren<ISNetExt_StateReplicatorProvider>();
+        var components = go.GetComponentsInChildren<SNetExt_StateReplicatorProviderWrapper>();
         for (int i = 0; i < components.Length; i++)
         {
-            var stateReplicator = components[i].GetStateReplicator();
+            var stateReplicator = components[i].Provider.GetStateReplicator();
             if (stateReplicator != null)
             {
                 var replicator = stateReplicator.Replicator;

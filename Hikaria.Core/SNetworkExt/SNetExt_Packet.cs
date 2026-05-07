@@ -1,4 +1,5 @@
 ﻿using GTFO.API;
+using System.Runtime.CompilerServices;
 
 namespace Hikaria.Core.SNetworkExt;
 
@@ -56,18 +57,48 @@ public class SNetExt_Packet<T> where T : struct
 
     public void Send(T data, List<SNetwork.SNet_Player> players)
     {
-        if (players.Count == 0) return;
+        if (players == null || players.Count == 0) return;
 
-        var index = players.FindIndex(p => p.IsLocal);
-        if (index != -1)
+        bool localFound = false;
+        int remoteCount = 0;
+        for (int i = 0; i < players.Count; i++)
         {
-            OnReceiveData(SNetwork.SNet.LocalPlayer, data);
-            NetworkAPI.InvokeEvent(EventName, data, players.Where(p => !p.IsLocal).ToList(), ChannelType);
+            if (players[i].IsLocal) localFound = true;
+            else remoteCount++;
         }
-        else
+
+        if (!localFound)
         {
             NetworkAPI.InvokeEvent(EventName, data, players, ChannelType);
+            return;
         }
+
+        OnReceiveData(SNetwork.SNet.LocalPlayer, data);
+
+        if (remoteCount == 0)
+        {
+            return;
+        }
+
+        var remoteList = GetRemotePlayerScratchList();
+        remoteList.Clear();
+        if (remoteList.Capacity < remoteCount)
+            remoteList.Capacity = remoteCount;
+        for (int i = 0; i < players.Count; i++)
+        {
+            if (!players[i].IsLocal)
+                remoteList.Add(players[i]);
+        }
+        NetworkAPI.InvokeEvent(EventName, data, remoteList, ChannelType);
+    }
+
+    [ThreadStatic]
+    private static List<SNetwork.SNet_Player> t_remotePlayerScratch;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static List<SNetwork.SNet_Player> GetRemotePlayerScratchList()
+    {
+        return t_remotePlayerScratch ??= new List<SNetwork.SNet_Player>(8);
     }
 
     private void OnReceiveData(ulong senderId, T data)

@@ -493,7 +493,7 @@ internal class LobbySettingsOverride : Feature
                     value ??= string.Empty;
                     value = value[..Math.Min(value.Length, PASSWORD_MAX_LENGTH)];
                     _password = value;
-                    HasPassword = !string.IsNullOrEmpty(_password);
+                    HasPassword = !string.IsNullOrWhiteSpace(_password);
                 }
             }
             public bool HasPassword { get; private set; }

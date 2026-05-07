@@ -102,13 +102,13 @@ internal class EnemyAPI_Impl : Feature
     [ArchivePatch(typeof(ES_HitreactBase), nameof(ES_HitreactBase.CurrentReactionType), patchMethodType: ArchivePatch.PatchMethodType.Setter)]
     private class ES_HitreactBase__set_CurrentReactionType__Patch
     {
-        private static void Postfix(ES_Hitreact __instance, ES_HitreactType value)
+        private static void Postfix(ES_HitreactBase __instance, ES_HitreactType value)
         {
             if (CurrentGameState != (int)eGameStateName.InLevel)
                 return;
 
             if (value == ES_HitreactType.ToDeath)
-                Utils.SafeInvoke(OnEnemyDead, __instance);
+                Utils.SafeInvoke(OnEnemyDead, __instance.m_enemyAgent);
         }
     }
 

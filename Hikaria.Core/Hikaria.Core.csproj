@@ -19,8 +19,12 @@
 
 	<Import Project="../Dependencies.props" />
 
-  <ItemGroup>
-    <ProjectReference Include="..\Hikaria.Core.Entities\Hikaria.Core.Entities.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\Hikaria.Core.Entities\Hikaria.Core.Entities.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Hikaria.Core.SourceGenerators\Hikaria.Core.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
 
 </Project>

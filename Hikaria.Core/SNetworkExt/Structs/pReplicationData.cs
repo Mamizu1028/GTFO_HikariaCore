@@ -11,5 +11,6 @@ public struct pReplicationData
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
     public string ReplicatorKeyHash;
 
+    [MarshalAs(UnmanagedType.U1)]
     public bool isRecall;
 }

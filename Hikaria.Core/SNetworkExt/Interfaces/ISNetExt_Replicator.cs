@@ -16,9 +16,9 @@ public interface ISNetExt_Replicator
 
     byte[] KeyHashBytes { get; }
 
-    string Key { get; set; }
+    string Key { get; internal set; }
 
-    string KeyHash { get; set; }
+    string KeyHash { get; internal set; }
 
     bool IsAnonymous { get; }
 

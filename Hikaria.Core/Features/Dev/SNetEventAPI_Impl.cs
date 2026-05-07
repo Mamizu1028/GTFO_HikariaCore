@@ -44,7 +44,7 @@ internal class SNetEventAPI_Impl : Feature
                 Utils.SafeInvoke(OnPlayerEvent, player, playerEvent, reason);
                 if (playerEvent == SNet_PlayerEvent.PlayerLeftSessionHub)
                 {
-                    FeatureLogger.Notice($"{player.NickName} [{player.Lookup}] {playerEvent}");
+                    FeatureLogger.Notice($"{player.NickName} [{player.Lookup}] {nameof(SessionMemberEvent.LeftSessionHub)}");
                     Utils.SafeInvoke(OnSessionMemberChanged, player, SessionMemberEvent.LeftSessionHub);
                 }
             });
@@ -98,6 +98,7 @@ internal class SNetEventAPI_Impl : Feature
     {
         private static void Postfix(SNet_Player player)
         {
+            FeatureLogger.Notice($"{player.NickName} [{player.Lookup}] {nameof(SessionMemberEvent.JoinSessionHub)}");
             Utils.SafeInvoke(OnSessionMemberChanged, player, SessionMemberEvent.JoinSessionHub);
         }
     }

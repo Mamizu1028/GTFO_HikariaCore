@@ -22,7 +22,8 @@ public static class CoreAPI
         {
             return CoreAPI_Impl.InstalledMods.TryGetValue(guid, out var info1) && range.Contains(info1.Version);
         }
-        return CoreAPI_Impl.OthersMods.TryGetValue(player.Lookup, out var lookup) && lookup.TryGetValue(guid, out var info2) && range.Contains(info2.Version);
+        return CoreAPI_Impl.OthersMods.TryGetValue(player.Lookup, out var lookup) 
+            && lookup.TryGetValue(guid, out var info2) && range.Contains(info2.Version);
     }
 
     #region Delegates

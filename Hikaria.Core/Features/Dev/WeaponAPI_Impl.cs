@@ -30,7 +30,7 @@ internal class WeaponAPI_Impl : Feature
     public static event PostShotgunFire OnPostShotgunFire;
     #endregion
 
-    [ArchivePatch(typeof(BulletWeapon), nameof(BulletWeapon.Fire))]
+    [ArchivePatch(typeof(BulletWeapon), nameof(BulletWeapon.Fire), priority: int.MaxValue)]
     private class BulletWeapon__Fire__Patch
     {
         private static void Prefix(BulletWeapon __instance, bool resetRecoilSimilarity)
@@ -44,7 +44,7 @@ internal class WeaponAPI_Impl : Feature
         }
     }
 
-    [ArchivePatch(typeof(Shotgun), nameof(Shotgun.Fire))]
+    [ArchivePatch(typeof(Shotgun), nameof(Shotgun.Fire), priority: int.MaxValue)]
     private class Shotgun__Fire__Patch
     {
         private static void Prefix(Shotgun __instance, bool resetRecoilSimilarity)

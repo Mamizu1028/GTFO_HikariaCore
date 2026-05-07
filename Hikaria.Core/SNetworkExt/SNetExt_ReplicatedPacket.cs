@@ -1,8 +1,6 @@
 ﻿using GTFO.API;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Hikaria.Core.SNetworkExt;
 
@@ -17,14 +15,17 @@ public abstract class SNetExt_ReplicatedPacket
         get => m_key;
         set
         {
-            m_key = value;
+            m_key = value ?? string.Empty;
             if (string.IsNullOrWhiteSpace(m_key))
             {
                 m_keyHash = string.Empty;
-                m_keyHashBytes = new byte[16];
+                m_keyHashBytes = s_emptyHashBytes;
                 return;
             }
-            KeyHash = PacketKeyToHash(m_key);
+            Span<byte> hashBytes = stackalloc byte[16];
+            SNetExt_HashUtil.KeyToHashBytes(m_key, hashBytes);
+            m_keyHash = SNetExt_HashUtil.HashBytesToHex(hashBytes);
+            m_keyHashBytes = hashBytes.ToArray();
         }
     }
 
@@ -33,8 +34,13 @@ public abstract class SNetExt_ReplicatedPacket
         get => m_keyHash;
         set
         {
-            m_keyHash = value;
-            KeyHashBytes = PacketKeyHashToBytes(m_keyHash);
+            m_keyHash = value ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(m_keyHash) || m_keyHash.Length != 32)
+            {
+                m_keyHashBytes = s_emptyHashBytes;
+                return;
+            }
+            m_keyHashBytes = SNetExt_HashUtil.HashHexToBytes(m_keyHash);
         }
     }
 
@@ -59,24 +65,16 @@ public abstract class SNetExt_ReplicatedPacket
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void InjectIDPacketIndex(byte[] bytes)
     {
-        using (MD5 md5 = MD5.Create())
-        {
-            Buffer.BlockCopy(Replicator.KeyHashBytes, 0, bytes, 0, 16);
-            Buffer.BlockCopy(KeyHashBytes, 0, bytes, 16, 16);
-        }
-
+        Buffer.BlockCopy(Replicator.KeyHashBytes, 0, bytes, 0, 16);
+        Buffer.BlockCopy(KeyHashBytes, 0, bytes, 16, 16);
         bytes[32] = Index;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void InjectIDPacketIndex(SNetExt_ReplicatedPacket packet, byte[] bytes, byte[] replicatorKeyHashBytes, byte[] packetKeyHashBytes)
     {
-        using (MD5 md5 = MD5.Create())
-        {
-            Buffer.BlockCopy(replicatorKeyHashBytes, 0, bytes, 0, 16);
-            Buffer.BlockCopy(packetKeyHashBytes, 0, bytes, 16, 16);
-        }
-
+        Buffer.BlockCopy(replicatorKeyHashBytes, 0, bytes, 0, 16);
+        Buffer.BlockCopy(packetKeyHashBytes, 0, bytes, 16, 16);
         bytes[32] = packet.Index;
     }
 
@@ -87,19 +85,20 @@ public abstract class SNetExt_ReplicatedPacket
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte[] PacketKeyHashToBytes(string keyHash)
     {
-        return Convert.FromHexString(keyHash);
+        return SNetExt_HashUtil.HashHexToBytes(keyHash);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string PacketKeyToHash(string key)
     {
-        using MD5 md5 = MD5.Create();
-        return Convert.ToHexString(md5.ComputeHash(Encoding.UTF8.GetBytes(key)));
+        return SNetExt_HashUtil.KeyToHashHex(key);
     }
 
     private string m_key;
     private string m_keyHash;
     private byte[] m_keyHashBytes;
+
+    private static readonly byte[] s_emptyHashBytes = new byte[16];
 }
 
 public class SNetExt_ReplicatedPacket<T> : SNetExt_ReplicatedPacket where T : struct
@@ -150,25 +149,34 @@ public class SNetExt_ReplicatedPacket<T> : SNetExt_ReplicatedPacket where T : st
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Send(T data, SNetwork.SNet_ChannelType type)
     {
-        Marshal.StructureToPtr(data, s_marshaller.m_intPtr, true);
-        Marshal.Copy(s_marshaller.m_intPtr, m_internalBytes, 33, s_marshaller.Size);
+        WritePayload(data);
         NetworkAPI.InvokeFreeSizedEvent(SNetExt_Replication.NETWORK_EVENT_NAME, m_internalBytes, type);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Send(T data, SNetwork.SNet_ChannelType type, SNetwork.SNet_Player player)
     {
-        Marshal.StructureToPtr(data, s_marshaller.m_intPtr, true);
-        Marshal.Copy(s_marshaller.m_intPtr, m_internalBytes, 33, s_marshaller.Size);
+        WritePayload(data);
         NetworkAPI.InvokeFreeSizedEvent(SNetExt_Replication.NETWORK_EVENT_NAME, m_internalBytes, player, type);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Send(T data, SNetwork.SNet_ChannelType type, List<SNetwork.SNet_Player> players)
     {
+        WritePayload(data);
+        NetworkAPI.InvokeFreeSizedEvent(SNetExt_Replication.NETWORK_EVENT_NAME, m_internalBytes, players, type);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void WritePayload(T data)
+    {
+        if (s_marshaller.IsBlittable)
+        {
+            MemoryMarshal.Write(m_internalBytes.AsSpan(33, s_marshaller.Size), ref data);
+            return;
+        }
         Marshal.StructureToPtr(data, s_marshaller.m_intPtr, true);
         Marshal.Copy(s_marshaller.m_intPtr, m_internalBytes, 33, s_marshaller.Size);
-        NetworkAPI.InvokeFreeSizedEvent(SNetExt_Replication.NETWORK_EVENT_NAME, m_internalBytes, players, type);
     }
 
     internal void CaptureToBuffer(T data, SNetExt_CapturePass captureDataType)

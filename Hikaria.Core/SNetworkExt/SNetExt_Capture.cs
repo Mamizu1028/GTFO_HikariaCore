@@ -19,7 +19,7 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public bool IsCapturing { get; set; }
+    public bool IsCapturing { get; private set; }
 
     [HideFromIl2Cpp]
     public bool IsRecalling { get; set; }
@@ -60,16 +60,19 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     {
     }
 
+    [HideFromIl2Cpp]
     internal static void RegisterCaptureCallback(ICaptureCallbackObject syncInterface)
     {
         s_captureCallbackObjects.Add(syncInterface);
     }
 
+    [HideFromIl2Cpp]
     internal static void UnRegisterForDropInCallback(ICaptureCallbackObject syncInterface)
     {
         s_captureCallbackObjects.Remove(syncInterface);
     }
 
+    [HideFromIl2Cpp]
     internal static void CleanUpAllButManagersCaptureCallbacks()
     {
         int i = s_captureCallbackObjects.Count;
@@ -235,22 +238,23 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
             return;
         var oldestMigrationBuffer = GetOldestMigrationBuffer();
         CaptureGameState(oldestMigrationBuffer);
-        var list = new List<SNetwork.SNet_Player>();
+        m_migrationPlayerScratch.Clear();
         var playersInSession = SNetwork.SNet.SessionHub.PlayersInSession;
         for (int i = 0; i < playersInSession.Count; i++)
         {
             var player = playersInSession[i];
             if (!player.IsLocal && !player.IsBot)
             {
-                list.Add(player);
+                m_migrationPlayerScratch.Add(player);
             }
         }
-        if (list.Count == 0)
+        if (m_migrationPlayerScratch.Count == 0)
         {
             m_minTimeToSendNextBuffer = Clock.Time + MIGRATION_CAPTURE_INTERVAL_MIN_DELAY;
             return;
         }
-        m_passiveMigrationBufferSend = new SNetExt_BufferSender(5, 0.5f, m_buffers[(int)oldestMigrationBuffer], list, SNetwork.SNet_ChannelType.SessionMigration);
+        // BufferSender 内部 m_sendToPlayers.AddRange(players)，所以不会持有外部 list 引用
+        m_passiveMigrationBufferSend = new SNetExt_BufferSender(5, 0.5f, m_buffers[(int)oldestMigrationBuffer], m_migrationPlayerScratch, SNetwork.SNet_ChannelType.SessionMigration);
         m_migrationTimer = Clock.Time + MIGRATION_CAPTURE_INTERVAL;
     }
 
@@ -381,6 +385,9 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
         if (captureDataType == SNetExt_CapturePass.Skip)
             return;
 
+        // TODO(perf): 可以用紧凑的 ArrayBufferWriter<byte> 替代 List<byte[]>，
+        // 减少捕获期间多次小数组分配。当前每个 packet 都 new byte[]，
+        // checkpoint 一次可能产生数百次小分配。改造需同步 Buffer 反序列化（RecallBytes）。
         byte[] array = new byte[data.Length];
         Buffer.BlockCopy(data, 0, array, 0, data.Length);
         PrimedBuffer.GetPass(captureDataType).Add(array);
@@ -447,13 +454,15 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
             type = bufferType,
             data = captureBuffer.data
         };
-        byte[] array;
+        byte[] array = new byte[3];
         if (player != null)
         {
-            for (int i = 0; i < SNetwork.SNet_CaptureBuffer.PassCount; i++)
+            for (int i = 0; i < SNetExt_CaptureBuffer.PassCount; i++)
             {
                 List<byte[]> list = captureBuffer.m_passes[i];
-                array = SNetExt_ReplicatedPacketBufferBytes.GetBufferDataBytes(new SNetExt_ReplicatedPacketBufferBytes.BufferData(captureBuffer.data.bufferID, 0));
+                SNetExt_ReplicatedPacketBufferBytes.WriteBufferDataBytes(
+                    new SNetExt_ReplicatedPacketBufferBytes.BufferData(captureBuffer.data.bufferID, (byte)i),
+                    array.AsSpan());
                 int count = list.Count;
                 for (int j = 0; j < count; j++)
                 {
@@ -466,7 +475,9 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
         for (int k = 0; k < SNetExt_CaptureBuffer.PassCount; k++)
         {
             List<byte[]> list2 = captureBuffer.m_passes[k];
-            array = SNetExt_ReplicatedPacketBufferBytes.GetBufferDataBytes(new SNetExt_ReplicatedPacketBufferBytes.BufferData(captureBuffer.data.bufferID, 0));
+            SNetExt_ReplicatedPacketBufferBytes.WriteBufferDataBytes(
+                new SNetExt_ReplicatedPacketBufferBytes.BufferData(captureBuffer.data.bufferID, (byte)k),
+                array.AsSpan());
             int count2 = list2.Count;
             for (int l = 0; l < count2; l++)
             {
@@ -477,7 +488,7 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
-    public void OnReceiveBufferBytes(byte[] bytes, SNetExt_ReplicatedPacketBufferBytes.BufferData bufferData)
+    public void OnReceiveBufferBytes(ReadOnlySpan<byte> bytes, SNetExt_ReplicatedPacketBufferBytes.BufferData bufferData)
     {
         if (!IsCapturing)
             return;
@@ -489,8 +500,8 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
             return;
         if (bufferData.pass >= SNetExt_CaptureBuffer.PassCount)
             return;
-        byte[] array = new byte[bytes.Length];
-        Buffer.BlockCopy(bytes, 0, array, 0, bytes.Length);
+        // TODO(perf): 见 CaptureToBuffer 同样的紧凑布局优化备忘
+        byte[] array = bytes.ToArray();
         PrimedBuffer.m_passes[bufferData.pass].Add(array);
     }
 
@@ -555,6 +566,7 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     private const float MIGRATION_CAPTURE_INTERVAL_MIN_DELAY = 20f;
     private ushort m_highestBufferID = 1;
     private float m_minTimeToSendNextBuffer;
+    private readonly List<SNetwork.SNet_Player> m_migrationPlayerScratch = new(8);
     private static readonly List<ICaptureCallbackObject> s_captureCallbackObjects = new();
     private readonly IArchiveLogger _logger = LoaderWrapper.CreateArSubLoggerInstance(nameof(SNetExt_Capture));
 }

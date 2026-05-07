@@ -20,32 +20,26 @@ internal class SNetExtAPI_Impl : Feature
 
     public new static IArchiveLogger FeatureLogger { get; set; }
 
-    public static bool TryGetVanillaReplicatorWrapper(ushort key, out ISNetExt_Replicator wrapper)
-    {
-        return SNetExt_Replication.TryGetReplicatorByKeyHash(SNetExt_Replication.ReplicatorKeyToHash($"VanillaWrapper_{key}"), out wrapper);
-    }
-
     #region SNet_Replication
     [ArchivePatch(typeof(SNetwork.SNet_Replication), nameof(SNetwork.SNet_Replication.AssignReplicatorKey))]
     private class SNet_Replication__AssignReplicatorKey__Patch
     {
-        private static void Postfix(SNetwork.IReplicator replicator)
+        private static void Postfix(SNetwork.IReplicator replicator, ushort key)
         {
-            if (!SNetExt_Replication.TryGetReplicatorByKeyHash(SNetExt_Replication.ReplicatorKeyToHash($"VanillaWrapper_{replicator.Key}"), out _))
-            {
-                SNetExt_Replication.AddVanillaReplicatorWrapper(replicator);
-                return;
-            }
-            FeatureLogger.Error($"Duplicated Vanilla Replicator, Key: {replicator.Key}");
+            if (replicator == null || replicator.Key != key) return;
+
+            SNetExt_Replication.TryBindVanillaWrapper(replicator);
         }
     }
 
     [ArchivePatch(typeof(SNetwork.SNet_Replication), nameof(SNetwork.SNet_Replication.ClearReplicatorKey))]
     private class SNet_Replication__ClearReplicatorKey__Patch
     {
-        private static void Prefix(ushort key)
+        private static void Prefix(SNetwork.IReplicator newReplicator)
         {
-            if (SNetExt_Replication.TryGetReplicatorByKeyHash(SNetExt_Replication.ReplicatorKeyToHash($"VanillaWrapper_{key}"), out var wrapper))
+            if (newReplicator == null) return;
+
+            if (SNetExt_Replication.TryGetVanillaWrapper(newReplicator, out var wrapper))
             {
                 wrapper.Despawn();
             }
@@ -57,9 +51,11 @@ internal class SNetExtAPI_Impl : Feature
     {
         private static void Prefix(SNetwork.IReplicator replicator)
         {
-            if (SNetExt_Replication.TryGetReplicatorByKeyHash(SNetExt_Replication.ReplicatorKeyToHash($"VanillaWrapper_{replicator.Key}"), out var wrapper))
+            if (replicator == null) return;
+
+            if (SNetExt_Replication.TryGetVanillaWrapper(replicator, out var wrapper))
             {
-                wrapper.Despawn();
+                SNetExt_Replication.DeallocateVanillaWrapper(wrapper);
             }
         }
     }
@@ -102,7 +98,7 @@ internal class SNetExtAPI_Impl : Feature
         }
     }
 
-    //[ArchivePatch(typeof(SNet), nameof(SNet.DestroySelfManagedReplicatedObject))]
+    [ArchivePatch(typeof(SNetwork.SNet), nameof(SNetwork.SNet.DestroySelfManagedReplicatedObject))]
     private class SNet__DestroySelfManagedReplicatedObject__Patch
     {
         private static void Prefix(GameObject go)

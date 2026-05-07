@@ -74,7 +74,7 @@ internal class CoreAPI_Impl : Feature
             OthersMods[player.Lookup][mod.GUID] = mod;
         }
 
-        Utils.SafeInvoke(OnPlayerModsSynced, player, data.Mods);
+        Utils.SafeInvoke(OnPlayerModsSynced, player, data.Mods.Where(info => !string.IsNullOrWhiteSpace(info.GUID)));
     }
 
     private void OnPluginLoaded(BepInEx.PluginInfo pluginInfo)

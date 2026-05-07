@@ -1,6 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text;
 using TheArchive.Interfaces;
 using TheArchive.Loader;
 using UnityEngine;
@@ -87,6 +85,26 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
         m_prefabKeyHashToKey.Clear();
     }
 
+    public bool RemovePrefab(string key)
+    {
+        var keyHash = PrefabKeyToHash(key);
+        if (!m_prefabs.TryGetValue(keyHash, out var entry))
+            return false;
+        if (entry.local != null)
+            m_prefabLookup.Remove(entry.local.Pointer);
+        m_prefabs.Remove(keyHash);
+        m_prefabKeyToKeyHash.Remove(key);
+        m_prefabKeyHashToKey.Remove(keyHash);
+        return true;
+    }
+
+    public bool RemovePrefab(GameObject prefab)
+    {
+        if (!TryGetPrefabKey(prefab, out var key, out _))
+            return false;
+        return RemovePrefab(key);
+    }
+
     public bool TryGetPrefabKey(GameObject prefab, out string key, out string keyHash)
     {
         if (!m_prefabLookup.TryGetValue(prefab.Pointer, out keyHash) || !m_prefabKeyHashToKey.TryGetValue(keyHash, out key))
@@ -156,6 +174,15 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
 
     protected virtual void InternalSpawnCallback(T spawnData)
     {
+        if (!SNetwork.SNet.IsMaster
+            && m_preSpawnedReplicator == null
+            && !SNetExt.Replication.IsLastSenderMaster
+            && !SNetwork.SNet.MasterManagement.IsMigrating)
+        {
+            _logger.Warning($"Rejected spawn packet from non-master sender (id={SNetExt.Replication.LastSenderID})");
+            m_internalSpawnCallbackReturnReplicator = default;
+            return;
+        }
         var replicationData = spawnData.ReplicationData;
         R r = default;
         GameObject gameObject = null;
@@ -196,7 +223,7 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
 
     private ISNetExt_DynamicReplicatorSupplier<T> LinkSupplier(R replicator, GameObject go)
     {
-        var supplier = go.GetComponent<ISNetExt_ReplicatorSupplier>() as ISNetExt_DynamicReplicatorSupplier<T>;
+        var supplier = go.GetComponent<SNetExt_ReplicatorSupplierWrapper>().ReplicatorSupplier as ISNetExt_DynamicReplicatorSupplier<T>;
         replicator.ReplicatorSupplier = supplier;
         supplier.Replicator = replicator;
         return supplier;
@@ -244,6 +271,11 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
 
     private void InternalDeSpawnCallback_Slave(pReplicationData despawnData)
     {
+        if (!SNetExt.Replication.IsLastSenderMaster && !SNetwork.SNet.MasterManagement.IsMigrating)
+        {
+            _logger.Warning($"Rejected despawn packet from non-master sender (id={SNetExt.Replication.LastSenderID})");
+            return;
+        }
         if (SNetExt_Replication.TryGetReplicator(despawnData, out var replicator))
         {
             OnDeSpawn(replicator as R);
@@ -256,7 +288,7 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
         return false;
     }
 
-    protected R AddReplicator(T spawnData, GameObject go)
+    protected virtual R CreateReplicator(T spawnData, GameObject go)
     {
         return new R();
     }
@@ -293,7 +325,7 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
             gameObject = m_prefabs[replicationData.PrefabKeyHash].sync;
         }
         go = UnityEngine.Object.Instantiate(gameObject, spawnData.Position, spawnData.Rotation);
-        replicator = AddReplicator(spawnData, go);
+        replicator = CreateReplicator(spawnData, go);
         return true;
     }
 
@@ -350,14 +382,13 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte[] PrefabKeyHashToBytes(string keyHash)
     {
-        return Convert.FromHexString(keyHash);
+        return SNetExt_HashUtil.HashHexToBytes(keyHash);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string PrefabKeyToHash(string key)
     {
-        using MD5 md5 = MD5.Create();
-        return Convert.ToHexString(md5.ComputeHash(Encoding.UTF8.GetBytes(key)));
+        return SNetExt_HashUtil.KeyToHashHex(key);
     }
 
     public List<R> m_replicators = new();
@@ -370,10 +401,10 @@ public class SNetExt_ReplicationManager<T, R> : SNetExt_ReplicationManager<T> wh
     protected SNetExt_ReplicatedPacket<T> m_spawnRequestPacket;
     protected SNetExt_ReplicatedPacket<pReplicationData> m_despawnRequestPacket;
     protected SNetExt_ReplicatedPacket<pReplicationData> m_despawnPacket;
-    protected Dictionary<string, (GameObject local, GameObject sync)> m_prefabs = new();
-    protected Dictionary<string, string> m_prefabKeyToKeyHash = new();
-    protected Dictionary<string, string> m_prefabKeyHashToKey = new();
-    protected Dictionary<IntPtr, string> m_prefabLookup = new();
+    protected Dictionary<string, (GameObject local, GameObject sync)> m_prefabs = new(16);
+    protected Dictionary<string, string> m_prefabKeyToKeyHash = new(16);
+    protected Dictionary<string, string> m_prefabKeyHashToKey = new(16);
+    protected Dictionary<IntPtr, string> m_prefabLookup = new(16);
     protected bool m_hasSpawnDespawnCallback;
     protected Action<ISNetExt_Replicator, bool> m_spawnDespawnCallback;
     protected Vector3 m_tempPosition;

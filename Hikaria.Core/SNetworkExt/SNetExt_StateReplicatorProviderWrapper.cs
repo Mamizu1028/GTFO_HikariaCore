@@ -22,12 +22,17 @@ internal class SNetExt_StateReplicatorProviderWrapper<S> : MonoBehaviour, ISNetE
     {
         m_stateReplicator = stateReplicator;
         m_onStateChange = onStateChange;
+        gameObject.AddComponent<SNetExt_StateReplicatorProviderWrapper>().Setup(this);
     }
 
     private void OnDestroy()
     {
+        if (m_stateReplicator == null) return;
         SNetExt_Capture.UnRegisterForDropInCallback(m_stateReplicator);
-        SNetExt_Replication.DeallocateReplicator(m_stateReplicator.Replicator);
+        if (m_stateReplicator.Replicator != null)
+        {
+            SNetExt_Replication.DeallocateReplicator(m_stateReplicator.Replicator);
+        }
     }
 
     private Action<SNetExt_StateReplicator<S>, S, S, bool> m_onStateChange;
@@ -60,12 +65,17 @@ internal class SNetExt_StateReplicatorProviderWrapper<S, I> : MonoBehaviour, ISN
         m_stateReplicator = stateReplicator;
         m_onStateChange = onStateChange;
         m_attemptInteract = attemptInteract;
+        gameObject.AddComponent<SNetExt_StateReplicatorProviderWrapper>().Setup(this);
     }
 
     private void OnDestroy()
     {
+        if (m_stateReplicator == null) return;
         SNetExt_Capture.UnRegisterForDropInCallback(m_stateReplicator);
-        SNetExt_Replication.DeallocateReplicator(m_stateReplicator.Replicator);
+        if (m_stateReplicator.Replicator != null)
+        {
+            SNetExt_Replication.DeallocateReplicator(m_stateReplicator.Replicator);
+        }
     }
 
     private Action<SNetExt_StateReplicator<S, I>, S, S, bool> m_onStateChange;

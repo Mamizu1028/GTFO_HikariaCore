@@ -1,4 +1,5 @@
 ﻿using Hikaria.Core.Features.Dev;
+using Il2CppSystem.Linq;
 using SNetwork;
 using TheArchive.Core.Attributes.Feature;
 using TheArchive.Core.Attributes.Feature.Members;
@@ -37,10 +38,7 @@ internal class ModList : Feature
         {
             Lookup = player.Lookup;
             Nickname = player.NickName;
-            if (CoreAPI_Impl.OthersMods.TryGetValue(Lookup, out var entry))
-            {
-                ModList = new List<ModInfoEntry>(entry.Values.Select(modInfo => new ModInfoEntry(modInfo)));
-            }
+            ModList = new();
         }
 
         [FSIgnore]
@@ -81,11 +79,13 @@ internal class ModList : Feature
     public override void OnEnable()
     {
         SNetEventAPI.OnSessionMemberChanged += OnSessionMemberChanged;
+        CoreAPI.OnPlayerModsSynced += OnPlayerModSynced;
     }
 
     public override void OnDisable()
     {
         SNetEventAPI.OnSessionMemberChanged -= OnSessionMemberChanged;
+        CoreAPI.OnPlayerModsSynced -= OnPlayerModSynced;
     }
 
     [ArchivePatch(typeof(SNet_Core_STEAM), nameof(SNet_Core_STEAM.CreateLocalPlayer))]
@@ -97,7 +97,7 @@ internal class ModList : Feature
         }
     }
 
-    public void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
+    private void OnSessionMemberChanged(SNet_Player player, SessionMemberEvent playerEvent)
     {
         if (player.IsBot)
             return;
@@ -109,15 +109,23 @@ internal class ModList : Feature
             else
                 Settings.OthersMods.RemoveAll(p => p.Lookup == player.Lookup);
         }
-        else if (playerEvent == SessionMemberEvent.JoinSessionHub)
-        {
-            if (player.IsLocal)
-                return;
+    }
 
-            if (!Settings.OthersMods.Any(p => p.Lookup == player.Lookup))
-            {
-                Settings.OthersMods.Add(new PlayerModListEntry(player));
-            }
+    private void OnPlayerModSynced(SNet_Player player, IEnumerable<pModInfo> mods)
+    {
+        if (player.IsLocal)
+            return;
+
+        var entry = Settings.OthersMods.Find(p => p.Lookup == player.Lookup);
+        if (entry == null)
+        {
+            entry = new PlayerModListEntry(player);
+            entry.ModList = new List<ModInfoEntry>(mods.Select(modInfo => new ModInfoEntry(modInfo)));
+            Settings.OthersMods.Add(entry);
+        }
+        else
+        {
+            entry.ModList = new List<ModInfoEntry>(mods.Select(modInfo => new ModInfoEntry(modInfo)));
         }
     }
 }

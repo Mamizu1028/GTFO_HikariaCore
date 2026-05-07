@@ -10,6 +10,7 @@ using UnityEngine;
 namespace Hikaria.Core;
 
 #region Popup
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public struct pPopupMessage
 {
     public PopupMessage UnpackPopupMessage()
@@ -100,6 +101,7 @@ public struct pModInfo
 #endregion
 
 #region Enemy
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public struct pFullEnemyReceivedDamageData
 {
     public pEnemyAgent enemy = new();
@@ -149,6 +151,7 @@ public struct pFullEnemyReceivedDamageData
 /// 次版本号：当你做了向下兼容的功能性新增时递增。
 /// 修订号：当你做了向下兼容的问题修正时递增。
 /// </remarks>
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public readonly struct Version : IComparable<Version>, IComparable, IEquatable<Version>
 {
     public static readonly Version ZeroVersion = new Version(0, 0, 0);

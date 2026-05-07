@@ -18,14 +18,14 @@ public struct pBuffersSummary
             levelChecksum = buffer.data.levelChecksum;
             return;
         }
-        bufferID = 0U;
+        bufferID = 0;
         progressionTime = 0f;
         levelChecksum = 0UL;
     }
 
     public readonly bool IsValid()
     {
-        return bufferID > 0U;
+        return bufferID > 0;
     }
 
     public readonly bool IsSame(ref pBuffersSummary sum)
@@ -54,7 +54,7 @@ public struct pBuffersSummary
 
     public ulong levelChecksum;
 
-    public uint bufferID;
+    public ushort bufferID;
 
     public float progressionTime;
 }

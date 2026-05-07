@@ -28,10 +28,6 @@ internal class ReceiveAmmoGiveFix : Feature
 
         private static InventorySlotAmmo SpeacialAmmo;
 
-        private static bool NeedRestoredStandardAmmoMaxCap = false;
-
-        private static bool NeedRestoredSpecialAmmoMaxCap = false;
-
         private static float AmmoStandardResourcePackMaxCap => PlayerDataBlock.GetBlock(1U).AmmoStandardResourcePackMaxCap;
         private static float AmmoSpecialResourcePackMaxCap => PlayerDataBlock.GetBlock(1U).AmmoSpecialResourcePackMaxCap;
 

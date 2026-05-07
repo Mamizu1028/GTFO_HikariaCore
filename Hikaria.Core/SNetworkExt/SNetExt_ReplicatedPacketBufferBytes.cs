@@ -1,4 +1,5 @@
-﻿using GTFO.API;
+using GTFO.API;
+using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -6,33 +7,44 @@ namespace Hikaria.Core.SNetworkExt;
 
 public class SNetExt_ReplicatedPacketBufferBytes : SNetExt_ReplicatedPacket
 {
-    private Action<byte[], BufferData> ReceiveAction { get; set; }
+    public delegate void SpanBufferReceiveDelegate(ReadOnlySpan<byte> payload, BufferData bufferData);
 
-    public static SNetExt_ReplicatedPacketBufferBytes Create(string key, Action<byte[], BufferData> receiveAction)
+    public SNetwork.SNet_ChannelType ChannelType
     {
-        var packet = new SNetExt_ReplicatedPacketBufferBytes
+        get => m_channelType;
+        set => m_channelType = value;
+    }
+
+    private SpanBufferReceiveDelegate ReceiveAction { get; set; }
+
+    public static SNetExt_ReplicatedPacketBufferBytes Create(string key, SpanBufferReceiveDelegate receiveAction)
+    {
+        if (receiveAction == null)
+            throw new ArgumentNullException(nameof(receiveAction));
+
+        return new SNetExt_ReplicatedPacketBufferBytes
         {
             Key = key,
             ReceiveAction = receiveAction
         };
-        return packet;
     }
 
-    public static byte[] GetBufferDataBytes(BufferData bufferData)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void WriteBufferDataBytes(BufferData bufferData, Span<byte> destination3)
     {
-        return new byte[3]
-        {
-            (byte)(bufferData.bufferID & 0xFF),
-            (byte)((bufferData.bufferID >> 8) & 0xFF),
-            bufferData.pass
-        };
+        if (destination3.Length < 3)
+            throw new ArgumentException("need 3 bytes", nameof(destination3));
+        destination3[0] = (byte)(bufferData.bufferID & 0xFF);
+        destination3[1] = (byte)((bufferData.bufferID >> 8) & 0xFF);
+        destination3[2] = bufferData.pass;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BufferData GetBufferData(byte[] bytes)
     {
-        ushort[] array = new ushort[1];
-        Buffer.BlockCopy(bytes, 33 + BUFFER_DATA_BYTE_SIZE, array, 0, 2);
-        return new BufferData(array[0], bytes[33 + 2]);
+        ushort bufferID = BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(33, 2));
+        byte pass = bytes[35];
+        return new BufferData(bufferID, pass);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -67,9 +79,11 @@ public class SNetExt_ReplicatedPacketBufferBytes : SNetExt_ReplicatedPacket
 
     public override void ReceiveBytes(byte[] bytes)
     {
-        byte[] bufferDataBytes = new byte[bytes.Length - 33 - BUFFER_DATA_BYTE_SIZE];
-        Buffer.BlockCopy(bytes, 33 + BUFFER_DATA_BYTE_SIZE, bufferDataBytes, 0, bufferDataBytes.Length);
-        ReceiveAction(bufferDataBytes, GetBufferData(bytes));
+        int payloadStart = 33 + BUFFER_DATA_BYTE_SIZE;
+        int payloadLength = bytes.Length - payloadStart;
+        if (payloadLength < 0) return;
+        var bufferData = GetBufferData(bytes);
+        ReceiveAction.Invoke(bytes.AsSpan(payloadStart, payloadLength), bufferData);
     }
 
     public static readonly int BUFFER_DATA_BYTE_SIZE = Marshal.SizeOf<BufferData>();

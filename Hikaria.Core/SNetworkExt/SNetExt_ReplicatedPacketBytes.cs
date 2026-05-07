@@ -1,22 +1,29 @@
-﻿using GTFO.API;
+using GTFO.API;
 using System.Runtime.CompilerServices;
 
 namespace Hikaria.Core.SNetworkExt;
 
 public class SNetExt_ReplicatedPacketBytes : SNetExt_ReplicatedPacket
 {
+    public delegate void SpanReceiveDelegate(ReadOnlySpan<byte> payload);
+
+    public SNetwork.SNet_ChannelType ChannelType
+    {
+        get => m_channelType;
+        set => m_channelType = value;
+    }
+
     private SNetwork.SNet_ChannelType m_channelType = SNetwork.SNet_ChannelType.SessionOrderCritical;
 
-    private Action<byte[]> ReceiveAction { get; set; }
+    private SpanReceiveDelegate ReceiveAction { get; set; }
 
-    public static SNetExt_ReplicatedPacketBytes Create(string key, Action<byte[]> receiveAction)
+    public static SNetExt_ReplicatedPacketBytes Create(string key, SpanReceiveDelegate receiveAction)
     {
-        var packet = new SNetExt_ReplicatedPacketBytes
+        return new SNetExt_ReplicatedPacketBytes
         {
             Key = key,
             ReceiveAction = receiveAction
         };
-        return packet;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -48,8 +55,8 @@ public class SNetExt_ReplicatedPacketBytes : SNetExt_ReplicatedPacket
 
     public override void ReceiveBytes(byte[] bytes)
     {
-        byte[] bufferDataBytes = new byte[bytes.Length - 33];
-        Buffer.BlockCopy(bytes, 33, bufferDataBytes, 0, bufferDataBytes.Length);
-        ReceiveAction(bufferDataBytes);
+        int payloadLength = bytes.Length - 33;
+        if (payloadLength < 0) return;
+        ReceiveAction?.Invoke(bytes.AsSpan(33, payloadLength));
     }
 }

@@ -22,12 +22,12 @@ internal class PauseManager : MonoBehaviour
         {
             SNet.Capture.CaptureGameState(eBufferType.Migration_A);
         }
-        if (m_pauseUpdateCoroutine != null)
+        if (_pauseUpdateCoroutine != null)
         {
-            StopCoroutine(m_pauseUpdateCoroutine);
+            StopCoroutine(_pauseUpdateCoroutine);
         }
-        m_pauseUpdateCoroutine = StartCoroutine(UpdateRegistered().WrapToIl2Cpp());
-        foreach (IPauseable pauseable in m_pausableUpdaters)
+        _pauseUpdateCoroutine = StartCoroutine(UpdateRegistered().WrapToIl2Cpp());
+        foreach (IPauseable pauseable in s_pausableUpdaters)
         {
             try
             {
@@ -44,12 +44,12 @@ internal class PauseManager : MonoBehaviour
 
     private void SetUnpaused()
     {
-        if (m_pauseUpdateCoroutine != null)
+        if (_pauseUpdateCoroutine != null)
         {
-            StopCoroutine(m_pauseUpdateCoroutine);
-            m_pauseUpdateCoroutine = null;
+            StopCoroutine(_pauseUpdateCoroutine);
+            _pauseUpdateCoroutine = null;
         }
-        foreach (IPauseable pauseable in m_pausableUpdaters)
+        foreach (IPauseable pauseable in s_pausableUpdaters)
         {
             try
             {
@@ -72,7 +72,7 @@ internal class PauseManager : MonoBehaviour
         var yielder = new WaitForSecondsRealtime(PauseUpdateInterval);
         while (true)
         {
-            foreach (IPauseable pauseable in m_pausableUpdaters)
+            foreach (IPauseable pauseable in s_pausableUpdaters)
             {
                 try
                 {
@@ -88,12 +88,12 @@ internal class PauseManager : MonoBehaviour
 
     public static void RegisterPauseable(IPauseable pu)
     {
-        m_pausableUpdaters.Add(pu);
+        s_pausableUpdaters.Add(pu);
     }
 
     public static void DeregisterPauseable(IPauseable pu)
     {
-        m_pausableUpdaters.Remove(pu);
+        s_pausableUpdaters.Remove(pu);
     }
 
     public static bool IsPaused
@@ -119,11 +119,11 @@ internal class PauseManager : MonoBehaviour
 
     public static float PauseUpdateInterval => Time.fixedUnscaledDeltaTime;
 
-    private Coroutine m_pauseUpdateCoroutine;
+    private Coroutine _pauseUpdateCoroutine;
 
     public static PauseManager Current { get; private set; }
 
-    private static HashSet<IPauseable> m_pausableUpdaters = new();
+    private static readonly HashSet<IPauseable> s_pausableUpdaters = new();
 
     private static bool s_isPaused;
 

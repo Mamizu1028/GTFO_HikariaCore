@@ -16,7 +16,9 @@ public class SNetExt_BufferSender
 
     private void UpdateBufferBytes()
     {
-        m_bufferBytes = SNetExt_ReplicatedPacketBufferBytes.GetBufferDataBytes(new SNetExt_ReplicatedPacketBufferBytes.BufferData(m_buffer.data.bufferID, (byte)m_passIndex));
+        SNetExt_ReplicatedPacketBufferBytes.WriteBufferDataBytes(
+            new SNetExt_ReplicatedPacketBufferBytes.BufferData(m_buffer.data.bufferID, (byte)m_passIndex),
+            m_bufferBytes.AsSpan());
     }
 
     private bool UpdatePlayerList()
@@ -145,7 +147,7 @@ public class SNetExt_BufferSender
 
     private int m_totalPacketsSent;
 
-    private byte[] m_bufferBytes;
+    private byte[] m_bufferBytes = new byte[3];
 
     public enum State
     {

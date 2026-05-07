@@ -8,7 +8,6 @@ using TheArchive.Core.Attributes.Feature.Settings;
 using TheArchive.Core.FeaturesAPI;
 using TheArchive.Interfaces;
 using UnityEngine;
-using static Il2CppSystem.Globalization.CultureInfo;
 
 namespace Hikaria.Core.Features.Fixes;
 
@@ -28,7 +27,7 @@ public class DeadBodyFix : Feature
 
     public class DeadBodyFixSettings
     {
-        //[FSSlider(100, 500, FSSlider.SliderStyle.FloatPercent, FSSlider.RoundTo.NoDecimal)]
+        [FSSlider(100, 500, FSSlider.SliderStyle.FloatNoDecimal)]
         [FSDisplayName("预测过期时间")]
         [FSDescription("本地预测敌人死亡状态保持时间")]
         [FSTooltip("默认值: 200, 单位: 毫秒ms")]
@@ -262,6 +261,7 @@ public class DeadBodyFix : Feature
                 {
                     Health = LastReceivedHealth;
                     _damage.Health = LastReceivedHealth;
+                    IsAlive = Health > 0f;
                     foreach (var limbHelper in _limbHelpers)
                     {
                         if (limbHelper.IsDirty)
@@ -299,7 +299,7 @@ public class DeadBodyFix : Feature
                 _isDirty = false;
             }
 
-            public bool IsDirty => !_isDirty && (_limb.DestructionType != eLimbDestructionType.Custom || !_isDestroyed);
+            public bool IsDirty => _isDirty && (_limb.DestructionType != eLimbDestructionType.Custom || !_isDestroyed);
 
             public bool IsHidden
             {

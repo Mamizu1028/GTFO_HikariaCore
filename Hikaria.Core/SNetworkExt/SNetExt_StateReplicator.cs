@@ -29,7 +29,7 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
                 break;
             default:
                 SNetExt.Logger.Error($"SNetExt_StateReplicator does not support {replictorLifeTime}");
-                break;
+                return null;
         }
         stateReplicator.m_channelType = channelType;
         stateReplicator.m_statePacket = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive, null);
@@ -73,7 +73,10 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
             {
                 m_statePacket.Send(value, m_channelType);
                 OnStateChange(value, false);
+                return;
             }
+            SNetExt.Logger.Warning(
+                $"SNetExt_StateReplicator<{typeof(S).Name}>.State setter called on non-master and will be ignored. Use a state replicator with interactions if you need slave-initiated changes.");
         }
     }
 
@@ -92,6 +95,11 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
 
     private void OnStateChangeReceive_Dropin(S state)
     {
+        if (!SNetExt.Replication.IsLastSenderMaster && !SNetwork.SNet.MasterManagement.IsMigrating)
+        {
+            SNetExt.Logger.Warning("Rejected dropin state packet from non-master sender");
+            return;
+        }
         OnStateChange(state, true);
     }
 
@@ -155,7 +163,7 @@ public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureC
                 break;
             default:
                 SNetExt.Logger.Error($"SNetExt_StateReplicator does not support {replictorLifeTime}");
-                break;
+                return null;
         }
         stateReplicator.m_channelType = channelType;
         stateReplicator.m_statePacket = stateReplicator.Replicator.CreatePacket<S>(typeof(S).FullName, stateReplicator.OnStateChangeReceive);
@@ -204,7 +212,6 @@ public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureC
     {
         if (SNetwork.SNet.IsMaster)
         {
-            m_statePacket.Send(m_currentState, m_channelType);
             OnStateChange(false, newState);
             return;
         }

@@ -1,12 +1,11 @@
-﻿using Hikaria.Core.Features.Dev;
 using Hikaria.Core.SNetworkExt;
 
 namespace Hikaria.Core;
 
 public static class SNetExtAPI
 {
-    public static bool TryGetReplicatorWrapper(SNetwork.IReplicator vanilla, out ISNetExt_Replicator wrapper)
+    public static bool TryGetVanillaWrapper(SNetwork.IReplicator vanilla, out SNetExt_Replicator_VanillaWrapper wrapper)
     {
-        return SNetExtAPI_Impl.TryGetVanillaReplicatorWrapper(vanilla.Key, out wrapper);
+        return SNetExt_Replication.TryGetVanillaWrapper(vanilla, out wrapper);
     }
 }
