@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace Hikaria.Core.SNetworkExt;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-internal readonly struct SNetExt_KeyHash16 : IEquatable<SNetExt_KeyHash16>
+public readonly struct SNetExt_KeyHash16 : IEquatable<SNetExt_KeyHash16>
 {
     public readonly ulong Lower;
     public readonly ulong Upper;
@@ -31,16 +31,30 @@ internal readonly struct SNetExt_KeyHash16 : IEquatable<SNetExt_KeyHash16>
     {
         if (string.IsNullOrWhiteSpace(hex32) || hex32.Length != 32)
             return default;
-        try
-        {
-            byte[] tmp = Convert.FromHexString(hex32);
-            return FromSpan(tmp);
-        }
-        catch (FormatException)
-        {
-            return default;
-        }
+        Span<byte> bytes = stackalloc byte[16];
+        if (!TryParseHex(hex32.AsSpan(), bytes)) return default;
+        return FromSpan(bytes);
     }
+
+    private static bool TryParseHex(ReadOnlySpan<char> hex, Span<byte> output)
+    {
+        for (int i = 0; i < 16; i++)
+        {
+            int hi = ParseNibble(hex[i * 2]);
+            int lo = ParseNibble(hex[i * 2 + 1]);
+            if (hi < 0 || lo < 0) return false;
+            output[i] = (byte)((hi << 4) | lo);
+        }
+        return true;
+    }
+
+    private static int ParseNibble(char c) => c switch
+    {
+        >= '0' and <= '9' => c - '0',
+        >= 'a' and <= 'f' => c - 'a' + 10,
+        >= 'A' and <= 'F' => c - 'A' + 10,
+        _ => -1
+    };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteTo(Span<byte> destination16)

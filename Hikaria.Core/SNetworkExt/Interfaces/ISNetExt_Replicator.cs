@@ -1,28 +1,32 @@
-﻿namespace Hikaria.Core.SNetworkExt;
+namespace Hikaria.Core.SNetworkExt;
 
 public interface ISNetExt_Replicator
 {
-    bool LocallyOwned { get; }
+    string Key { get; }
 
-    SNetExt_ReplicatedPacket<T> CreatePacket<T>(string packetKey, Action<T> receiveAction, Action<T> validateAction = null) where T : struct;
+    string KeyHash { get; }
 
-    ISNetExt_ReplicatorSupplier ReplicatorSupplier { get; set; }
-
-    void ReceiveBytes(string key, int packetIndex, byte[] bytes);
-
-    SNetwork.SNet_Player OwningPlayer { get; set; }
+    ReadOnlySpan<byte> KeyHashBytes { get; }
 
     SNetExt_ReplicatorType Type { get; }
 
-    byte[] KeyHashBytes { get; }
-
-    string Key { get; internal set; }
-
-    string KeyHash { get; internal set; }
+    bool LocallyOwned { get; }
 
     bool IsAnonymous { get; }
 
     bool HasValidKeyHash { get; }
+
+    SNetwork.SNet_Player OwningPlayer { get; }
+
+    bool OwnedByMaster { get; }
+
+    ISNetExt_ReplicatorSupplier ReplicatorSupplier { get; set; }
+
+    SNetExt_ReplicatedPacket<T> CreatePacket<T>(string packetKey, Action<T> receiveAction, Action<T> validateAction = null) where T : struct;
+
+    SNetExt_ReplicatedPacketBytes CreatePacketBytes(string key, SNetExt_ReplicatedPacketBytes.SpanReceiveDelegate receiveAction);
+
+    SNetExt_ReplicatedPacketBufferBytes CreatePacketBufferBytes(string key, SNetExt_ReplicatedPacketBufferBytes.SpanBufferReceiveDelegate receiveAction);
 
     void Despawn();
 

@@ -27,7 +27,7 @@ public class DeadBodyFix : Feature
 
     public class DeadBodyFixSettings
     {
-        [FSSlider(100, 500, FSSlider.SliderStyle.FloatNoDecimal)]
+        //[FSSlider(100, 500, FSSlider.SliderStyle.FloatNoDecimal)]
         [FSDisplayName("预测过期时间")]
         [FSDescription("本地预测敌人死亡状态保持时间")]
         [FSTooltip("默认值: 200, 单位: 毫秒ms")]
@@ -48,19 +48,16 @@ public class DeadBodyFix : Feature
         EnemyAPI.OnEnemyLimbDestroyed += OnEnemyLimbDestroyed;
         EnemyAPI.OnEnemyDead += OnEnemyDead;
         EnemyAPI.OnEnemySpawned += OnEnemySpawned;
-        EnemyAPI.OnEnemyDespawn += OnEnemyDespawn;
         SNetEventAPI.OnMasterChanged += OnMasterChanged;
         CoreAPI.OnPlayerModsSynced += OnPlayerModsSynced;
+
+        UpdateMasterDamageSyncState();
 
         if (CurrentGameState == (int)eGameStateName.InLevel)
         {
             foreach (var enemy in UnityEngine.Object.FindObjectsOfType<EnemyAgent>())
             {
-                if (!s_enemyDamageableHelpers.TryGetValue(enemy.GlobalID, out var data))
-                {
-                    data = new EnemyDamageableHelper(enemy.Damage);
-                    s_enemyDamageableHelpers.Add(enemy.GlobalID, data);
-                }
+                s_predictionStore.Register(enemy);
             }
         }
     }
@@ -71,302 +68,678 @@ public class DeadBodyFix : Feature
         EnemyAPI.OnEnemyLimbDestroyed -= OnEnemyLimbDestroyed;
         EnemyAPI.OnEnemyDead -= OnEnemyDead;
         EnemyAPI.OnEnemySpawned -= OnEnemySpawned;
-        EnemyAPI.OnEnemyDespawn -= OnEnemyDespawn;
         SNetEventAPI.OnMasterChanged -= OnMasterChanged;
         CoreAPI.OnPlayerModsSynced -= OnPlayerModsSynced;
-        s_enemyDamageableHelpers.Clear();
+
+        s_predictionStore.RestoreAll();
+        s_layerPolicy.RestoreAll();
     }
     #endregion
 
     #region 事件监听
     private void OnMasterChanged()
     {
-        s_masterHasFullDamageSync = CoreAPI.IsPlayerInstalledCore(SNet.Master);
+        UpdateMasterDamageSyncState();
     }
 
     private void OnPlayerModsSynced(SNet_Player player, IEnumerable<pModInfo> mods)
     {
-        s_masterHasFullDamageSync = CoreAPI.IsPlayerInstalledCore(SNet.Master);
+        UpdateMasterDamageSyncState();
+    }
+
+    private static void UpdateMasterDamageSyncState()
+    {
+        s_predictionStore.MasterHasFullDamageSync = CoreAPI.IsPlayerInstalledCore(SNet.Master);
     }
 
     private void OnEnemyReceivedDamage(EnemyAgent enemy, pFullEnemyReceivedDamageData data)
     {
-        if (!s_enemyDamageableHelpers.TryGetValue(enemy.GlobalID, out var helper) || helper.IsDead)
-            return;
-
-        var limbID = data.limbID;
-        if (limbID >= 0)
-        {
-            helper.ReceivedLimbHealth(limbID);
-            helper.UpdateLimbHealth(limbID);
-        }
-
-        helper.ReceivedHealth();
-        helper.UpdateHealth();
-
-        if (data.isKill)
-        {
-            helper.ReceivedDead();
-        }
+        s_predictionStore.ApplyAuthoritativeDamage(enemy, data);
     }
 
     private void OnEnemySpawned(EnemyAgent enemy)
     {
-        s_enemyDamageableHelpers[enemy.GlobalID] = new EnemyDamageableHelper(enemy.Damage);
+        s_predictionStore.Register(enemy);
     }
 
-    private void OnEnemyDespawn(EnemyAgent enemy)
+    private void OnEnemyLimbDestroyed(Dam_EnemyDamageLimb limb)
     {
-        s_enemyDamageableHelpers.Remove(enemy.GlobalID);
+        s_predictionStore.ApplyAuthoritativeLimbDestroyed(limb);
     }
 
-    private static void OnEnemyLimbDestroyed(Dam_EnemyDamageLimb limb)
+    private void OnEnemyDead(EnemyAgent enemy)
     {
-        s_enemyDamageableHelpers[limb.m_base.Owner.GlobalID].ReceiveLimbDestroyed(limb.m_limbID);
-    }
-
-    private static void OnEnemyDead(EnemyAgent enemy)
-    {
-        if (s_enemyDamageableHelpers.TryGetValue(enemy.GlobalID, out var data))
-        {
-            data.ReceivedDead();
-        }
+        s_predictionStore.ApplyAuthoritativeDeath(enemy);
+        s_predictionStore.Forget(enemy);
+        s_layerPolicy.Forget(enemy);
     }
     #endregion
 
-    private static bool s_masterHasFullDamageSync = false;
-    private static bool s_blockCustomLimbDamageOverflow = true;
-    private static pFullDamageData s_fullDamageData = new();
-    private static readonly Dictionary<int, EnemyDamageableHelper> s_enemyDamageableHelpers = new();
     private static float s_expirationTime = 0.2f;
+    private static bool s_blockCustomLimbDamageOverflow = true;
+    private static readonly CorpsePierceLayerPolicy s_layerPolicy = new();
+    private static readonly EnemyDamagePredictionStore s_predictionStore = new(s_layerPolicy, () => s_expirationTime);
 
-    public class EnemyDamageableHelper
+    #region Helpers
+    internal sealed class EnemyDamagePredictionStore
     {
-        private readonly EnemyDamageableLimbHelper[] _limbHelpers;
-        private readonly Dam_EnemyDamageBase _damage;
-
-        private bool _alive = true;
-        private bool _isDirty = false;
-        private float _nextCheckTime = 0f;
-
-        public bool IsAlive
+        private sealed class EnemyPredictionState
         {
-            get => _alive;
-            private set
+            public EnemyAgent Enemy { get; }
+            public Dam_EnemyDamageBase Damage { get; }
+            public LimbPredictionState[] Limbs { get; }
+            public float AuthoritativeHealth { get; private set; }
+            public bool IsAuthorityDead { get; private set; }
+            public bool HasPrediction { get; private set; }
+            public bool IsPredictedDead { get; private set; }
+            public float PredictionExpiresAt { get; private set; }
+
+            public EnemyPredictionState(EnemyAgent enemy)
             {
-                if (_alive == value)
-                    return;
-
-                _alive = value;
-
-                foreach (var limbHelper in _limbHelpers)
-                    limbHelper.UpdatePredictiveAlive(_alive);
+                Enemy = enemy;
+                Damage = enemy.Damage;
+                Limbs = Damage.DamageLimbs.Select(limb => new LimbPredictionState(limb)).ToArray();
+                CaptureAuthoritativeFromGame();
             }
-        }
 
-        public float Health { get; private set; }
-
-        public bool IsDirty
-        {
-            get => _isDirty && !IsDead;
-            private set
+            public void CaptureAuthoritativeFromGame()
             {
-                _isDirty = value;
-                if (value)
-                    _nextCheckTime = Time.unscaledTime + s_expirationTime;
-            }
-        }
-
-        public bool IsDead { get; private set; } = false;
-
-        public float LastReceivedHealth { get; private set; } = 0f;
-
-        public EnemyDamageableHelper(Dam_EnemyDamageBase damage)
-        {
-            _damage = damage;
-            _limbHelpers = _damage.DamageLimbs.Select(limb => new EnemyDamageableLimbHelper(limb)).ToArray();
-            LastReceivedHealth = damage.Health;
-            Health = damage.Health;
-            _nextCheckTime = 0f;
-            IsDead = false;
-            _alive = true;
-            _isDirty = false;
-        }
-
-        public void ResetState()
-        {
-            LastReceivedHealth = _damage.Health;
-            Health = _damage.Health;
-            IsAlive = Health > 0f;
-            IsDead = !IsAlive;
-            _nextCheckTime = 0f;
-            IsDirty = false;
-
-            foreach (var limbHelper in _limbHelpers)
-            {
-                limbHelper.ResetState();
-            }
-        }
-
-        public void UpdateLimbHealth(int limbID)
-        {
-            _limbHelpers[limbID].UpdateLimbHealth();
-            IsDirty = true;
-        }
-
-        public void UpdateHealth()
-        {
-            Health = _damage.Health;
-            IsAlive = Health > 0f;
-            IsDirty = true;
-        }
-
-        public void ReceivedLimbHealth(int limbID)
-        {
-            _limbHelpers[limbID].ReceivedLimbHealth();
-        }
-
-        public void ReceivedHealth()
-        {
-            LastReceivedHealth = _damage.Health;
-        }
-
-        public void ReceiveLimbDestroyed(int limbID)
-        {
-            _limbHelpers[limbID].ReceiveDestroyed();
-            IsDirty = true;
-        }
-
-        public void ReceivedDead()
-        {
-            if (!IsDead)
-            {
-                LastReceivedHealth = 0f;
-                Health = 0f;
-                _damage.Health = 0f;
-                IsDead = true;
-                foreach (var limbHelper in _limbHelpers)
+                AuthoritativeHealth = Damage.Health;
+                for (int i = 0; i < Limbs.Length; i++)
                 {
-                    limbHelper.ReceivedDead();
-                }
-            }
-            _isDirty = false;
-        }
-
-        public void CheckExpriation()
-        {
-            if (Time.unscaledTime > _nextCheckTime)
-            {
-                if (s_masterHasFullDamageSync)
-                {
-                    Health = LastReceivedHealth;
-                    _damage.Health = LastReceivedHealth;
-                    IsAlive = Health > 0f;
-                    foreach (var limbHelper in _limbHelpers)
-                    {
-                        if (limbHelper.IsDirty)
-                            limbHelper.CheckExpriation();
-                    }
-                }
-                else 
-                {
-                    if (!IsAlive && !IsDead)
-                    {
-                        Health = LastReceivedHealth;
-                        _damage.Health = LastReceivedHealth;
-                        foreach (var limbHelper in _limbHelpers)
-                        {
-                            limbHelper.CheckExpriation();
-                        }
-                    }
-                }
-                _isDirty = false;
-            }
-        }
-
-        private class EnemyDamageableLimbHelper
-        {
-            private readonly Dam_EnemyDamageLimb _limb;
-
-            private bool _isDestroyed = false;
-            private bool _isDirty = false;
-
-            public EnemyDamageableLimbHelper(Dam_EnemyDamageLimb limb)
-            {
-                _limb = limb;
-                LimbHealth = limb.m_health;
-                LastReceivedLimbHealth = limb.m_health;
-                _isDirty = false;
-            }
-
-            public bool IsDirty => _isDirty && (_limb.DestructionType != eLimbDestructionType.Custom || !_isDestroyed);
-
-            public bool IsHidden
-            {
-                get => _limb.gameObject.layer == LayerManager.LAYER_ENEMY_DEAD;
-                private set
-                {
-                    _limb.gameObject.layer = value ? LayerManager.LAYER_ENEMY_DEAD : LayerManager.LAYER_ENEMY_DAMAGABLE;
+                    Limbs[i].CaptureAuthoritativeFromGame();
                 }
             }
 
-            public float LimbHealth { get; private set; } = 0f;
-
-            public float LastReceivedLimbHealth { get; private set; } = 0f;
-
-            public void ReceivedDead()
+            public void CaptureAuthoritativeFromGame(int limbID)
             {
-                IsHidden = true;
-                _isDirty = false;
+                AuthoritativeHealth = Damage.Health;
+
+                if (TryGetLimb(limbID, out var limbState))
+                    limbState.CaptureAuthoritativeFromGame();
             }
 
-            public void ReceiveDestroyed()
+            public void MarkPrediction(float expiresAt)
             {
-                _isDestroyed = true;
-                IsHidden = _limb.DestructionType == eLimbDestructionType.Custom;
-                _isDirty = true;
+                HasPrediction = true;
+                PredictionExpiresAt = expiresAt;
             }
 
-            public void ReceivedLimbHealth()
+            public void MarkPredictedDead()
             {
-                LastReceivedLimbHealth = _limb.m_health;
-                _isDirty = true;
+                HasPrediction = true;
+                IsPredictedDead = true;
             }
 
-            public void UpdateLimbHealth()
+            public void MarkAuthorityDead()
             {
-                LimbHealth = _limb.m_health;
-                IsHidden = _limb.DestructionType == eLimbDestructionType.Custom && (LimbHealth < 0 || _isDestroyed);
-                _isDirty = true;
+                IsAuthorityDead = true;
+                AuthoritativeHealth = 0f;
+                Damage.Health = 0f;
+                ClearPredictionFlags();
             }
 
-            public void UpdatePredictiveAlive(bool alive)
+            public void ClearPredictionFlags()
             {
-                if (!alive)
-                    IsHidden = true;
-            }
+                HasPrediction = false;
+                IsPredictedDead = false;
+                PredictionExpiresAt = 0f;
 
-            public void CheckExpriation()
-            {
-                if (s_masterHasFullDamageSync || IsHidden)
+                for (int i = 0; i < Limbs.Length; i++)
                 {
-                    LimbHealth = LastReceivedLimbHealth;
-                    _limb.m_health = LastReceivedLimbHealth;
-                    IsHidden = _limb.DestructionType == eLimbDestructionType.Custom && (LimbHealth < 0 || _isDestroyed);
+                    Limbs[i].ClearPredictionFlags();
                 }
-                _isDirty = false;
             }
 
-            public void ResetState()
+            public void RestoreAuthoritative(bool restoreAllLimbs)
             {
-                LastReceivedLimbHealth = _limb.m_health;
-                _isDestroyed = _limb.IsDestroyed;
-                LimbHealth = _limb.m_health;
-                IsHidden = _limb.DestructionType == eLimbDestructionType.Custom && (LimbHealth < 0 || _isDestroyed);
-                _isDirty = false;
+                Damage.Health = AuthoritativeHealth;
+
+                for (int i = 0; i < Limbs.Length; i++)
+                {
+                    if (restoreAllLimbs || Limbs[i].HasPrediction)
+                        Limbs[i].RestoreAuthoritative();
+                }
             }
+
+            public bool TryGetLimb(int limbID, out LimbPredictionState limbState)
+            {
+                limbState = null;
+
+                if (limbID < 0 || limbID >= Limbs.Length)
+                    return false;
+
+                limbState = Limbs[limbID];
+                return limbState.Limb != null;
+            }
+        }
+
+        private sealed class LimbPredictionState
+        {
+            public Dam_EnemyDamageLimb Limb { get; }
+            public float AuthoritativeHealth { get; private set; }
+            public bool HasPrediction { get; private set; }
+            public bool HasPredictedCustomDestroyed { get; private set; }
+
+            public LimbPredictionState(Dam_EnemyDamageLimb limb)
+            {
+                Limb = limb;
+                CaptureAuthoritativeFromGame();
+            }
+
+            public void CaptureAuthoritativeFromGame()
+            {
+                AuthoritativeHealth = Limb.m_health;
+            }
+
+            public void MarkPredicted()
+            {
+                HasPrediction = true;
+            }
+
+            public void MarkPredictedCustomDestroyed()
+            {
+                HasPrediction = true;
+                HasPredictedCustomDestroyed = true;
+            }
+
+            public void ClearPredictionFlags()
+            {
+                HasPrediction = false;
+                HasPredictedCustomDestroyed = false;
+            }
+
+            public void RestoreAuthoritative()
+            {
+                Limb.m_health = AuthoritativeHealth;
+            }
+        }
+
+        private readonly Dictionary<int, EnemyPredictionState> _states = new();
+        private readonly CorpsePierceLayerPolicy _layerPolicy;
+        private readonly Func<float> _expirationTimeProvider;
+
+        public bool MasterHasFullDamageSync { get; set; }
+
+        public EnemyDamagePredictionStore(CorpsePierceLayerPolicy layerPolicy, Func<float> expirationTimeProvider)
+        {
+            _layerPolicy = layerPolicy;
+            _expirationTimeProvider = expirationTimeProvider;
+        }
+
+        public void Register(EnemyAgent enemy)
+        {
+            if (!CanTrack(enemy))
+                return;
+
+            _states[enemy.GlobalID] = new EnemyPredictionState(enemy);
+        }
+
+        public void Forget(EnemyAgent enemy)
+        {
+            if (enemy == null)
+                return;
+
+            _states.Remove(enemy.GlobalID);
+        }
+
+        public void ApplyLocalDamagePrediction(EnemyAgent enemy, int limbID, float damageAmount)
+        {
+            if (damageAmount <= 0f)
+                return;
+
+            if (!TryGetOrRegister(enemy, out var state) || state.IsAuthorityDead)
+                return;
+
+            if (!state.HasPrediction)
+                state.CaptureAuthoritativeFromGame();
+
+            if (state.TryGetLimb(limbID, out var limbState))
+            {
+                var limb = limbState.Limb;
+                bool wasCustomDestroyed = limb.DestructionType == eLimbDestructionType.Custom && limb.IsDestroyed;
+                bool limbKilled = limb.DoDamage(damageAmount);
+
+                limbState.MarkPredicted();
+
+                bool isCustomDestroyed = limb.DestructionType == eLimbDestructionType.Custom
+                    && (limb.IsDestroyed || limb.m_health < 0f || limbKilled);
+
+                if (!wasCustomDestroyed && isCustomDestroyed)
+                {
+                    limbState.MarkPredictedCustomDestroyed();
+                    _layerPolicy.MarkPredictedCustomLimbDestroyed(limb);
+                }
+            }
+
+            state.Damage.RegisterDamage(damageAmount);
+            state.MarkPrediction(Time.unscaledTime + _expirationTimeProvider());
+
+            if (state.Damage.Health <= 0f)
+            {
+                state.MarkPredictedDead();
+                _layerPolicy.MarkEnemyPredictedDead(enemy);
+            }
+        }
+
+        public void ApplyAuthoritativeDamage(EnemyAgent enemy, pFullEnemyReceivedDamageData data)
+        {
+            if (!TryGetOrRegister(enemy, out var state))
+                return;
+
+            if (data.isKill)
+            {
+                ApplyAuthoritativeDeath(enemy);
+                return;
+            }
+
+            state.CaptureAuthoritativeFromGame(data.limbID);
+
+            if (MasterHasFullDamageSync)
+                state.RestoreAuthoritative(restoreAllLimbs: false);
+
+            _layerPolicy.ClearEnemyPredictedDead(enemy);
+            _layerPolicy.ClearPredictedCustomLimbDestroyed(enemy);
+            state.ClearPredictionFlags();
+        }
+
+        public void ApplyAuthoritativeDeath(EnemyAgent enemy)
+        {
+            if (!TryGetOrRegister(enemy, out var state))
+                return;
+
+            state.MarkAuthorityDead();
+            _layerPolicy.ClearEnemyPredictedDead(enemy);
+            _layerPolicy.MarkEnemyConfirmedDead(enemy);
+        }
+
+        public void ApplyAuthoritativeLimbDestroyed(Dam_EnemyDamageLimb limb)
+        {
+            if (limb == null || limb.m_base == null || limb.m_base.Owner == null)
+                return;
+
+            var enemy = limb.m_base.Owner;
+
+            if (!TryGetOrRegister(enemy, out var state))
+                return;
+
+            if (!state.TryGetLimb(limb.m_limbID, out var limbState))
+                return;
+
+            limbState.CaptureAuthoritativeFromGame();
+            limbState.ClearPredictionFlags();
+
+            if (limb.DestructionType == eLimbDestructionType.Custom)
+                _layerPolicy.ConfirmCustomLimbDestroyed(limb);
+        }
+
+        public void CheckExpiration(EnemyAgent enemy)
+        {
+            if (enemy == null)
+                return;
+
+            if (!_states.TryGetValue(enemy.GlobalID, out var state))
+                return;
+
+            if (!state.HasPrediction || state.IsAuthorityDead || Time.unscaledTime <= state.PredictionExpiresAt)
+                return;
+
+            if (MasterHasFullDamageSync || state.IsPredictedDead)
+            {
+                state.RestoreAuthoritative(restoreAllLimbs: MasterHasFullDamageSync);
+                _layerPolicy.ClearEnemyPredictedDead(enemy);
+            }
+
+            _layerPolicy.ClearPredictedCustomLimbDestroyed(enemy);
+            state.ClearPredictionFlags();
+        }
+
+        public void RestoreAll()
+        {
+            foreach (var state in _states.Values)
+            {
+                if (state.HasPrediction && !state.IsAuthorityDead)
+                    state.RestoreAuthoritative(restoreAllLimbs: true);
+            }
+
+            _states.Clear();
+        }
+
+        private bool TryGetOrRegister(EnemyAgent enemy, out EnemyPredictionState state)
+        {
+            state = null;
+
+            if (!CanTrack(enemy))
+                return false;
+
+            if (!_states.TryGetValue(enemy.GlobalID, out state))
+            {
+                state = new EnemyPredictionState(enemy);
+                _states.Add(enemy.GlobalID, state);
+            }
+
+            return true;
+        }
+
+        private static bool CanTrack(EnemyAgent enemy)
+        {
+            return enemy != null && enemy.Damage != null && enemy.Damage.DamageLimbs != null;
         }
     }
+
+    internal static class EnemyDamageEstimator
+    {
+        public static float EstimateBulletDamage(Dam_EnemyDamageBase damageBase, float rawDamage)
+        {
+            if (damageBase == null || damageBase.Owner == null)
+                return 0f;
+
+            var fullDamageData = new pFullDamageData();
+            fullDamageData.damage.Set(rawDamage, damageBase.HealthMax);
+
+            return AgentModifierManager.ApplyModifier(
+                damageBase.Owner,
+                AgentModifier.ProjectileResistance,
+                fullDamageData.damage.Get(damageBase.HealthMax));
+        }
+
+        public static float EstimateMeleeDamage(Dam_EnemyDamageBase damageBase, float rawDamage)
+        {
+            if (damageBase == null || damageBase.Owner == null)
+                return 0f;
+
+            var fullDamageData = new pFullDamageData();
+            fullDamageData.damage.Set(rawDamage, damageBase.DamageMax);
+
+            var roundedDamage = Dam_EnemyDamageBase.RoundDamage(fullDamageData.damage.Get(damageBase.DamageMax));
+
+            return AgentModifierManager.ApplyModifier(
+                damageBase.Owner,
+                AgentModifier.MeleeResistance,
+                roundedDamage);
+        }
+    }
+
+    internal sealed class CorpsePierceLayerPolicy
+    {
+        [Flags]
+        private enum LimbLayerOverrideReason
+        {
+            None = 0,
+            PredictedDead = 1,
+            ConfirmedDead = 2,
+            PredictedCustomLimbDestroyed = 4,
+            CustomLimbDestroyed = 8
+        }
+
+        private sealed class LimbLayerOverride
+        {
+            public Dam_EnemyDamageLimb Limb { get; }
+            public int LimbID { get; }
+            public int OriginalLayer { get; }
+            public LimbLayerOverrideReason Reasons { get; private set; }
+
+            public LimbLayerOverride(Dam_EnemyDamageLimb limb, int limbID)
+            {
+                Limb = limb;
+                LimbID = limbID;
+                OriginalLayer = limb.gameObject.layer;
+                Reasons = LimbLayerOverrideReason.None;
+            }
+
+            public void AddReason(LimbLayerOverrideReason reason)
+            {
+                Reasons |= reason;
+            }
+
+            public void RemoveReason(LimbLayerOverrideReason reason)
+            {
+                Reasons &= ~reason;
+            }
+
+            public void SetReasons(LimbLayerOverrideReason reasons)
+            {
+                Reasons = reasons;
+            }
+        }
+
+        private readonly Dictionary<int, List<LimbLayerOverride>> _enemyOverrides = new();
+        private int _originalPiercingMask;
+        private bool _hasOriginalPiercingMask;
+
+        public void ApplyPiercingMask(LayerManager layerManager)
+        {
+            if (layerManager == null)
+                return;
+
+            if (!_hasOriginalPiercingMask)
+            {
+                _originalPiercingMask = LayerManager.MASK_BULLETWEAPON_PIERCING_PASS;
+                _hasOriginalPiercingMask = true;
+            }
+
+            LayerManager.MASK_BULLETWEAPON_PIERCING_PASS =
+                _originalPiercingMask | (1 << LayerManager.LAYER_ENEMY_DEAD);
+        }
+
+        public void MarkEnemyPredictedDead(EnemyAgent enemy)
+        {
+            AddEnemyReason(enemy, LimbLayerOverrideReason.PredictedDead);
+        }
+
+        public void ClearEnemyPredictedDead(EnemyAgent enemy)
+        {
+            RemoveEnemyReason(enemy, LimbLayerOverrideReason.PredictedDead);
+        }
+
+        public void MarkEnemyConfirmedDead(EnemyAgent enemy)
+        {
+            AddEnemyReason(enemy, LimbLayerOverrideReason.ConfirmedDead);
+        }
+
+        public void MarkPredictedCustomLimbDestroyed(Dam_EnemyDamageLimb limb)
+        {
+            AddLimbReason(limb, LimbLayerOverrideReason.PredictedCustomLimbDestroyed);
+        }
+
+        public void ConfirmCustomLimbDestroyed(Dam_EnemyDamageLimb limb)
+        {
+            RemoveLimbReason(limb, LimbLayerOverrideReason.PredictedCustomLimbDestroyed);
+            AddLimbReason(limb, LimbLayerOverrideReason.CustomLimbDestroyed);
+        }
+
+        public void ClearPredictedCustomLimbDestroyed(EnemyAgent enemy)
+        {
+            RemoveEnemyReason(enemy, LimbLayerOverrideReason.PredictedCustomLimbDestroyed);
+        }
+
+        public void Forget(EnemyAgent enemy)
+        {
+            if (enemy == null)
+                return;
+
+            _enemyOverrides.Remove(enemy.GlobalID);
+        }
+
+        public void RestoreEnemy(EnemyAgent enemy)
+        {
+            if (enemy == null)
+                return;
+
+            if (!_enemyOverrides.TryGetValue(enemy.GlobalID, out var overrides))
+                return;
+
+            foreach (var layerOverride in overrides)
+            {
+                RestoreLayer(layerOverride);
+            }
+
+            _enemyOverrides.Remove(enemy.GlobalID);
+        }
+
+        public void RestoreAll()
+        {
+            foreach (var overrides in _enemyOverrides.Values)
+            {
+                foreach (var layerOverride in overrides)
+                {
+                    RestoreLayer(layerOverride);
+                }
+            }
+
+            _enemyOverrides.Clear();
+
+            if (_hasOriginalPiercingMask)
+            {
+                LayerManager.MASK_BULLETWEAPON_PIERCING_PASS = _originalPiercingMask;
+                _hasOriginalPiercingMask = false;
+            }
+        }
+
+        private void AddEnemyReason(EnemyAgent enemy, LimbLayerOverrideReason reason)
+        {
+            if (!TryGetDamage(enemy, out var damage))
+                return;
+
+            foreach (var limb in damage.DamageLimbs)
+            {
+                AddLimbReason(limb, reason);
+            }
+        }
+
+        private void RemoveEnemyReason(EnemyAgent enemy, LimbLayerOverrideReason reason)
+        {
+            if (enemy == null)
+                return;
+
+            if (!_enemyOverrides.TryGetValue(enemy.GlobalID, out var overrides))
+                return;
+
+            for (int i = overrides.Count - 1; i >= 0; i--)
+            {
+                var layerOverride = overrides[i];
+                layerOverride.RemoveReason(reason);
+                ApplyOverrideState(layerOverride);
+
+                if (layerOverride.Reasons == LimbLayerOverrideReason.None)
+                    overrides.RemoveAt(i);
+            }
+
+            if (overrides.Count == 0)
+                _enemyOverrides.Remove(enemy.GlobalID);
+        }
+
+        private void AddLimbReason(Dam_EnemyDamageLimb limb, LimbLayerOverrideReason reason)
+        {
+            if (!TryGetLimbIdentity(limb, out var enemyGlobalID, out var limbID))
+                return;
+
+            var layerOverride = GetOrCreateOverride(limb, enemyGlobalID, limbID);
+            layerOverride.AddReason(reason);
+            ApplyOverrideState(layerOverride);
+        }
+
+        private void RemoveLimbReason(Dam_EnemyDamageLimb limb, LimbLayerOverrideReason reason)
+        {
+            if (!TryGetLimbIdentity(limb, out var enemyGlobalID, out var limbID))
+                return;
+
+            if (!_enemyOverrides.TryGetValue(enemyGlobalID, out var overrides))
+                return;
+
+            for (int i = overrides.Count - 1; i >= 0; i--)
+            {
+                var layerOverride = overrides[i];
+                if (layerOverride.LimbID != limbID)
+                    continue;
+
+                layerOverride.RemoveReason(reason);
+                ApplyOverrideState(layerOverride);
+
+                if (layerOverride.Reasons == LimbLayerOverrideReason.None)
+                    overrides.RemoveAt(i);
+
+                break;
+            }
+
+            if (overrides.Count == 0)
+                _enemyOverrides.Remove(enemyGlobalID);
+        }
+
+        private LimbLayerOverride GetOrCreateOverride(Dam_EnemyDamageLimb limb, int enemyGlobalID, int limbID)
+        {
+            if (!_enemyOverrides.TryGetValue(enemyGlobalID, out var overrides))
+            {
+                overrides = new List<LimbLayerOverride>();
+                _enemyOverrides.Add(enemyGlobalID, overrides);
+            }
+
+            for (int i = 0; i < overrides.Count; i++)
+            {
+                var layerOverride = overrides[i];
+                if (layerOverride.LimbID != limbID)
+                    continue;
+
+                if (layerOverride.Limb == limb)
+                    return layerOverride;
+
+                var replacement = new LimbLayerOverride(limb, limbID);
+                replacement.SetReasons(layerOverride.Reasons);
+                RestoreLayer(layerOverride);
+                overrides[i] = replacement;
+                return replacement;
+            }
+
+            var created = new LimbLayerOverride(limb, limbID);
+            overrides.Add(created);
+            return created;
+        }
+
+        private static void ApplyOverrideState(LimbLayerOverride layerOverride)
+        {
+            if (layerOverride.Limb == null || layerOverride.Limb.gameObject == null)
+                return;
+
+            layerOverride.Limb.gameObject.layer = layerOverride.Reasons == LimbLayerOverrideReason.None
+                ? layerOverride.OriginalLayer
+                : LayerManager.LAYER_ENEMY_DEAD;
+        }
+
+        private static void RestoreLayer(LimbLayerOverride layerOverride)
+        {
+            if (layerOverride.Limb == null || layerOverride.Limb.gameObject == null)
+                return;
+
+            layerOverride.Limb.gameObject.layer = layerOverride.OriginalLayer;
+        }
+
+        private static bool TryGetDamage(EnemyAgent enemy, out Dam_EnemyDamageBase damage)
+        {
+            damage = null;
+
+            if (enemy == null || enemy.Damage == null)
+                return false;
+
+            damage = enemy.Damage;
+            return true;
+        }
+
+        private static bool TryGetLimbIdentity(Dam_EnemyDamageLimb limb, out int enemyGlobalID, out int limbID)
+        {
+            enemyGlobalID = 0;
+            limbID = -1;
+
+            if (limb == null || limb.m_base == null || limb.m_base.Owner == null)
+                return false;
+
+            enemyGlobalID = limb.m_base.Owner.GlobalID;
+            limbID = limb.m_limbID;
+            return true;
+        }
+    }
+
+
+    #endregion
 
     #region 修改 LayerMask 使子弹可以穿透尸体
     [ArchivePatch(typeof(LayerManager), nameof(LayerManager.Setup))]
@@ -374,7 +747,7 @@ public class DeadBodyFix : Feature
     {
         private static void Postfix(LayerManager __instance)
         {
-            LayerManager.MASK_BULLETWEAPON_PIERCING_PASS = __instance.GetMask(new string[] { "EnemyDamagable", "PlayerSynced", "EnemyDead" });
+            s_layerPolicy.ApplyPiercingMask(__instance);
             LayerManager.MASK_MELEE_ATTACK_TARGETS_WITH_STATIC = __instance.GetMask(new string[] { "EnemyDamagable", "Dynamic", "Default", "Default_NoGraph", "Default_BlockGraph" });
         }
     }
@@ -386,10 +759,7 @@ public class DeadBodyFix : Feature
     {
         private static void Postfix(EnemyAgent __instance)
         {
-            if (s_enemyDamageableHelpers.TryGetValue(__instance.GlobalID, out var data) && data.IsDirty)
-            {
-                data.CheckExpriation();
-            }
+            s_predictionStore.CheckExpiration(__instance);
         }
     }
     #endregion
@@ -409,13 +779,11 @@ public class DeadBodyFix : Feature
             if (SNet.IsMaster)
                 return;
 
-            var enemy = __instance.Owner;
-            s_fullDamageData.damage.Set(dam, __instance.HealthMax);
-            var realDamage = AgentModifierManager.ApplyModifier(enemy, AgentModifier.ProjectileResistance, s_fullDamageData.damage.Get(__instance.HealthMax));
-            __instance.DamageLimbs[limbID].DoDamage(realDamage);
-            s_enemyDamageableHelpers[enemy.GlobalID].UpdateLimbHealth(limbID);
-            __instance.RegisterDamage(realDamage);
-            s_enemyDamageableHelpers[enemy.GlobalID].UpdateHealth();
+            if (__instance == null || __instance.Owner == null)
+                return;
+
+            var realDamage = EnemyDamageEstimator.EstimateBulletDamage(__instance, dam);
+            s_predictionStore.ApplyLocalDamagePrediction(__instance.Owner, limbID, realDamage);
         }
     }
 
@@ -433,19 +801,17 @@ public class DeadBodyFix : Feature
             if (SNet.IsMaster)
                 return;
 
-            var enemy = __instance.Owner;
-            s_fullDamageData.damage.Set(dam, __instance.DamageMax);
-            var realDamage = AgentModifierManager.ApplyModifier(enemy, AgentModifier.MeleeResistance, Dam_EnemyDamageBase.RoundDamage(s_fullDamageData.damage.Get(__instance.DamageMax)));
-            __instance.DamageLimbs[limbID].DoDamage(realDamage);
-            s_enemyDamageableHelpers[enemy.GlobalID].UpdateLimbHealth(limbID);
-            __instance.RegisterDamage(realDamage);
-            s_enemyDamageableHelpers[enemy.GlobalID].UpdateHealth();
+            if (__instance == null || __instance.Owner == null)
+                return;
+
+            var realDamage = EnemyDamageEstimator.EstimateMeleeDamage(__instance, dam);
+            s_predictionStore.ApplyLocalDamagePrediction(__instance.Owner, limbID, realDamage);
         }
     }
     #endregion
 
     #region 屏蔽非法伤害
-    [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveBulletDamage), priority: 20000)]
+    [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveBulletDamage), priority: int.MinValue)]
     private class Dam_EnemyDamageBase__ReceiveBulletDamage__Patch
     {
         // 屏蔽特殊部位因网络延迟引起销毁不及时从而出现的多次伤害
@@ -465,7 +831,7 @@ public class DeadBodyFix : Feature
         }
     }
 
-    [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveMeleeDamage), priority: 20000)]
+    [ArchivePatch(typeof(Dam_EnemyDamageBase), nameof(Dam_EnemyDamageBase.ReceiveMeleeDamage), priority: int.MinValue)]
     private class Dam_EnemyDamageBase__ReceiveMeleeDamage__Patch
     {
         // 屏蔽特殊部位因网络延迟引起销毁不及时从而出现的多次伤害

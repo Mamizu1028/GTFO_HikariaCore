@@ -1,5 +1,4 @@
 ﻿using Clonesoft.Json;
-using Hikaria.Core.Entities;
 using Hikaria.Core.Managers;
 using Hikaria.Core.SNetworkExt;
 using SNetwork;
@@ -85,6 +84,14 @@ internal class LobbySettingsOverride : Feature
                 LobbySettingsManager.PasswordForJoinOtherLobby = value;
             }
         }
+    }
+
+    public enum LobbyPrivacy
+    {
+        Public = 0,
+        FriendsOnly = 1,
+        Private = 2,
+        Invisible = 3
     }
 
     public override void OnFeatureSettingChanged(FeatureSetting setting)

@@ -53,16 +53,16 @@ public struct pPopupMessage
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
 public struct pModList : ISNetExt_ReplicatedPlayerData
 {
-    public pModList(SNet_Player player, List<pModInfo> modList)
+    public pModList(SNet_Player player, IEnumerable<pModInfo> modList)
     {
         Array.Fill(Mods, new());
         var playerData = new SNetStructs.pPlayer();
         playerData.SetPlayer(player);
         PlayerData = playerData;
-        ModCount = Math.Clamp(modList.Count, 0, MOD_SYNC_COUNT);
+        ModCount = Math.Clamp(modList.Count(), 0, MOD_SYNC_COUNT);
         for (int i = 0; i < ModCount; i++)
         {
-            Mods[i] = modList[i];
+            Mods[i] = modList.ElementAt(i);
         }
     }
 

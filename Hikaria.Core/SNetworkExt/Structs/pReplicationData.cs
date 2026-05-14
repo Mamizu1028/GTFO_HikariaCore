@@ -1,15 +1,13 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 namespace Hikaria.Core.SNetworkExt;
 
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct pReplicationData
 {
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-    public string PrefabKeyHash;
+    public SNetExt_KeyHash16 PrefabKeyHash;
 
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-    public string ReplicatorKeyHash;
+    public SNetExt_KeyHash16 ReplicatorKeyHash;
 
     [MarshalAs(UnmanagedType.U1)]
     public bool isRecall;

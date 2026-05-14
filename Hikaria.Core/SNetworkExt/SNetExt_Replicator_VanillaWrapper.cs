@@ -19,34 +19,17 @@ public sealed class SNetExt_Replicator_VanillaWrapper : SNetExt_Replicator
 
     public override SNetExt_ReplicatorType Type => SNetExt_ReplicatorType.VanillaWrapper;
 
-    public override SNetwork.SNet_Player OwningPlayer
-    {
-        get => m_vanillaInterface?.OwningPlayer;
-        set => throw new InvalidOperationException(
-            $"OwningPlayer is read-only on {nameof(SNetExt_Replicator_VanillaWrapper)}.");
-    }
+    public override SNetwork.SNet_Player OwningPlayer => m_vanillaInterface?.OwningPlayer;
 
-    public override bool OwnedByMaster
-    {
-        get => m_vanilla != null && m_vanilla.OwnedByMaster;
-        set => throw new InvalidOperationException(
-            $"OwnedByMaster is read-only on {nameof(SNetExt_Replicator_VanillaWrapper)}.");
-    }
+    public override bool OwnedByMaster => m_vanilla != null && m_vanilla.OwnedByMaster;
 
-    public override bool LocallyOwned
-    {
-        get
-        {
-            if (m_vanillaInterface == null) return false;
-            return m_vanillaInterface.LocallyOwned;
-        }
-    }
+    public override bool LocallyOwned => m_vanillaInterface != null && m_vanillaInterface.LocallyOwned;
 
     internal SNetExt_Replicator_VanillaWrapper(SNetwork.IReplicator vanilla)
     {
         m_vanillaInterface = vanilla ?? throw new ArgumentNullException(nameof(vanilla));
         m_vanilla = vanilla.Cast<SNetwork.SNet_Replicator>();
-        Key = $"VanillaWrapper_{m_vanilla.Key}";
+        ((ISNetExt_MutableReplicator)this).AssignKey($"VanillaWrapper_{m_vanilla.Key}");
     }
 
     public override void Despawn()

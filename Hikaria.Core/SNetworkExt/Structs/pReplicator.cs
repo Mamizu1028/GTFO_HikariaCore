@@ -1,28 +1,22 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 namespace Hikaria.Core.SNetworkExt;
 
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode, Pack = 1)]
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct pReplicator
 {
+    public SNetExt_KeyHash16 KeyHash;
+
     public readonly bool TryGetReplicator(out ISNetExt_Replicator rep)
-    {
-        return SNetExt_Replication.TryGetReplicatorByKeyHash(KeyHash, out rep);
-    }
+        => SNetExt_Replication.TryGetReplicatorByKeyHash16(KeyHash, out rep);
 
     public void SetReplicator(ISNetExt_Replicator rep)
     {
         if (rep != null)
-        {
-            KeyHash = rep.KeyHash;
-        }
+            KeyHash = SNetExt_KeyHash16.FromHex(rep.KeyHash);
+        else
+            KeyHash = default;
     }
 
-    public readonly bool IsValid()
-    {
-        return !string.IsNullOrWhiteSpace(KeyHash);
-    }
-
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-    public string KeyHash;
+    public readonly bool IsValid() => !KeyHash.IsEmpty;
 }

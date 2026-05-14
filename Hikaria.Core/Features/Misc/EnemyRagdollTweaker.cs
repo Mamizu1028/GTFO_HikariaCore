@@ -12,6 +12,7 @@ using UnityEngine;
 
 namespace Hikaria.Core.Features.Misc;
 
+[ForceDisable("WIP")]
 [EnableFeatureByDefault]
 internal class EnemyRagdollTweaker : Feature
 {

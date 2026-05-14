@@ -1,4 +1,4 @@
-﻿using GTFO.API;
+using GTFO.API;
 using Il2CppInterop.Runtime.Attributes;
 using System.Runtime.CompilerServices;
 using TheArchive.Interfaces;
@@ -13,6 +13,10 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
 
     private static readonly IArchiveLogger _logger = LoaderWrapper.CreateArSubLoggerInstance(nameof(SNetExt_Replication));
 
+    private static readonly SNetExt_ReplicatorRegistry s_registry = new();
+
+    internal static SNetExt_ReplicatorRegistry Registry => s_registry;
+
     [HideFromIl2Cpp]
     public void Setup()
     {
@@ -23,14 +27,13 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     public void SetupReplication() { }
 
     [HideFromIl2Cpp]
-    internal void OnRecall()
-    {
-    }
+    internal void OnRecall() => RecallStarted?.Invoke();
 
     [HideFromIl2Cpp]
-    internal void OnPostRecall()
-    {
-    }
+    internal void OnPostRecall() => RecallFinished?.Invoke();
+
+    public static event Action RecallStarted;
+    public static event Action RecallFinished;
 
     [HideFromIl2Cpp]
     public void OnResetSession()
@@ -44,46 +47,36 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
         if (m_replicationManagers != null)
         {
             for (int i = 0; i < m_replicationManagers.Count; i++)
-            {
                 m_replicationManagers[i].OnValidateMasterData();
-            }
         }
     }
 
     [HideFromIl2Cpp]
-    public void CleanupReplicators()
+    internal void CleanupReplicators()
     {
         SNetExt.PrefabReplication.OnClearAllSpawnedLocal();
-        for (int i = m_assignedReplicators.Count - 1; i > -1; i--)
+        var assigned = s_registry.Assigned;
+        for (int i = assigned.Count - 1; i >= 0; i--)
         {
-            var replicator = m_assignedReplicators[i];
-            if (replicator != null)
+            var replicator = assigned[i];
+            if (replicator == null) continue;
+            switch (replicator.Type)
             {
-                if (replicator.Type == SNetExt_ReplicatorType.Dynamic)
-                {
+                case SNetExt_ReplicatorType.Dynamic:
                     replicator.Despawn();
-                }
-                else if (replicator.Type == SNetExt_ReplicatorType.SelfManaged)
-                {
-                    replicator.Key = string.Empty;
-                    m_assignedReplicators.RemoveAt(i);
-                }
-                else if (replicator.Type == SNetExt_ReplicatorType.VanillaWrapper)
-                {
+                    break;
+                case SNetExt_ReplicatorType.SelfManaged:
+                    if (replicator is ISNetExt_MutableReplicator mut)
+                        mut.AssignKey(string.Empty);
+                    s_registry.Unregister(replicator);
+                    break;
+                case SNetExt_ReplicatorType.VanillaWrapper:
                     var wrapper = replicator as SNetExt_Replicator_VanillaWrapper;
                     if (wrapper.VanillaType == SNetwork.SNet_ReplicatorType.Dynamic)
-                    {
                         wrapper.Despawn();
-                    }
                     else if (wrapper.VanillaType == SNetwork.SNet_ReplicatorType.SelfManaged)
-                    {
                         DeallocateVanillaWrapper(wrapper);
-                    }
-                }
-            }
-            else
-            {
-                m_assignedReplicators.RemoveAt(i);
+                    break;
             }
         }
     }
@@ -105,35 +98,57 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
 
     [HideFromIl2Cpp]
     public bool TryGetLastSender(out SNetwork.SNet_Player sender, bool allowCreate = false)
+        => SNetwork.SNet.Core.TryGetPlayer(LastSenderID, out sender, allowCreate);
+
+    [HideFromIl2Cpp]
+    internal SNetwork.SNet_Player ResolveLastSender()
+        => SNetwork.SNet.Core.TryGetPlayer(LastSenderID, out var p, false) ? p : null;
+
+    [HideFromIl2Cpp]
+    public bool IsLastSenderMaster
     {
-        return SNetwork.SNet.Core.TryGetPlayer(LastSenderID, out sender, allowCreate);
+        get
+        {
+            var p = ResolveLastSender();
+            return p != null && p.IsMaster;
+        }
     }
 
     [HideFromIl2Cpp]
-    public bool IsLastSenderMaster => SNetwork.SNet.Core.TryGetPlayer(LastSenderID, out var sender, false) && sender.IsMaster;
+    public bool IsLastSenderInSessionHub
+    {
+        get
+        {
+            var p = ResolveLastSender();
+            return p != null && p.IsInSessionHub;
+        }
+    }
 
     [HideFromIl2Cpp]
-    public bool IsLastSenderInSessionHub => SNetwork.SNet.Core.TryGetPlayer(LastSenderID, out var sender, false) && sender.IsInSessionHub;
-
-    [HideFromIl2Cpp]
-    public bool IsLastSenderInSlot => SNetwork.SNet.Core.TryGetPlayer(LastSenderID, out var sender, false) && sender.IsInSessionHub && sender.IsInSlot;
+    public bool IsLastSenderInSlot
+    {
+        get
+        {
+            var p = ResolveLastSender();
+            return p != null && p.IsInSessionHub && p.IsInSlot;
+        }
+    }
 
     [HideFromIl2Cpp]
     internal void RecallBytes(byte[] bytes)
     {
         LastSenderID = 0UL;
-        if (TryGetReplicator(bytes, out m_tempReplicator, out m_tempPacketKeyHash, out m_tempPacketIndex))
-            m_tempReplicator.ReceiveBytes(m_tempPacketKeyHash, m_tempPacketIndex, bytes);
+        if (TryGetReplicator(bytes, out var replicator, out var packetKeyHash, out var packetIndex))
+            ((ISNetExt_MutableReplicator)replicator).ReceiveBytes(packetKeyHash, packetIndex, bytes);
     }
 
     [HideFromIl2Cpp]
     private void ReceiveBytes(ulong senderId, byte[] bytes)
     {
         LastSenderID = senderId;
-        if (bytes.Length < 33)
-            return;
-        if (TryGetReplicator(bytes, out m_tempReplicator, out m_tempPacketKeyHash, out m_tempPacketIndex))
-            m_tempReplicator.ReceiveBytes(m_tempPacketKeyHash, m_tempPacketIndex, bytes);
+        if (bytes.Length < 33) return;
+        if (TryGetReplicator(bytes, out var replicator, out var packetKeyHash, out var packetIndex))
+            ((ISNetExt_MutableReplicator)replicator).ReceiveBytes(packetKeyHash, packetIndex, bytes);
     }
 
     [HideFromIl2Cpp]
@@ -141,21 +156,19 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     public static bool TryGetReplicatorByKeyHash(string keyHash, out ISNetExt_Replicator replicator)
     {
         var k = SNetExt_KeyHash16.FromHex(keyHash);
-        if (k.IsEmpty || !s_replicators.TryGetValue(k, out replicator))
+        if (k.IsEmpty)
         {
             replicator = null;
             return false;
         }
-        return replicator != null;
+        return s_registry.TryGet(k, out replicator);
     }
 
     [HideFromIl2Cpp]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool TryGetReplicatorByKeyHash16(in SNetExt_KeyHash16 keyHash, out ISNetExt_Replicator replicator)
     {
-        if (!s_replicators.TryGetValue(keyHash, out replicator))
-            return false;
-        return replicator != null;
+        return s_registry.TryGet(keyHash, out replicator);
     }
 
     [HideFromIl2Cpp]
@@ -165,8 +178,7 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
         if (TryGetReplicatorByKeyHash(keyHash, out var replicator) && replicator.ReplicatorSupplier != null)
         {
             supplier = replicator.ReplicatorSupplier as A;
-            if (supplier != null)
-                return true;
+            if (supplier != null) return true;
         }
         supplier = default;
         return false;
@@ -176,143 +188,81 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReplicator(pReplicationData data, out ISNetExt_Replicator replicator)
     {
-        return TryGetReplicatorByKeyHash(data.ReplicatorKeyHash, out replicator);
+        return s_registry.TryGet(data.ReplicatorKeyHash, out replicator);
     }
 
     [HideFromIl2Cpp]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryGetReplicator(byte[] bytes, out ISNetExt_Replicator replicator, out string packetKeyHash, out byte packetIndex)
+    private static bool TryGetReplicator(byte[] bytes, out ISNetExt_Replicator replicator, out SNetExt_KeyHash16 packetKeyHash, out byte packetIndex)
     {
         var replicatorKey = SNetExt_KeyHash16.FromSpan(bytes.AsSpan(0, 16));
-        if (!s_replicators.TryGetValue(replicatorKey, out replicator))
+        if (!s_registry.TryGet(replicatorKey, out replicator))
         {
-            packetKeyHash = string.Empty;
+            packetKeyHash = default;
             packetIndex = byte.MaxValue;
             return false;
         }
-
-        packetKeyHash = Convert.ToHexString(bytes, 16, 16);
+        packetKeyHash = SNetExt_KeyHash16.FromSpan(bytes.AsSpan(16, 16));
         packetIndex = bytes[32];
-        return replicator != null;
+        return true;
     }
 
     [HideFromIl2Cpp]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte[] ReplicatorKeyHashToBytes(string keyHash)
-    {
-        return SNetExt_HashUtil.HashHexToBytes(keyHash);
-    }
+        => SNetExt_HashUtil.HashHexToBytes(keyHash);
 
     [HideFromIl2Cpp]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string ReplicatorKeyToHash(string key)
-    {
-        return SNetExt_HashUtil.KeyToHashHex(key);
-    }
+        => SNetExt_HashUtil.KeyToHashHex(key);
 
     [HideFromIl2Cpp]
-    private void AddToAssingedList(ISNetExt_Replicator replicator)
+    internal static void AllocateReplicator(ISNetExt_MutableReplicator replicator)
     {
-        if (!m_assignedReplicators.Contains(replicator))
+        var status = s_registry.Register(replicator);
+        switch (status)
         {
-            m_assignedReplicators.Add(replicator);
+            case SNetExt_ReplicatorRegistry.RegisterStatus.InvalidKeyHash:
+                _logger.Error($"AllocateReplicator, Invalid KeyHash. Hash: '{replicator.KeyHash}'");
+                throw new InvalidOperationException($"Replicator has invalid KeyHash '{replicator.KeyHash}'");
+            case SNetExt_ReplicatorRegistry.RegisterStatus.Conflict:
+                s_registry.TryGet(SNetExt_KeyHash16.FromHex(replicator.KeyHash), out var existing);
+                _logger.Error($"AllocateReplicator, KeyHash conflict. Existing Key: '{existing?.Key}', New Key: '{replicator.Key}', KeyHash: '{replicator.KeyHash}'");
+                throw new InvalidOperationException($"Replicator with KeyHash '{replicator.KeyHash}' already exists");
         }
     }
 
     [HideFromIl2Cpp]
-    private void RemoveFromAssignedList(ISNetExt_Replicator replicator)
+    internal static void AssignReplicatorKey(ISNetExt_MutableReplicator replicator, string keyHash, bool isRecall = false)
     {
-        m_assignedReplicators.Remove(replicator);
-    }
-
-    [HideFromIl2Cpp]
-    private void ClearReplicatorKey(string keyHash, ISNetExt_Replicator newReplicator)
-    {
-        var k = SNetExt_KeyHash16.FromHex(keyHash);
-        if (k.IsEmpty || !s_replicators.TryGetValue(k, out var replicator))
-            return;
-        if (replicator != null)
+        var newHash = SNetExt_KeyHash16.FromHex(keyHash);
+        if (newHash.IsEmpty)
         {
-            if (replicator == newReplicator)
-            {
-                _logger.Error("ClearReplicatorKey, This happened!");
-                return;
-            }
-
-            RemoveFromAssignedList(replicator);
-            replicator.Despawn();
-        }
-    }
-
-    [HideFromIl2Cpp]
-    public static void AllocateReplicator(ISNetExt_Replicator replicator)
-    {
-        if (!replicator.HasValidKeyHash)
-        {
-            _logger.Error($"AllocateReplicator, Invalid KeyHash. Hash: '{replicator.KeyHash}'");
+            _logger.Error($"AssignReplicatorKey, Invalid KeyHash. Hash: '{keyHash}'");
             return;
         }
-        var k = SNetExt_KeyHash16.FromHex(replicator.KeyHash);
-        if (s_replicators.TryGetValue(k, out var existReplicator))
+        var status = s_registry.Reassign(replicator, newHash);
+        if (status == SNetExt_ReplicatorRegistry.RegisterStatus.Conflict)
         {
-            _logger.Error($"AllocateReplicator, keyHash Conflict. Exist Key: '{existReplicator.Key}', New Key: '{replicator.Key}', Key Hash: '{replicator.KeyHash}'");
-            return;
+            _logger.Error($"AssignReplicatorKey, KeyHash conflict on '{keyHash}'");
+            throw new InvalidOperationException($"Cannot reassign to KeyHash '{keyHash}': occupied");
         }
-        s_replicators[k] = replicator;
-        s_replicatorKeyToKeyHash[replicator.Key] = replicator.KeyHash;
-        s_replicatorKeyHashToKey[replicator.KeyHash] = replicator.Key;
-        SNetExt.Replication.AddToAssingedList(replicator);
     }
 
     [HideFromIl2Cpp]
-    public static void AssignReplicatorKey(ISNetExt_Replicator replicator, string keyHash, bool isRecall = false)
+    internal static void DeallocateReplicator(ISNetExt_Replicator replicator)
     {
-        SNetExt.Replication.ClearReplicatorKey(replicator.KeyHash, replicator);
-
-        replicator.Key = string.Empty;
-        replicator.KeyHash = keyHash;
-
-        if (!replicator.HasValidKeyHash)
-        {
-            _logger.Error($"AssignReplicatorKey, Invalid KeyHash. Hash: '{replicator.KeyHash}'");
-            return;
-        }
-        var k = SNetExt_KeyHash16.FromHex(replicator.KeyHash);
-        s_replicators[k] = replicator;
-        if (!replicator.IsAnonymous)
-        {
-            s_replicatorKeyToKeyHash[replicator.Key] = replicator.KeyHash;
-            s_replicatorKeyHashToKey[replicator.KeyHash] = replicator.Key;
-        }
-        SNetExt.Replication.AddToAssingedList(replicator);
-    }
-
-    [HideFromIl2Cpp]
-    public static void DeallocateReplicator(ISNetExt_Replicator replicator)
-    {
-        var k = SNetExt_KeyHash16.FromHex(replicator.KeyHash);
-        if (k.IsEmpty || !s_replicators.TryGetValue(k, out var existReplicator))
-            return;
-        if (existReplicator == replicator)
-        {
-            s_replicators.Remove(k);
-            if (!replicator.IsAnonymous)
-            {
-                s_replicatorKeyToKeyHash.Remove(replicator.Key);
-                s_replicatorKeyHashToKey.Remove(replicator.KeyHash);
-            }
-        }
-        replicator.Key = string.Empty;
-        SNetExt.Replication.RemoveFromAssignedList(replicator);
+        s_registry.Unregister(replicator);
+        if (replicator is ISNetExt_MutableReplicator mut)
+            mut.AssignKey(string.Empty);
     }
 
     [HideFromIl2Cpp]
     public static ISNetExt_Replicator AddManagerReplicator(string key)
     {
-        var manager = new SNetExt_Replicator_Manager
-        {
-            Key = key
-        };
+        var manager = new SNetExt_Replicator_Manager();
+        ((ISNetExt_MutableReplicator)manager).AssignKey(key);
         AllocateReplicator(manager);
         return manager;
     }
@@ -331,10 +281,8 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     [HideFromIl2Cpp]
     public static ISNetExt_Replicator AddSelfManagedReplicator(string key)
     {
-        var replicator = new SNetExt_Replicator_SelfManaged
-        {
-            Key = key
-        };
+        var replicator = new SNetExt_Replicator_SelfManaged();
+        ((ISNetExt_MutableReplicator)replicator).AssignKey(key);
         AllocateReplicator(replicator);
         return replicator;
     }
@@ -353,16 +301,10 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
     [HideFromIl2Cpp]
     internal static bool TryBindVanillaWrapper(SNetwork.IReplicator vanilla)
     {
-        if (vanilla == null || vanilla.Key == 0)
-        {
-            return false;
-        }
-        if (s_byVanillaPointer.TryGetValue(vanilla.Pointer, out var wrapper) && wrapper != null && wrapper.IsAlive)
-        {
+        if (vanilla == null || vanilla.Key == 0) return false;
+        if (s_registry.TryGetByVanilla(vanilla.Pointer, out var existing) && existing != null && existing.IsAlive)
             return true;
-        }
-        wrapper = BindVanillaInternal(vanilla);
-        return wrapper != null;
+        return BindVanillaInternal(vanilla) != null;
     }
 
     [HideFromIl2Cpp]
@@ -374,37 +316,27 @@ public class SNetExt_Replication : MonoBehaviour, ISNetExt_Manager
             _logger.Error($"BindVanillaInternal: invalid keyhash for vanilla.Key={vanilla.Key}");
             return null;
         }
-        AllocateReplicator(wrapper);
-        s_byVanillaPointer[vanilla.Pointer] = wrapper;
+        var status = s_registry.RegisterVanilla(wrapper);
+        if (status != SNetExt_ReplicatorRegistry.RegisterStatus.Success)
+        {
+            _logger.Error($"BindVanillaInternal: failed to register wrapper, status={status}");
+            return null;
+        }
         return wrapper;
     }
 
     [HideFromIl2Cpp]
     internal static bool TryGetVanillaWrapper(SNetwork.IReplicator vanilla, out SNetExt_Replicator_VanillaWrapper wrapper)
-    {
-        return s_byVanillaPointer.TryGetValue(vanilla.Pointer, out wrapper) && wrapper != null;
-    }
+        => s_registry.TryGetByVanilla(vanilla.Pointer, out wrapper);
 
     [HideFromIl2Cpp]
     internal static void DeallocateVanillaWrapper(SNetExt_Replicator_VanillaWrapper wrapper)
     {
-        DeallocateReplicator(wrapper);
-        if (!s_byVanillaPointer.Remove(wrapper.Vanilla.Pointer))
-        {
-            _logger.Error($"DeallocateVanillaWrapper: Wrapper doesn't exists for Vanilla.Pointer={wrapper.Vanilla.Pointer}");
-        }
+        if (!s_registry.UnregisterVanilla(wrapper))
+            _logger.Error($"DeallocateVanillaWrapper: Wrapper doesn't exist for Vanilla.Pointer={wrapper.Vanilla.Pointer}");
     }
 
-    private static readonly Dictionary<SNetExt_KeyHash16, ISNetExt_Replicator> s_replicators = new(64);
-    private static readonly Dictionary<string, string> s_replicatorKeyToKeyHash = new(64);
-    private static readonly Dictionary<string, string> s_replicatorKeyHashToKey = new(64);
-    private static readonly Dictionary<IntPtr, SNetExt_Replicator_VanillaWrapper> s_byVanillaPointer = new(64);
-
-    private readonly List<ISNetExt_Replicator> m_assignedReplicators = new();
     private readonly List<SNetExt_ReplicationManager> m_replicationManagers = new();
-    private ISNetExt_Replicator m_tempReplicator;
-    private string m_tempPacketKeyHash;
-    private byte m_tempPacketIndex;
 
     [HideFromIl2Cpp]
     public ulong LastSenderID { get; private set; }

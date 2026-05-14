@@ -1,7 +1,6 @@
 ﻿using Clonesoft.Json;
 using Clonesoft.Json.Converters;
 using Clonesoft.Json.Serialization;
-using SNetwork;
 using TheArchive.Core;
 using TheArchive.Core.Localization;
 
@@ -15,15 +14,11 @@ public static class CoreGlobal
 
     public const string VERSION = "1.0.0";
 
-    public static int Revision => SNet.GameRevision;
-
-    public static string RevisionString => SNet.GameRevisionString;
-
     internal static ILocalizationService Localization { get; private set; }
 
     internal static JsonSerializerSettings JsonSerializerSettings { get; private set; }
 
-    public static void Setup(IArchiveModule module)
+    internal static void Setup(IArchiveModule module)
     {
         Localization = module.LocalizationService;
 

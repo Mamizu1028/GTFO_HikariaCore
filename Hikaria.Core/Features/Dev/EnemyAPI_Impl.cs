@@ -38,9 +38,11 @@ internal class EnemyAPI_Impl : Feature
     #region Events
     public static event Action<Dam_EnemyDamageLimb> OnEnemyLimbDestroyed;
     public static event Action<EnemyAgent> OnEnemyDead;
+    public static event Action<EnemyAgent> OnPostEnemyDead;
     public static event EnemyReceivedDamage OnEnemyReceivedDamage;
     public static event Action<EnemyAgent> OnEnemySpawned;
     public static event Action<EnemyAgent> OnEnemyDespawn;
+    public static event Action<EnemyAgent> OnEnemyDespawnd;
     #endregion
 
     private static void OnReceivedFullEnemyReceivedDamage(SNet_Player sender, pFullEnemyReceivedDamageData data)
@@ -79,6 +81,11 @@ internal class EnemyAPI_Impl : Feature
         {
             Utils.SafeInvoke(OnEnemyDead, __instance);
         }
+
+        private static void Postfix(EnemyAgent __instance)
+        {
+            Utils.SafeInvoke(OnPostEnemyDead, __instance);
+        }
     }
 
     [ArchivePatch(typeof(EnemySync), nameof(EnemySync.OnSpawn))]
@@ -96,6 +103,11 @@ internal class EnemyAPI_Impl : Feature
         private static void Prefix(EnemySync __instance)
         {
             Utils.SafeInvoke(OnEnemyDespawn, __instance.m_agent);
+        }
+
+        private static void Postfix(EnemySync __instance)
+        {
+            Utils.SafeInvoke(OnEnemyDespawnd, __instance.m_agent);
         }
     }
 

@@ -119,8 +119,10 @@ internal class ModList : Feature
         var entry = Settings.OthersMods.Find(p => p.Lookup == player.Lookup);
         if (entry == null)
         {
-            entry = new PlayerModListEntry(player);
-            entry.ModList = new List<ModInfoEntry>(mods.Select(modInfo => new ModInfoEntry(modInfo)));
+            entry = new PlayerModListEntry(player)
+            {
+                ModList = new List<ModInfoEntry>(mods.Select(modInfo => new ModInfoEntry(modInfo)))
+            };
             Settings.OthersMods.Add(entry);
         }
         else

@@ -14,11 +14,11 @@ public class SNetExt_CaptureBuffer
 
     public List<byte[]> GetPass(SNetExt_CapturePass pass)
     {
-        if ((int)pass >= PassCount)
-        {
-            return m_passes[0];
-        }
-        return m_passes[(int)pass];
+        int idx = (int)pass;
+        if (idx < 0 || idx >= PassCount)
+            throw new ArgumentOutOfRangeException(nameof(pass),
+                $"pass={pass} must be < PassCount ({PassCount})");
+        return m_passes[idx];
     }
 
     public void Clear()

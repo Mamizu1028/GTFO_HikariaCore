@@ -20,7 +20,7 @@ public class SNetExt_ReplicatedPlayerData<A> where A : struct
     {
         if ((wrappedData as ISNetExt_ReplicatedPlayerData).PlayerData.TryGetPlayer(out var player) && !player.IsLocal)
         {
-            player.StoreCustomData(wrappedData);
+            player.StoreCustomDataLocal(wrappedData);
             Utils.SafeInvoke(s_singleton.m_onChangeCallback, player, wrappedData);
         }
     }

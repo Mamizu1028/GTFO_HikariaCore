@@ -65,15 +65,15 @@ public abstract class SNetExt_ReplicatedPacket
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void InjectIDPacketIndex(byte[] bytes)
     {
-        Buffer.BlockCopy(Replicator.KeyHashBytes, 0, bytes, 0, 16);
+        Replicator.KeyHashBytes.CopyTo(bytes.AsSpan(0, 16));
         Buffer.BlockCopy(KeyHashBytes, 0, bytes, 16, 16);
         bytes[32] = Index;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void InjectIDPacketIndex(SNetExt_ReplicatedPacket packet, byte[] bytes, byte[] replicatorKeyHashBytes, byte[] packetKeyHashBytes)
+    public static void InjectIDPacketIndex(SNetExt_ReplicatedPacket packet, byte[] bytes, ReadOnlySpan<byte> replicatorKeyHashBytes, byte[] packetKeyHashBytes)
     {
-        Buffer.BlockCopy(replicatorKeyHashBytes, 0, bytes, 0, 16);
+        replicatorKeyHashBytes.CopyTo(bytes.AsSpan(0, 16));
         Buffer.BlockCopy(packetKeyHashBytes, 0, bytes, 16, 16);
         bytes[32] = packet.Index;
     }
@@ -175,8 +175,17 @@ public class SNetExt_ReplicatedPacket<T> : SNetExt_ReplicatedPacket where T : st
             MemoryMarshal.Write(m_internalBytes.AsSpan(33, s_marshaller.Size), ref data);
             return;
         }
-        Marshal.StructureToPtr(data, s_marshaller.m_intPtr, true);
-        Marshal.Copy(s_marshaller.m_intPtr, m_internalBytes, 33, s_marshaller.Size);
+        IntPtr ptr = Marshal.AllocHGlobal(s_marshaller.Size);
+        try
+        {
+            Marshal.StructureToPtr(data, ptr, false);
+            Marshal.Copy(ptr, m_internalBytes, 33, s_marshaller.Size);
+        }
+        finally
+        {
+            Marshal.DestroyStructure<T>(ptr);
+            Marshal.FreeHGlobal(ptr);
+        }
     }
 
     internal void CaptureToBuffer(T data, SNetExt_CapturePass captureDataType)
@@ -187,16 +196,19 @@ public class SNetExt_ReplicatedPacket<T> : SNetExt_ReplicatedPacket where T : st
 
     public override void ReceiveBytes(byte[] bytes)
     {
-        if (bytes.Length == s_marshaller.SizeWithIDs)
+        if (bytes.Length != s_marshaller.SizeWithIDs)
         {
-            s_marshaller.MarshalToData(bytes, ref m_data);
-            if (m_hasValidateAction && SNetwork.SNet.IsMaster)
-            {
-                ValidateAction(m_data);
-                return;
-            }
-            ReceiveAction(m_data);
+            SNetExt.Logger.Warning(
+                $"ReceiveBytes<{typeof(T).Name}>: size mismatch (expected {s_marshaller.SizeWithIDs}, got {bytes.Length})");
+            return;
         }
+        s_marshaller.MarshalToData(bytes, ref m_data);
+        if (m_hasValidateAction && SNetwork.SNet.IsMaster)
+        {
+            ValidateAction(m_data);
+            return;
+        }
+        ReceiveAction(m_data);
     }
 
     private void SetInternalSize()

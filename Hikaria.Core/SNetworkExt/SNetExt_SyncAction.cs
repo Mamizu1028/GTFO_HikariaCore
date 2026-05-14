@@ -1,17 +1,27 @@
-﻿using TheArchive.Utilities;
+using TheArchive.Utilities;
 
 namespace Hikaria.Core.SNetworkExt;
 
-public abstract class SNetExt_SyncedAction<T> where T : struct
+public abstract class SNetExt_SyncedAction<T> : IDisposable where T : struct
 {
     protected SNetExt_SyncedAction() { }
 
-    ~SNetExt_SyncedAction()
+    public void Dispose()
     {
-        SNetEventAPI.OnSessionMemberChanged -= OnSessionMemberChanged;
-        CoreAPI.OnPlayerModsSynced -= OnPlayerModsSynced;
+        if (_disposed) return;
+        _disposed = true;
+        if (_sessionMemberHandler != null)
+            SNetEventAPI.OnSessionMemberChanged -= _sessionMemberHandler;
+        if (_modsSyncedHandler != null)
+            CoreAPI.OnPlayerModsSynced -= _modsSyncedHandler;
         m_listeners.Clear();
         m_listenersLookup.Clear();
+        GC.SuppressFinalize(this);
+    }
+
+    ~SNetExt_SyncedAction()
+    {
+        Dispose();
     }
 
     protected void Setup(string eventName, Action<SNetwork.SNet_Player, T> incomingAction, Action<T> incomingActionValidation = null, Func<SNetwork.SNet_Player, bool> listenerFilter = null, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
@@ -19,8 +29,11 @@ public abstract class SNetExt_SyncedAction<T> where T : struct
         m_packet = SNetExt_Packet<T>.Create(eventName, incomingAction, incomingActionValidation, channelType);
         m_listenerFilter = listenerFilter;
         m_hasListenerFilter = listenerFilter != null;
-        SNetEventAPI.OnSessionMemberChanged += OnSessionMemberChanged;
-        CoreAPI.OnPlayerModsSynced += OnPlayerModsSynced;
+
+        _sessionMemberHandler = OnSessionMemberChanged;
+        _modsSyncedHandler = OnPlayerModsSynced;
+        SNetEventAPI.OnSessionMemberChanged += _sessionMemberHandler;
+        CoreAPI.OnPlayerModsSynced += _modsSyncedHandler;
     }
 
     public void SyncToPlayer(SNetwork.SNet_Player player, T data)
@@ -138,6 +151,10 @@ public abstract class SNetExt_SyncedAction<T> where T : struct
     public event Action<SNetwork.SNet_Player> OnPlayerAddedToListeners;
 
     public event Action<SNetwork.SNet_Player> OnPlayerRemovedFromListeners;
+
+    private bool _disposed;
+    private Action<SNetwork.SNet_Player, SessionMemberEvent> _sessionMemberHandler;
+    private CoreAPI.PlayerModsSynced _modsSyncedHandler;
 
     protected SNetExt_Packet<T> m_packet;
     protected Func<SNetwork.SNet_Player, bool> m_listenerFilter;

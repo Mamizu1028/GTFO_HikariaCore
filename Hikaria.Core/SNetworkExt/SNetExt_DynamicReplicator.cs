@@ -1,8 +1,22 @@
-﻿namespace Hikaria.Core.SNetworkExt;
+namespace Hikaria.Core.SNetworkExt;
 
-public class SNetExt_DynamicReplicator<T> : SNetExt_Replicator where T : struct, ISNetExt_DynamicReplication
+public class SNetExt_DynamicReplicator<T> : SNetExt_Replicator, ISNetExt_OwnedReplicator where T : struct, ISNetExt_DynamicReplication
 {
     public override SNetExt_ReplicatorType Type => SNetExt_ReplicatorType.Dynamic;
+
+    public override bool LocallyOwned => OwnedByMaster ? SNetwork.SNet.IsMaster : (OwningPlayer != null && OwningPlayer.IsLocal);
+
+    SNetwork.SNet_Player ISNetExt_OwnedReplicator.OwningPlayer
+    {
+        get => OwningPlayer;
+        set => SetOwningPlayerInternal(value);
+    }
+
+    bool ISNetExt_OwnedReplicator.OwnedByMaster
+    {
+        get => OwnedByMaster;
+        set => SetOwnedByMasterInternal(value);
+    }
 
     public void SetManager(SNetExt_ReplicationManager<T> manager)
     {
@@ -44,16 +58,13 @@ public class SNetExt_DynamicReplicator<T> : SNetExt_Replicator where T : struct,
             m_manager.DeSpawn(this);
             return;
         }
-        if (ReplicatorSupplier != null && ReplicatorSupplier.gameObject != null)
-        {
-            UnityEngine.Object.Destroy(ReplicatorSupplier.gameObject);
-            ReplicatorSupplier = null;
-        }
+        var supplier = ReplicatorSupplier;
+        ReplicatorSupplier = null;
+        if (supplier?.gameObject != null)
+            UnityEngine.Object.Destroy(supplier.gameObject);
     }
 
     private bool m_isRegistered;
-
     private SNetExt_ReplicationManager<T> m_manager;
-
     private T m_spawnData;
 }

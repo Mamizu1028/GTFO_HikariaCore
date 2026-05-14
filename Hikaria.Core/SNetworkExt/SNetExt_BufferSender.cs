@@ -9,9 +9,14 @@ public class SNetExt_BufferSender
         m_packetsPerFrame = packetsPerFrame;
         m_sendInterval = sendInterval;
         m_buffer = buffer;
-        m_sendToPlayers.AddRange(players);
         m_bufferType = buffer.type;
         m_channelType = channelType;
+        for (int i = 0; i < players.Count; i++)
+        {
+            var p = players[i];
+            if (p != null && p.IsInSessionHub && !p.IsBot)
+                m_sendToPlayers.Add(p);
+        }
     }
 
     private void UpdateBufferBytes()
@@ -23,19 +28,18 @@ public class SNetExt_BufferSender
 
     private bool UpdatePlayerList()
     {
-        for (int i = m_sendToPlayers.Count - 1; i > -1; i--)
+        for (int i = m_sendToPlayers.Count - 1; i >= 0; i--)
         {
-            var snet_Player = m_sendToPlayers[i];
-            if (!snet_Player.IsInSessionHub || snet_Player.IsBot)
-            {
+            var p = m_sendToPlayers[i];
+            if (p == null || !p.IsInSessionHub || p.IsBot)
                 m_sendToPlayers.RemoveAt(i);
-            }
         }
         return m_sendToPlayers.Count > 0;
     }
 
     public bool Update()
     {
+        if (!SNetwork.SNet.IsMaster) return true;
         if (m_state == State.Send)
         {
             m_sendTimer += Clock.Delta;
@@ -105,7 +109,6 @@ public class SNetExt_BufferSender
                     {
                         SNetExt.Capture.m_bufferBytesPacket.Send(list[i], m_bufferBytes, m_sendToPlayers);
                         m_packetIndex++;
-                        m_totalPacketsSent++;
                     }
                     break;
                 }
@@ -142,10 +145,6 @@ public class SNetExt_BufferSender
     private readonly SNetwork.SNet_ChannelType m_channelType;
 
     private float m_sendTimer;
-
-    private int m_totalPacketsToSend;
-
-    private int m_totalPacketsSent;
 
     private byte[] m_bufferBytes = new byte[3];
 

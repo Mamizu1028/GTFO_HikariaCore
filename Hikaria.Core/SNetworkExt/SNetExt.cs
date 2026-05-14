@@ -1,4 +1,4 @@
-﻿using TheArchive.Interfaces;
+using TheArchive.Interfaces;
 using TheArchive.Loader;
 using UnityEngine;
 
@@ -84,24 +84,19 @@ public static class SNetExt
 
     public static void SendCustomData<A>(SNetwork.SNet_Player toPlayer = null) where A : struct
     {
-        if (toPlayer != null && toPlayer.IsBot)
-            return;
+        if (toPlayer != null && toPlayer.IsBot) return;
+        if (SNetwork.SNet.LocalPlayer == null) return;
 
-        if (SNetwork.SNet.LocalPlayer != null)
+        SNetExt_ReplicatedPlayerData<A>.SendData(SNetwork.SNet.LocalPlayer, GetLocalCustomData<A>(), toPlayer);
+
+        if (!SNetwork.SNet.IsMaster) return;
+
+        var allBots = SNetwork.SNet.Core.GetAllBots(true);
+        for (int i = 0; i < allBots.Count; i++)
         {
-            SNetExt_ReplicatedPlayerData<A>.SendData(SNetwork.SNet.LocalPlayer, GetLocalCustomData<A>(), toPlayer);
-        }
-        if (SNetwork.SNet.IsMaster && toPlayer != null && !toPlayer.IsBot)
-        {
-            var allBots = SNetwork.SNet.Core.GetAllBots(true);
-            for (int i = 0; i < allBots.Count; i++)
-            {
-                var bot = allBots[i];
-                if (bot != null && bot.IsBot)
-                {
-                    SNetExt_ReplicatedPlayerData<A>.SendData(bot, LoadCustomData<A>(bot), toPlayer);
-                }
-            }
+            var bot = allBots[i];
+            if (bot == null || !bot.IsBot) continue;
+            SNetExt_ReplicatedPlayerData<A>.SendData(bot, LoadCustomData<A>(bot), toPlayer);
         }
     }
 
@@ -139,6 +134,22 @@ public static class SNetExt
             typed = (DataWrapper<A>)dataWrapper;
         }
         typed.Store(player, data);
+    }
+
+    public static void StoreCustomDataLocal<A>(this SNetwork.SNet_Player player, A data) where A : struct
+    {
+        var key = (player.Lookup, typeof(A));
+        DataWrapper<A> typed;
+        if (!s_dataWrappersLookup.TryGetValue(key, out var dataWrapper))
+        {
+            typed = new DataWrapper<A>();
+            s_dataWrappersLookup.Add(key, typed);
+        }
+        else
+        {
+            typed = (DataWrapper<A>)dataWrapper;
+        }
+        typed.StoreLocal(data);
     }
 
     private static void SetupReplication()

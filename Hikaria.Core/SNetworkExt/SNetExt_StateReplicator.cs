@@ -11,7 +11,7 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
 
     public ISNetExt_Replicator Replicator { get; set; }
 
-    public ISNetExt_Replicator GetReplicator() => Replicator;
+    public bool PersistAcrossSession => Replicator?.Type == SNetExt_ReplicatorType.Manager;
 
     public static SNetExt_StateReplicator<S> Create(ISNetExt_StateReplicatorProvider<S> provider, SNetExt_ReplicatorLifeTime replictorLifeTime, S startingState = default, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
     {
@@ -69,14 +69,9 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
         get => m_currentState;
         set
         {
-            if (SNetwork.SNet.IsMaster)
-            {
-                m_statePacket.Send(value, m_channelType);
-                OnStateChange(value, false);
-                return;
-            }
-            SNetExt.Logger.Warning(
-                $"SNetExt_StateReplicator<{typeof(S).Name}>.State setter called on non-master and will be ignored. Use a state replicator with interactions if you need slave-initiated changes.");
+            if (!SNetwork.SNet.IsMaster) return;
+            m_statePacket.Send(value, m_channelType);
+            OnStateChange(value, false);
         }
     }
 
@@ -128,13 +123,6 @@ public class SNetExt_StateReplicator<S> : ISNetExt_StateReplicator, ICaptureCall
     private SNetExt_ReplicatedPacket<S> m_statePacket;
     private SNetExt_ReplicatedPacket<S> m_statePacket_Dropin;
     private S m_currentState;
-
-    private struct pWrappedState
-    {
-        public S state;
-
-        public bool isDropIn;
-    }
 }
 
 public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureCallbackObject, ISNetExt_ReplicatorSupplier where S : struct where I : struct
@@ -145,7 +133,7 @@ public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureC
 
     public ISNetExt_Replicator Replicator { get; set; }
 
-    public ISNetExt_Replicator GetReplicator() => Replicator;
+    public bool PersistAcrossSession => Replicator?.Type == SNetExt_ReplicatorType.Manager;
 
     public static SNetExt_StateReplicator<S, I> Create(ISNetExt_StateReplicatorProvider<S, I> provider, SNetExt_ReplicatorLifeTime replictorLifeTime, S startingState = default, SNetwork.SNet_ChannelType channelType = SNetwork.SNet_ChannelType.GameOrderCritical)
     {
@@ -208,11 +196,11 @@ public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureC
         m_provider.AttemptInteract(interaction);
     }
 
-    public void InteractWithState(S newState, I interaction)
+    public void InteractWithState(I interaction)
     {
         if (SNetwork.SNet.IsMaster)
         {
-            OnStateChange(false, newState);
+            m_provider.AttemptInteract(interaction);
             return;
         }
         if (SNetwork.SNet.HasMaster)
@@ -282,11 +270,4 @@ public class SNetExt_StateReplicator<S, I> : ISNetExt_StateReplicator, ICaptureC
     private S m_currentState;
 
     public SNetExt_CapturePass CapturePass = SNetExt_CapturePass.FirstPass;
-
-    private struct pWrappedState
-    {
-        public S state;
-
-        public bool isRecall;
-    }
 }

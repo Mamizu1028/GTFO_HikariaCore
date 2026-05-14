@@ -100,7 +100,7 @@ public sealed class NativeDetourHandle<TDelegate> : INativeDetourHandle
     private TDelegate _original;
     private INativeDetour _detour;
     private bool _applied;
-    private int _disposed;   // 0 = alive, 1 = disposed
+    private int _disposed;
 
     public DetourDescriptor Descriptor { get; }
 
@@ -266,7 +266,6 @@ public unsafe static class NativeDetour
                 return false;
             }
 
-            // 快速路径:启动前已被占用直接抛,不浪费 native 资源
             if (NativeDetourRegistry.IsRegistered(ptr))
                 throw new NativeDetourConflictException(ptr, descriptor);
 
@@ -294,7 +293,6 @@ public unsafe static class NativeDetour
         }
         catch (NativeDetourConflictException)
         {
-            // 显式让冲突异常向外传,不被通用 catch 吞掉
             throw;
         }
         catch (Exception ex)

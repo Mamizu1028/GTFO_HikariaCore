@@ -25,7 +25,7 @@ internal class BulletPierceFix : Feature
 
     public static new IArchiveLogger FeatureLogger { get; set; }
 
-    public static readonly int PatchPriority = -100000;
+    public static readonly int PatchPriority = int.MinValue;
 
     [ArchivePatch(typeof(Weapon), nameof(Weapon.CastWeaponRay))]
     private static class Weapon__CastWeaponRay__Patch

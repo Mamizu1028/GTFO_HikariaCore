@@ -1,4 +1,4 @@
-﻿using Il2CppInterop.Runtime.Attributes;
+using Il2CppInterop.Runtime.Attributes;
 using TheArchive.Interfaces;
 using TheArchive.Loader;
 using UnityEngine;
@@ -7,22 +7,22 @@ namespace Hikaria.Core.SNetworkExt;
 
 public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
 {
-    [HideFromIl2Cpp]
-    public SNetExt_CaptureBuffer PrimedBuffer
-    {
-        get => m_primedBuffer;
-        set
-        {
-            m_primedBuffer = value;
-            IsCapturing = m_primedBuffer != null;
-        }
-    }
+    public enum SNetExt_CaptureState { Idle, Capturing, Recalling }
 
     [HideFromIl2Cpp]
-    public bool IsCapturing { get; private set; }
+    public SNetExt_CaptureState State => _state;
 
     [HideFromIl2Cpp]
-    public bool IsRecalling { get; set; }
+    public bool IsCapturing => _state == SNetExt_CaptureState.Capturing;
+
+    [HideFromIl2Cpp]
+    public bool IsRecalling => _state == SNetExt_CaptureState.Recalling;
+
+    [HideFromIl2Cpp]
+    public SNetExt_CaptureBuffer PrimedBuffer => IsCapturing ? _activeBuffer : null;
+
+    [HideFromIl2Cpp]
+    public SNetExt_BufferType PrimedBufferType => _activeBufferType;
 
     [HideFromIl2Cpp]
     public void Setup()
@@ -52,7 +52,8 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
         }
         m_highestBufferID = 1;
         m_passiveMigrationBufferSend = null;
-        IsCapturing = false;
+        _activeBuffer = null;
+        _state = SNetExt_CaptureState.Idle;
     }
 
     [HideFromIl2Cpp]
@@ -73,23 +74,18 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     }
 
     [HideFromIl2Cpp]
+    internal static void UnregisterCaptureCallback(ICaptureCallbackObject syncInterface)
+        => UnRegisterForDropInCallback(syncInterface);
+
+    [HideFromIl2Cpp]
     internal static void CleanUpAllButManagersCaptureCallbacks()
     {
         int i = s_captureCallbackObjects.Count;
         while (i-- > 0)
         {
             var captureCallbackObject = s_captureCallbackObjects[i];
-            if (captureCallbackObject == null)
-            {
+            if (captureCallbackObject == null || !captureCallbackObject.PersistAcrossSession)
                 s_captureCallbackObjects.RemoveAt(i);
-                continue;
-            }
-            var replicator = captureCallbackObject.GetReplicator();
-            if (replicator == null || replicator.Type != SNetExt_ReplicatorType.Manager)
-            {
-                s_captureCallbackObjects.RemoveAt(i);
-                continue;
-            }
         }
     }
 
@@ -103,22 +99,27 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     internal void IncreaseRecallCount(SNetExt_BufferType bufferType)
     {
         var captureBuffer = m_buffers[(int)bufferType];
+        if (!captureBuffer.isValid)
+        {
+            _logger.Warning($"IncreaseRecallCount on invalid buffer {bufferType}");
+            return;
+        }
         captureBuffer.data.recallCount++;
     }
 
     [HideFromIl2Cpp]
     public List<pBuffersSummary> GetBufferSummaries()
     {
-        var list = new List<pBuffersSummary>();
+        _summariesScratch.Clear();
         for (int i = 0; i < m_buffers.Length; i++)
         {
             var captureBuffer = m_buffers[i];
             if (captureBuffer.type != SNetExt_BufferType.JoinedHub && captureBuffer.isValid)
             {
-                list.Add(new pBuffersSummary(captureBuffer));
+                _summariesScratch.Add(new pBuffersSummary(captureBuffer));
             }
         }
-        return list;
+        return _summariesScratch;
     }
 
     [HideFromIl2Cpp]
@@ -153,8 +154,12 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
         {
             if (!forceCapture || !SNetwork.SNet.Sync.IsBitSet(SNetwork.SNet.Sync.MASK_MASTER_CAN_RECALL_GAMESTATE, (int)SNetwork.SNet.LocalPlayer.Session.mode))
                 return false;
-
             SNetExt.Capture.CaptureGameState(GetOldestMigrationBuffer());
+            if (!TryGetNewestMigrationBuffer(out bufferType))
+            {
+                _logger.Error("TrySendLatestMigrationBuffer: forceCapture failed to produce usable buffer");
+                return false;
+            }
         }
         SendBuffer(bufferType, toPlayer, false);
         return true;
@@ -253,7 +258,7 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
             m_minTimeToSendNextBuffer = Clock.Time + MIGRATION_CAPTURE_INTERVAL_MIN_DELAY;
             return;
         }
-        // BufferSender 内部 m_sendToPlayers.AddRange(players)，所以不会持有外部 list 引用
+
         m_passiveMigrationBufferSend = new SNetExt_BufferSender(5, 0.5f, m_buffers[(int)oldestMigrationBuffer], m_migrationPlayerScratch, SNetwork.SNet_ChannelType.SessionMigration);
         m_migrationTimer = Clock.Time + MIGRATION_CAPTURE_INTERVAL;
     }
@@ -323,7 +328,8 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
         {
             case SNetExt_BufferOperationType.StartReceive:
                 OpenBuffer(command.type, command.bufferID);
-                PrimedBuffer.data.sendingPlayerLookup = SNetExt.Replication.LastSenderID;
+                if (_activeBuffer != null)
+                    _activeBuffer.data.sendingPlayerLookup = SNetExt.Replication.LastSenderID;
                 return;
             case SNetExt_BufferOperationType.StoreGameState:
                 OpenBuffer(command.type, 0);
@@ -358,10 +364,11 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
         {
             m_highestBufferID = bufferID;
         }
-        PrimedBufferType = type;
-        PrimedBuffer = m_buffers[(int)type];
-        PrimedBuffer.Clear();
-        PrimedBuffer.data.bufferID = bufferID;
+        _activeBufferType = type;
+        _activeBuffer = m_buffers[(int)type];
+        _activeBuffer.Clear();
+        _activeBuffer.data.bufferID = bufferID;
+        _state = SNetExt_CaptureState.Capturing;
     }
 
     [HideFromIl2Cpp]
@@ -375,8 +382,11 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
         {
             s_captureCallbackObjects[j].OnStateCapture();
         }
-        PrimedBuffer.data.levelChecksum = SNetwork.SNet.LocalPlayer.Session.levelChecksum;
-        PrimedBuffer.data.progressionTime = Clock.ExpeditionProgressionTime;
+        if (_activeBuffer != null)
+        {
+            _activeBuffer.data.levelChecksum = SNetwork.SNet.LocalPlayer.Session.levelChecksum;
+            _activeBuffer.data.progressionTime = Clock.ExpeditionProgressionTime;
+        }
     }
 
     [HideFromIl2Cpp]
@@ -384,13 +394,12 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     {
         if (captureDataType == SNetExt_CapturePass.Skip)
             return;
+        if (_activeBuffer == null)
+            return;
 
-        // TODO(perf): 可以用紧凑的 ArrayBufferWriter<byte> 替代 List<byte[]>，
-        // 减少捕获期间多次小数组分配。当前每个 packet 都 new byte[]，
-        // checkpoint 一次可能产生数百次小分配。改造需同步 Buffer 反序列化（RecallBytes）。
         byte[] array = new byte[data.Length];
         Buffer.BlockCopy(data, 0, array, 0, data.Length);
-        PrimedBuffer.GetPass(captureDataType).Add(array);
+        _activeBuffer.GetPass(captureDataType).Add(array);
     }
 
     [HideFromIl2Cpp]
@@ -404,25 +413,28 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     {
         if (!SNetExt.Replication.TryGetLastSender(out var sender, false) || !sender.IsInSessionHub)
             return;
-        if (!IsCapturing || PrimedBuffer == null)
+        if (_state != SNetExt_CaptureState.Capturing || _activeBuffer == null)
             return;
-        if (SNetExt.Replication.LastSenderID != PrimedBuffer.data.sendingPlayerLookup)
+        if (SNetExt.Replication.LastSenderID != _activeBuffer.data.sendingPlayerLookup)
             return;
-        if (PrimedBuffer.type == completion.type && PrimedBuffer.data.bufferID == completion.data.bufferID)
+        if (_activeBufferType == completion.type && _activeBuffer.data.bufferID == completion.data.bufferID)
         {
-            PrimedBuffer.isValid = true;
-            PrimedBuffer.data = completion.data;
-            PrimedBuffer = null;
+            _activeBuffer.isValid = true;
+            _activeBuffer.data = completion.data;
+            _activeBuffer = null;
+            _state = SNetExt_CaptureState.Idle;
         }
     }
 
     [HideFromIl2Cpp]
     private void CloseBuffer(SNetExt_BufferType type)
     {
-        if (PrimedBuffer != null && PrimedBuffer.type == type)
+        if (_state == SNetExt_CaptureState.Capturing && _activeBufferType == type)
         {
-            PrimedBuffer.isValid = true;
-            PrimedBuffer = null;
+            if (_activeBuffer != null)
+                _activeBuffer.isValid = true;
+            _activeBuffer = null;
+            _state = SNetExt_CaptureState.Idle;
         }
     }
 
@@ -430,28 +442,22 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     public void SendBuffer(SNetExt_BufferType bufferType, SNetwork.SNet_Player player = null, bool sendAsMigrationBuffer = false)
     {
         m_minTimeToSendNextBuffer = Clock.Time + MIGRATION_CAPTURE_INTERVAL_MIN_DELAY;
-        var captureBuffer = m_buffers[(int)bufferType];
-        if (sendAsMigrationBuffer)
-        {
-            bufferType = GetOldestMigrationBuffer();
-        }
+        var actualType = sendAsMigrationBuffer ? GetOldestMigrationBuffer() : bufferType;
+        var captureBuffer = m_buffers[(int)actualType];
         var bufferCommand = new pBufferCommand
         {
-            type = bufferType,
+            type = actualType,
             operation = SNetExt_BufferOperationType.StartReceive,
             bufferID = captureBuffer.data.bufferID
         };
         if (player != null)
-        {
             m_bufferCommandPacket.Send(bufferCommand, SNetwork.SNet_ChannelType.SessionOrderCritical, player);
-        }
         else
-        {
             m_bufferCommandPacket.Send(bufferCommand, SNetwork.SNet_ChannelType.SessionOrderCritical);
-        }
+
         var bufferCompletion = new pBufferCompletion
         {
-            type = bufferType,
+            type = actualType,
             data = captureBuffer.data
         };
         byte[] array = new byte[3];
@@ -490,23 +496,16 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     [HideFromIl2Cpp]
     public void OnReceiveBufferBytes(ReadOnlySpan<byte> bytes, SNetExt_ReplicatedPacketBufferBytes.BufferData bufferData)
     {
-        if (!IsCapturing)
-            return;
-        if (PrimedBuffer.data.bufferID != bufferData.bufferID)
-            return;
-        if (PrimedBuffer.data.sendingPlayerLookup != SNetExt.Replication.LastSenderID)
-            return;
-        if (!SNetwork.SNet.MasterManagement.IsMigrating && !SNetExt.Replication.IsLastSenderMaster)
-            return;
-        if (bufferData.pass >= SNetExt_CaptureBuffer.PassCount)
-            return;
-        // TODO(perf): 见 CaptureToBuffer 同样的紧凑布局优化备忘
-        byte[] array = bytes.ToArray();
-        PrimedBuffer.m_passes[bufferData.pass].Add(array);
-    }
+        if (_state != SNetExt_CaptureState.Capturing) return;
+        var buf = _activeBuffer;
+        if (buf == null) return;
+        if (buf.data.bufferID != bufferData.bufferID) return;
+        if (buf.data.sendingPlayerLookup != SNetExt.Replication.LastSenderID) return;
+        if (!SNetwork.SNet.MasterManagement.IsMigrating && !SNetExt.Replication.IsLastSenderMaster) return;
+        if (bufferData.pass >= SNetExt_CaptureBuffer.PassCount) return;
 
-    [HideFromIl2Cpp]
-    public SNetExt_BufferType PrimedBufferType { get; set; }
+        buf.m_passes[bufferData.pass].Add(bytes.ToArray());
+    }
 
     [HideFromIl2Cpp]
     public ulong GetRecallCount(SNetExt_BufferType type)
@@ -523,28 +522,34 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     private void RecallBuffer(SNetExt_BufferType bufferType)
     {
         var captureBuffer = m_buffers[(int)bufferType];
-        IsRecalling = true;
-        PrimedBufferType = bufferType;
-        if (!captureBuffer.isValid)
-            return;
-        var replicationManagers = SNetExt.Replication.ReplicationManagers;
-        for (int i = 0; i < replicationManagers.Count; i++)
+        _state = SNetExt_CaptureState.Recalling;
+        _activeBufferType = bufferType;
+        try
         {
-            replicationManagers[i].ClearAllLocal();
-        }
-        SNetExt.Replication.OnRecall();
-        for (int j = 0; j < SNetExt_CaptureBuffer.PassCount; j++)
-        {
-            List<byte[]> list = captureBuffer.m_passes[j];
-            int count = list.Count;
-            for (int k = 0; k < count; k++)
+            if (!captureBuffer.isValid)
+                return;
+            var replicationManagers = SNetExt.Replication.ReplicationManagers;
+            for (int i = 0; i < replicationManagers.Count; i++)
             {
-                byte[] bytes = list[k];
-                SNetExt.Replication.RecallBytes(bytes);
+                replicationManagers[i].ClearAllLocal();
             }
+            SNetExt.Replication.OnRecall();
+            for (int j = 0; j < SNetExt_CaptureBuffer.PassCount; j++)
+            {
+                List<byte[]> list = captureBuffer.m_passes[j];
+                int count = list.Count;
+                for (int k = 0; k < count; k++)
+                {
+                    byte[] bytes = list[k];
+                    SNetExt.Replication.RecallBytes(bytes);
+                }
+            }
+            SNetExt.Replication.OnPostRecall();
         }
-        SNetExt.Replication.OnPostRecall();
-        IsRecalling = false;
+        finally
+        {
+            _state = SNetExt_CaptureState.Idle;
+        }
     }
 
     [HideFromIl2Cpp]
@@ -558,8 +563,11 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     internal SNetExt_ReplicatedPacket<pBufferCompletion> m_bufferCompletionPacket;
     internal SNetExt_ReplicatedPacketBufferBytes m_bufferBytesPacket;
 
+    private SNetExt_CaptureState _state = SNetExt_CaptureState.Idle;
+    private SNetExt_CaptureBuffer _activeBuffer;
+    private SNetExt_BufferType _activeBufferType;
+
     private SNetExt_CaptureBuffer[] m_buffers;
-    private SNetExt_CaptureBuffer m_primedBuffer;
     private SNetExt_BufferSender m_passiveMigrationBufferSend;
     private float m_migrationTimer;
     private const float MIGRATION_CAPTURE_INTERVAL = 60f;
@@ -567,6 +575,7 @@ public class SNetExt_Capture : MonoBehaviour, ISNetExt_Manager
     private ushort m_highestBufferID = 1;
     private float m_minTimeToSendNextBuffer;
     private readonly List<SNetwork.SNet_Player> m_migrationPlayerScratch = new(8);
+    private readonly List<pBuffersSummary> _summariesScratch = new(8);
     private static readonly List<ICaptureCallbackObject> s_captureCallbackObjects = new();
     private readonly IArchiveLogger _logger = LoaderWrapper.CreateArSubLoggerInstance(nameof(SNetExt_Capture));
 }

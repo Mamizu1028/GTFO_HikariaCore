@@ -67,36 +67,36 @@ public class SNetExt_Packet<T> where T : struct
             else remoteCount++;
         }
 
-        if (!localFound)
+        if (remoteCount > 0)
         {
-            NetworkAPI.InvokeEvent(EventName, data, players, ChannelType);
-            return;
+            if (!localFound)
+            {
+                NetworkAPI.InvokeEvent(EventName, data, players, ChannelType);
+            }
+            else
+            {
+                var remoteList = GetRemotePlayerScratchList();
+                remoteList.Clear();
+                if (remoteList.Capacity < remoteCount)
+                    remoteList.Capacity = remoteCount;
+                for (int i = 0; i < players.Count; i++)
+                {
+                    if (!players[i].IsLocal)
+                        remoteList.Add(players[i]);
+                }
+                NetworkAPI.InvokeEvent(EventName, data, remoteList, ChannelType);
+            }
         }
 
-        OnReceiveData(SNetwork.SNet.LocalPlayer, data);
-
-        if (remoteCount == 0)
-        {
-            return;
-        }
-
-        var remoteList = GetRemotePlayerScratchList();
-        remoteList.Clear();
-        if (remoteList.Capacity < remoteCount)
-            remoteList.Capacity = remoteCount;
-        for (int i = 0; i < players.Count; i++)
-        {
-            if (!players[i].IsLocal)
-                remoteList.Add(players[i]);
-        }
-        NetworkAPI.InvokeEvent(EventName, data, remoteList, ChannelType);
+        if (localFound)
+            OnReceiveData(SNetwork.SNet.LocalPlayer, data);
     }
 
     [ThreadStatic]
-    private static List<SNetwork.SNet_Player> t_remotePlayerScratch;
+    private List<SNetwork.SNet_Player> t_remotePlayerScratch;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static List<SNetwork.SNet_Player> GetRemotePlayerScratchList()
+    private List<SNetwork.SNet_Player> GetRemotePlayerScratchList()
     {
         return t_remotePlayerScratch ??= new List<SNetwork.SNet_Player>(8);
     }

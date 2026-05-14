@@ -9,6 +9,8 @@ internal static class SNetExt_HashUtil
     [ThreadStatic]
     private static MD5 t_md5;
 
+    private static readonly Dictionary<string, string> s_keyHexCache = new(65535);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static MD5 GetMD5() => t_md5 ??= MD5.Create();
 
@@ -16,8 +18,13 @@ internal static class SNetExt_HashUtil
     {
         if (string.IsNullOrWhiteSpace(key))
             return string.Empty;
+        lock (s_keyHexCache)
+        {
+            if (s_keyHexCache.TryGetValue(key, out var cached)) return cached;
+        }
         var md5 = GetMD5();
 
+        string hex;
         int byteCount = Encoding.UTF8.GetByteCount(key);
         if (byteCount <= 256)
         {
@@ -25,10 +32,18 @@ internal static class SNetExt_HashUtil
             Encoding.UTF8.GetBytes(key, input);
             Span<byte> output = stackalloc byte[16];
             md5.TryComputeHash(input, output, out _);
-            return Convert.ToHexString(output);
+            hex = Convert.ToHexString(output);
+        }
+        else
+        {
+            hex = Convert.ToHexString(md5.ComputeHash(Encoding.UTF8.GetBytes(key)));
         }
 
-        return Convert.ToHexString(md5.ComputeHash(Encoding.UTF8.GetBytes(key)));
+        lock (s_keyHexCache)
+        {
+            s_keyHexCache[key] = hex;
+        }
+        return hex;
     }
 
     public static void KeyToHashBytes(string key, Span<byte> destination16)

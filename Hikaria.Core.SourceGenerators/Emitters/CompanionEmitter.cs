@@ -115,14 +115,12 @@ internal static class CompanionEmitter
 
     private static void EmitContainerAggregators(StringBuilder sb, IReadOnlyList<HookInfo> hooks)
     {
-        sb.AppendLine("        /// <summary>启用本类内全部 [NativeDetour] hook。建议在功能 Load() 时调用。</summary>");
         sb.AppendLine("        public static void ApplyAll()");
         sb.AppendLine("        {");
         foreach (var h in hooks)
             sb.Append("            ").Append(h.Stem).AppendLine("_Apply();");
         sb.AppendLine("        }");
         sb.AppendLine();
-        sb.AppendLine("        /// <summary>释放本类内全部 [NativeDetour] hook。建议在功能 OnUnload() 时调用。</summary>");
         sb.AppendLine("        public static void DisposeAll()");
         sb.AppendLine("        {");
         foreach (var h in hooks)

@@ -1,4 +1,12 @@
 ﻿{
-  "GenericTexts": {},
+  "GenericTexts": {
+    "1": {
+      "Comment": "",
+      "Data": {
+        "English": "Hikaria Core",
+        "Chinese": "Hikaria 核心"
+      }
+    }
+  },
   "EnumTexts": {}
 }

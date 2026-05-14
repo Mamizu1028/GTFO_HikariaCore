@@ -49,14 +49,16 @@ public class SNetExt_PrefabReplicationManager : MonoBehaviour, ISNetExt_Manager
         where TData : struct, ISNetExt_DynamicReplication
     {
         Type typeFromHandle = typeof(TData);
-        if (m_repManagers.TryGetValue(typeFromHandle, out var replicationManager))
+        if (m_repManagers.TryGetValue(typeFromHandle, out var existing))
         {
-            repManager = replicationManager as SNetExt_ReplicationManager<TData, TReplicator>;
+            repManager = existing as SNetExt_ReplicationManager<TData, TReplicator>;
+            if (repManager == null)
+                throw new InvalidOperationException(
+                    $"Manager for {typeFromHandle.Name} was registered with a different TReplicator (existing: {existing.GetType().Name})");
             return;
         }
         repManager = new SNetExt_ReplicationManager<TData, TReplicator>();
-        replicationManager = repManager;
-        m_repManagers.Add(typeFromHandle, replicationManager);
+        m_repManagers.Add(typeFromHandle, repManager);
     }
 
     [HideFromIl2Cpp]
