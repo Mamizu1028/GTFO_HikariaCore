@@ -93,7 +93,7 @@ public class SNetExt_Packet<T> where T : struct
     }
 
     [ThreadStatic]
-    private List<SNetwork.SNet_Player> t_remotePlayerScratch;
+    private static List<SNetwork.SNet_Player> t_remotePlayerScratch;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private List<SNetwork.SNet_Player> GetRemotePlayerScratchList()
